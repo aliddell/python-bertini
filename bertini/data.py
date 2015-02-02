@@ -6,9 +6,12 @@ from fractions import Fraction as fraction
 
 from sympy import Matrix
 
+from naglib.datatypes import Component
 from fileutils import striplines
 
 def get_components(dirname='.'):
+    # this is a quite crude way to get the NID
+    # this will change in the near future
     main_data = dirname + '/main_data'
     fh = open(main_data, 'r')
     lines = striplines(fh.readlines())
@@ -25,11 +28,10 @@ def get_components(dirname='.'):
             # capture number at end of line
             c = int(re.sub(r'[^(\d+$)]', '', l))
             if c not in dimcomponents:
-                components.append(dict([('dim',dim),('id',c), ('degree',1),
-                                        ('directory', dirname)]))
+                components.append(Component(dim,1,None))
                 dimcomponents.add(c)
             else:
-                components[-1]['degree'] += 1
+                components[-1].degree += 1
 
     return components
 

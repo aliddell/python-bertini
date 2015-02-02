@@ -10,6 +10,13 @@ class Component(object):
         deg = self._degree
         return '{0}-dim component of degree {1}'.format(dim, deg)
 
+    @property
+    def degree(self):
+        return self._degree
+    @degree.setter
+    def degree(self, deg):
+        self._degree = deg
+
 class WitnessSet(object):
 
     def __init__(self, f, L, W):
