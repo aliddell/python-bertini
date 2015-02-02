@@ -9,7 +9,6 @@ from sympy import Matrix
 
 from fileutils import striplines
 
-# INTERNAL METHODS
 def get_components(filename):
     dirname = os.path.dirname(filename)
     if not dirname:

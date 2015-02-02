@@ -60,7 +60,8 @@ def __proc_err_output(output):
 
 BERTINI = __has_bertini()
 
-def call_bertini(input_file, start_file='', cmd=BERTINI, suppress=True):
+def call_bertini(input_file, start_file='', cmd=BERTINI):
+    """Call Bertini"""
     if not cmd:
         raise(NoBertiniError)
     if not start_file:
@@ -72,5 +73,5 @@ def call_bertini(input_file, start_file='', cmd=BERTINI, suppress=True):
         output = check_output(arg)
     except CalledProcessError as e:
         raise(BertiniError(__proc_err_output(e.output)))
-    if not suppress:
-        print(output)
+
+    return output
