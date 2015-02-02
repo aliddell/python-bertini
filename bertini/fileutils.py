@@ -5,11 +5,7 @@ from os.path import isfile
 from sys import stderr, stdout
 import re
 
-def striplines(lines, nonempty=True):
-    if nonempty:
-        return [l.strip() for l in lines if l != '\n']
-    else:
-        return [l.strip() for l in lines]
+from naglib.fileutils import striplines
 
 def read_input(filename):
     """Read in an input file and parse out the variables, functions, etc"""
