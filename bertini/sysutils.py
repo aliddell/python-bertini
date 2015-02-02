@@ -52,7 +52,9 @@ def __proc_err_output(output):
     if dex == -1:
         return output
     else:
-        return lines[dex:]
+        l = lines[dex]
+        lines[dex] = l[l.index(' ')+1:] # strip 'ERROR: '
+        return '\n'.join(lines[dex:])
 
 BERTINI = __has_bertini()
 
