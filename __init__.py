@@ -22,27 +22,8 @@ def __naglib_debug():
     if debug_str in ('True', 'False'):
         return eval(debug_str)
     else:
-        raise RuntimeError("unrecognized value for NAGLIB_DEBUG: %s" %
-                           debug_str)
+        raise RuntimeError('unrecognized value for NAGLIB_DEBUG: {0}'.format(debug_str))
 NAGLIB_DEBUG = __naglib_debug()
 
 from .bertini import *
-# Adds about .04-.05 seconds of import time
-# from combinatorics import *
-# This module is slow to import:
-#from physics import units
-
-# '##' is commented out by acl
-
-##from .plotting import plot, textplot, plot_backends, plot_implicit
-##from .printing import pretty, pretty_print, pprint, pprint_use_unicode, \
-##    pprint_try_use_unicode, print_gtk, print_tree, pager_print, TableForm
-##from .printing import ccode, fcode, jscode, mathematica_code, octave_code, \
-##    latex, preview
-##from .printing import python, print_python, srepr, sstr, sstrrepr
-##from .interactive import init_session, init_printing
-
-##evalf._create_evalf_table()
-
-# This is slow to import:
-#import abc
+from .core import *
