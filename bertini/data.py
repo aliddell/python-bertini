@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import os
 import re
 
 from fractions import Fraction as fraction
@@ -9,8 +8,7 @@ from sympy import Matrix
 
 from fileutils import striplines
 
-def get_components(filename):
-    dirname = os.path.dirname(filename)
+def get_components(dirname):
     if not dirname:
         dirname = '.'
     main_data = dirname + '/main_data'

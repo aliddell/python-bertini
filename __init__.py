@@ -5,6 +5,7 @@ from NAG. It depends on NumPy, SciPy, SymPy, and MPMath."""
 from __future__ import absolute_import, print_function
 
 from naglib.release import __version__
+from exceptions import *
 
 import sys
 if sys.version_info[0] == 2 and sys.version_info[1] < 6:
