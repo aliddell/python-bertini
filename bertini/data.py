@@ -8,9 +8,7 @@ from sympy import Matrix
 
 from fileutils import striplines
 
-def get_components(dirname):
-    if not dirname:
-        dirname = '.'
+def get_components(dirname='.'):
     main_data = dirname + '/main_data'
     fh = open(main_data, 'r')
     lines = striplines(fh.readlines())
