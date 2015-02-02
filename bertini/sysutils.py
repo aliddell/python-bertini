@@ -56,6 +56,6 @@ def call_bertini(input_file, start_file='', cmd=BERTINI, suppress=True):
     try:
         output = check_output(arg)
     except CalledProcessError as e:
-        raise(BertiniError(e.message))
+        raise(BertiniError(e.output))
     if not suppress:
         print(output)
