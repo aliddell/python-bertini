@@ -1,18 +1,20 @@
 from __future__ import print_function
 
+from fractions import Fraction as fraction
 from os.path import isfile
+from sys import stderr, stdout
 import re
-import sys
 
-def _striplines(lines, nonempty=True):
+def striplines(lines, nonempty=True):
     if nonempty:
         return [l.strip() for l in lines if l != '\n']
     else:
         return [l.strip() for l in lines]
 
-def _read_input(filename):
+def read_input(filename):
+    """Read in an input file and parse out the variables, functions, etc"""
     fh = open(filename, 'r')
-    lines = _striplines(fh.readlines())
+    lines = striplines(fh.readlines())
     fh.close()
 
     var_candidates = []
@@ -66,9 +68,9 @@ def _read_input(filename):
 
     return (functions, variable_group)
 
-def _parselines(lines, **kwargs):
+def parselines(lines, **kwargs):
     """Returns a list of n-tuples of complex numbers, realized as ordered pairs"""
-    lines = _striplines(lines)
+    lines = striplines(lines)
     points = []
 
     d_limit = 10**8
@@ -101,11 +103,11 @@ def _parselines(lines, **kwargs):
             newpoint = []
             for p in point:
                 if rational and limit:
-                    p0 = Fraction(p[0]).limit_denominator(d_limit)
-                    p1 = Fraction(p[1]).limit_denominator(d_limit)
+                    p0 = fraction(p[0]).limit_denominator(d_limit)
+                    p1 = fraction(p[1]).limit_denominator(d_limit)
                 elif rational:
-                    p0 = Fraction(p[0])
-                    p1 = Fraction(p[1])
+                    p0 = fraction(p[0])
+                    p1 = fraction(p[1])
                 else:
                     p0 = float(p[0])
                     p1 = float(p[1])
@@ -122,9 +124,9 @@ def _parselines(lines, **kwargs):
             points.append(tuple(newpoint))
         else:
             if rational and limit:
-                point = [(Fraction(p[0]).limit_denominator(d_limit), Fraction(p[1]).limit_denominator(d_limit)) for p in point]
+                point = [(fraction(p[0]).limit_denominator(d_limit), fraction(p[1]).limit_denominator(d_limit)) for p in point]
             elif rational:
-                point = [(Fraction(p[0]), Fraction(p[1])) for p in point]
+                point = [(fraction(p[0]), fraction(p[1])) for p in point]
             else:
                 point = [(float(p[0]), float(p[1])) for p in point]
 
@@ -142,21 +144,21 @@ def fprint(points, **kwargs):
             if res[0] == 'y':
                 fh = open(filename, 'w')
             else:
-                print('Bailing out', file=sys.stderr)
+                print('Bailing out', file=stderr)
                 res = None
                 return res
         elif isfile(filename):
             if kwargs['overwrite']:
                 fh = open(filename, 'w')
             else:
-                print('Bailing out', file=sys.stderr)
+                print('Bailing out', file=stderr)
                 res = None
                 return res
         else:
             fh = open(filename, 'w')
     else:
         usestdout = True
-        fh = sys.stdout
+        fh = stdout
 
     numpoints = len(points)
     print('{0}'.format(numpoints), file=fh)
@@ -193,15 +195,5 @@ def readfile(filename, **kwargs):
     lines = fh.readlines()
     fh.close()
 
-    points = _parselines(lines,**kwargs)
+    points = parselines(lines,**kwargs)
     return points
-
-# EXTERNALLY FACING STUFF
-def read_input(input_file):
-    """Read in an input file and return lists of functions and variables"""
-    return _read_input(input_file)
-
-def striplines(lines, nonempty=True):
-    """Return a list of (potentially nonempty) strings,
-    stripped of newlines"""
-    return _striplines(lines, nonempty)
