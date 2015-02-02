@@ -26,3 +26,4 @@ def __naglib_debug():
 NAGLIB_DEBUG = __naglib_debug()
 
 from .core import *
+import bertini
