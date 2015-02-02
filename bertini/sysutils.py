@@ -10,6 +10,13 @@ class NoBertiniError(Exception):
     def __str__(self):
         return self.message
 
+class BertiniError(Exception):
+
+    def __init__(self, message):
+        self.message = message
+    def __str__(self):
+        return self.message
+
 def __os():
     from sys import platform
 
@@ -36,15 +43,19 @@ def __has_bertini():
 
     return bertinipath.strip()
 
-HAS_BERTINI = __has_bertini()
+BERTINI = __has_bertini()
 
-def bertini(input_file, start_file='', cmd=HAS_BERTINI, suppress=True):
+def call_bertini(input_file, start_file='', cmd=BERTINI, suppress=True):
     if not cmd:
         raise(NoBertiniError)
     if not start_file:
         arg = [cmd, input_file]
     else:
         arg = [cmd, input_file, start_file]
-    output = check_output(arg)
+
+    try:
+        output = check_output(arg)
+    except CalledProcessError as e:
+        raise(BertiniError(e.message))
     if not suppress:
         print(output)
