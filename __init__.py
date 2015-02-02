@@ -25,5 +25,5 @@ def __naglib_debug():
         raise RuntimeError('unrecognized value for NAGLIB_DEBUG: {0}'.format(debug_str))
 NAGLIB_DEBUG = __naglib_debug()
 
+from .bertini import *
 from .core import *
-import bertini
