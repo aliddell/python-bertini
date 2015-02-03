@@ -3,11 +3,31 @@ from __future__ import print_function
 import re
 
 from fractions import Fraction as fraction
+from os import chdir
+from tempfile import mkdtemp
 
 from sympy import Matrix
 
 from naglib.datatypes import Component
-from fileutils import striplines
+from naglib.bertini.sysutils import call_bertini
+from fileutils import striplines, write_system
+
+def compute_NID(system):
+    dirname = mkdtemp()
+    input_file = dirname + 'input'
+
+    variables = set()
+    for f in system:
+        variables = variables.union(f.free_symbols)
+
+    write_system(variables=variables, params=None, functions=system,
+                 constants=None, tracktype=0, filename=input_file)
+    chdir(dirname)
+    call_bertini(input_file)
+
+    components = get_components(dirname)
+
+    return components
 
 def get_components(dirname='.'):
     # this is a quite crude way to get the NID

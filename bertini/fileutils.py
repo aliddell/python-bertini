@@ -193,3 +193,40 @@ def readfile(filename, **kwargs):
 
     points = parselines(lines,**kwargs)
     return points
+
+def write_system(variables, params, functions, constants=None,
+                 tracktype=0, phtpy=0, witness=0, filename='input'):
+
+    # Python exponentiation: x**y; bertini exponentiation: x^y
+    str_funcs = [re.sub(string=str(f), pattern=r'\*\*', repl='^') \
+        for f in functions]
+
+    fh = open(filename, 'w')
+    fh.write('CONFIG\n')
+    fh.write('TrackType:{0};\n'.format(tracktype))
+    fh.write('ParameterHomotopy:{0};\n'.format(phtpy))
+    fh.write('ConstructWitnessSet:{0};\n'.format(witness))
+    fh.write('END\n')
+    fh.write('INPUT\n')
+
+    if phtpy:
+        fh.write('parameter {0};\n'.format(','.join([str(p) for p in params])))
+    # write out variable group
+    variable_group = ','.join([str(v) for v in variables])
+    fh.write('variable_group {0};\n'.format(variable_group))
+    if constants:
+        fh.write('constant {0};\n'.format(','.join(['rp{0}'.format(i) \
+            for i in range(len(constants))])))
+
+    function_group = ['f{0}'.format(i+1) for i in range(len(str_funcs))]
+    fh.write('function {0};\n'.format(','.join([f for f in function_group])))
+    if constants:
+        for i in range(len(constants)):
+            fh.write('rp{0} = {1};\n'.format(i, constants[i]))
+    for i in range(len(str_funcs)):
+        fh.write('f{0} = {1};\n'.format(i+1, str_funcs[i]))
+
+    fh.write('\n')
+
+    fh.write('END\n')
+    fh.close()
