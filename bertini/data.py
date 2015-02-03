@@ -21,7 +21,7 @@ def compute_NID(system):
         variables = variables.union(f.free_symbols)
 
     write_system(variables=variables, params=None, functions=system,
-                 constants=None, tracktype=0, filename=input_file)
+                 constants=None, tracktype=1, filename=input_file)
     chdir(dirname)
     call_bertini(input_file)
 
