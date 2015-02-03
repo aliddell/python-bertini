@@ -8,7 +8,7 @@ from tempfile import mkdtemp
 
 from sympy import Matrix
 
-from naglib.datatypes import Component
+from naglib.core.datatypes import Component
 from naglib.bertini.sysutils import call_bertini
 from fileutils import striplines, write_system
 
