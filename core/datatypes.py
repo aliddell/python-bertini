@@ -10,6 +10,9 @@ class Component(object):
         deg = self._degree
         return '{0}-dim component of degree {1}'.format(dim, deg)
 
+    def __repr__(self):
+        return self.__str__()
+
     @property
     def degree(self):
         return self._degree
