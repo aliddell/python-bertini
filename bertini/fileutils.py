@@ -68,7 +68,7 @@ def parse_witness_data(filename):
                         'multiplicity':multiplicity,
                         'component number':component_number,
                         'deflations':deflations})
-        codims.append((codim,pts))
+        codims.append(tuple([codim,pts]))
     if int(lines[0]) != -1:
         print('uh oh', file=stderr)
 
