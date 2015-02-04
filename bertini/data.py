@@ -10,6 +10,7 @@ from sympy import Matrix
 
 from naglib.core.datatypes import Component
 from naglib.bertini.sysutils import call_bertini
+from naglib.fileutils import striplines
 from fileutils import striplines, write_system
 
 def compute_NID(system):

@@ -5,7 +5,76 @@ from os.path import isfile
 from sys import stderr, stdout
 import re
 
+from mpmath import mpc
+from mpmath.mp import prec
+
 from naglib.fileutils import striplines
+
+def parse_witness_data(filename):
+    if not isfile(filename):
+        return None
+
+    fh = open(filename, 'r')
+    lines = striplines(fh.readlines())
+    fh.close()
+
+    num_vars, nonempty_codims = int(lines[0]), int(lines[1])
+    # previous line includes additional homogenizing variable(s),
+    # as appropriate
+    lines = lines[2:]
+
+    # following block represents a single codim; repeated for each
+    codims = []
+    for i in range(nonempty_codims):
+        codim = int(lines[0])
+        num_points = int(lines[1])
+        lines = lines[2:]
+        # following block represents a single point; repeated for each
+        pts = []
+        for j in range(num_points):
+            prec = int(lines[0])
+
+            lines = lines[1:]
+            pt = []
+            for k in range(num_vars):
+                coord = lines[k].split(' ')
+                pt.append(mpc(*coord))
+            pt = tuple(pt)
+            lines = lines[num_vars:]
+            # the next point is the last approximation of the point
+            # on the path before convergence
+            prec = int(lines[0])
+            lines = lines[1:]
+            approx_pt = []
+            for k in range(num_vars):
+                coord = lines[k].split(' ')
+                pt.append(mpc(*coord))
+
+            lines = lines[num_vars:]
+            condition_number = float(lines[0])
+            corank = float(lines[1]) # corank of Jacobian at this point
+            smallest_nonzero_singular = float(lines[2])
+            largest_nonzero_singular = float(lines[3])
+            pt_type = int(lines[4])
+            multiplicity = int(lines[5])
+            component_number = int(lines[6])
+            deflations = int(lines[7])
+            lines = lines[8:]
+            pts.append({'coordinates':pt,
+                        'corank':corank,
+                        'condition number':condition_number,
+                        'sigma_1':smallest_nonzero_singular,
+                        'sigma_n':largest_nonzero_singular,
+                        'type':pt_type,
+                        'multiplicity':multiplicity,
+                        'component number':component_number,
+                        'deflations':deflations})
+        codims.append(codim,pts)
+    if int(lines[0]) != -1:
+        print('uh oh', file=stderr)
+
+    return codims
+
 
 def read_input(filename):
     """Read in an input file and parse out the variables, functions, etc"""
