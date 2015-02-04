@@ -6,7 +6,6 @@ from sys import stderr, stdout
 import re
 
 from mpmath import mpc
-from mpmath.mp import prec
 
 from naglib.fileutils import striplines
 
