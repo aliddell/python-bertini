@@ -47,7 +47,7 @@ def parse_witness_data(filename):
             approx_pt = []
             for k in range(num_vars):
                 coord = lines[k].split(' ')
-                pt.append(mpc(*coord))
+                approx_pt.append(mpc(*coord))
 
             lines = lines[num_vars:]
             condition_number = float(lines[0])
