@@ -5,7 +5,7 @@ from os.path import isfile
 from sys import stderr, stdout
 import re
 
-from mpmath import mpc
+from mpmath import mpc, matrix
 
 from naglib.fileutils import striplines
 
@@ -53,7 +53,7 @@ def parse_witness_data(filename):
             condition_number = float(lines[0])
             corank = float(lines[1]) # corank of Jacobian at this point
             smallest_nonzero_singular = float(lines[2])
-            largest_nonzero_singular = float(lines[3])
+            largest_zero_singular = float(lines[3])
             pt_type = int(lines[4])
             multiplicity = int(lines[5])
             component_number = int(lines[6])
@@ -63,14 +63,129 @@ def parse_witness_data(filename):
                         'corank':corank,
                         'condition number':condition_number,
                         'sigma_1':smallest_nonzero_singular,
-                        'sigma_n':largest_nonzero_singular,
+                        'sigma_0':largest_zero_singular,
                         'type':pt_type,
                         'multiplicity':multiplicity,
                         'component number':component_number,
                         'deflations':deflations})
-        codims.append(tuple([codim,pts]))
-    if int(lines[0]) != -1:
-        print('uh oh', file=stderr)
+        codims.append((codim,pts))
+
+    # -1 designates the end of witness points
+    lines = lines[1:]
+
+    INT = 0
+    DOUBLE = 1
+    RATIONAL = 2
+
+    # remaining data is related to slices, randomization,
+    # homogenization, and patches
+    num_format = int(lines[0])
+    # previous line describes format for remainder of data
+    lines = lines[1:]
+
+    # the following block is repeated for each nonempty codim.
+    # first, matrix A used for randomization
+    # second, matrix W
+    for i in range(nonempty_codims):
+        num_rows, num_cols = lines[0].split(' ')
+        num_rows = int(num_rows)
+        num_cols = int(num_cols)
+        AW_size = num_rows*num_cols
+
+        lines = lines[:2]
+
+        if AW_size == 0:
+            A = None
+            W = None
+        else:
+            A = lines[:AW_size]
+            lines = lines[AW_size:]
+            W = lines[:AW_size]
+            lines = lines[AW_size:]
+
+            A = [a.split(' ') for a in A] # A is complex-valued
+            if num_format == INT:
+                A = [mpc(int(a[0]), int(a[1])) for a in A]
+            elif num_format == DOUBLE:
+                A = [mpc(float(a[0]), float(a[1])) for a in A]
+            elif num_format == RATIONAL:
+                A = [mpc(float(fraction(a[0])), float(fraction(a[1]))) for a in A]
+            A = [A[j:j+num_cols] for j in range(0,AW_size,num_cols)]
+            A = matrix(A)
+
+            W = [int(w) for w in W] # W is integer-valued
+            W = [W[j:j+num_cols] for j in range(0,AW_size,num_cols)]
+            W = matrix(W)
+
+        # third, a vector H used for homogenization
+        # random if projective input
+        H_size = int(lines[0])
+        lines = lines[1:]
+        H = lines[:H_size]
+        H = [h.split(' ') for h in H] # H is complex-valued
+        if num_format == INT:
+            H = [mpc(int(h[0]), int(h[1])) for h in H]
+        elif num_format == DOUBLE:
+            H = [mpc(float(h[0]), float(h[1])) for h in H]
+        elif num_format == RATIONAL:
+            H = [mpc(float(fraction(h[0])), float(fraction(h[1]))) for h in H]
+
+        H = matrix(H)
+        lines = lines[H_size:]
+
+        # fourth, a number homVarConst
+        # 0 for affine, random for projective
+        hvc = lines[0].split(' ')
+        if num_format == INT:
+            hvc = mpc(int(hvc[0]), int(hvc[1]))
+        elif num_format == DOUBLE:
+            hvc = mpc(float(hvc[0]), float(hvc[1]))
+        elif num_format == RATIONAL:
+            hvc = mpc(float(fraction(hvc[0])), float(fraction(hvc[1])))
+
+        lines = lines[1:]
+
+        # fifth, matrix B for linear slice coefficients
+        num_rows, num_cols = lines[0].split(' ')
+        num_rows, num_cols = int(num_rows), int(num_cols)
+        B_size = num_rows*num_cols
+
+        if B_size == 0:
+            B = None
+        else:
+            B = lines[:B_size]
+            lines = lines[B_size:]
+
+            B = [b.split(' ') for b in B] # B is complex-valued
+            if num_format == INT:
+                B = [mpc(int(b[0]), int(b[1])) for b in B]
+            elif num_format == DOUBLE:
+                B = [mpc(float(b[0]), float(b[1])) for b in B]
+            elif num_format == RATIONAL:
+                B = [mpc(float(fraction(b[0])), float(fraction(b[1]))) for b in B]
+            B = [B[j:j+num_cols] for j in range(0,B_size,num_cols)]
+            B = matrix(B)
+
+        # sixth and finally, vector p for patch coefficients
+        p_size = int(lines[0])
+        lines = lines[1:]
+
+        p = lines[:p_size]
+        p = [q.split(' ') for q in p]
+        if num_format == INT:
+            p = [mpc(int(q[0]), int(q[1])) for q in p]
+        elif num_format == DOUBLE:
+            p = [mpc(float(q[0]), float(q[1])) for q in p]
+        elif num_format == RATIONAL:
+            p = [mpc(float(fraction(q[0])), float(fraction(q[1]))) for q in p]
+
+        p = matrix(p)
+        codims[i][1]['A'] = A
+        codims[i][1]['W'] = W
+        codims[i][1]['H'] = H
+        codims[i][1]['homVarConst'] = hvc
+        codims[i][1]['B'] = B
+        codims[i][1]['p'] = p
 
     return codims
 
