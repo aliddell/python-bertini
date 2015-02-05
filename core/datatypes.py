@@ -20,6 +20,31 @@ class Component(object):
     def degree(self, deg):
         self._degree = deg
 
+class WitnessPoint(object):
+
+    def __init__(self, dim, component_id, pt, projective=True):
+        """Initialize the WitnessPoint object.
+
+        Keyword arguments:
+        dim -- the dimension of the component to which the point belongs
+        component_id -- the component number for this dimension, as assigned by Bertini
+        pt -- the coordinates of the witness point (an mpc vector)
+        projective -- True if the point is projective, otherwise False
+        """
+        self._dim = dim
+        self._component_id = component_id
+        self._pt = pt
+        self._projective = projective
+
+    def __str__(self):
+        return '(' + ', '.join(str(p) for p in self._pt) + ')'
+
+    def __repr__(self):
+        return 'WitnessPoint({0},{1},{2},projective={3})'.format(self._dim,
+                                                                 self._component_id,
+                                                                 self._pt,
+                                                                 self._projective)
+
 class WitnessSet(object):
 
     def __init__(self, f, L, W):
