@@ -33,7 +33,10 @@ class WitnessPoint(object):
         """
         self._dim = dim
         self._component_id = component_id
-        self._pt = pt
+        if not hasattr(pt, '__iter__'):
+            self._pt = (pt,)
+        else:
+            self._pt = tuple(pt)
         self._projective = projective
 
     def __str__(self):
@@ -44,6 +47,19 @@ class WitnessPoint(object):
                                                                  self._component_id,
                                                                  self._pt,
                                                                  self._projective)
+
+    @property
+    def dim(self):
+        return self._dim
+
+    @property
+    def component_id(self):
+        return self._component_id
+    @component_id.setter
+    def component_id(self, c):
+        if type(c) != int:
+            raise(TypeError('component_id needs to be an int'))
+        self._component_id = c
 
 class WitnessSet(object):
 
