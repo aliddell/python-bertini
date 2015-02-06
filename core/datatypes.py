@@ -57,10 +57,27 @@ class WitnessPoint(object):
         return self._component_id
     @property
     def pt(self):
-	return self._pt
+        return self._pt
     @property
     def isprojective(self):
-	return self._isprojective
+        return self._isprojective
+    
+    def dehomogenize(self):
+        """Dehomogenize the witness point
+        """
+        dim = self._dim
+        component_id = self._component_id
+        pt = self._pt
+        if not self._isprojective:
+            newpt = self
+        else:
+            first = pt[0]
+            pt = pt[1:]
+            # first should not be equal to 0
+            pt = [pt[i]/first for i in range(len(pt))]
+            newpt = WitnessPoint(dim, component_id, pt, False)
+            
+        return newpt
 
 class WitnessSet(object):
 
