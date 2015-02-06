@@ -1,2 +1,4 @@
+# IDE files
+*.kdev4
 # .pyc files
 *.pyc

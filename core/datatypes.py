@@ -22,14 +22,14 @@ class Component(object):
 
 class WitnessPoint(object):
 
-    def __init__(self, dim, component_id, pt, projective=True):
+    def __init__(self, dim, component_id, pt, isprojective=True):
         """Initialize the WitnessPoint object.
 
         Keyword arguments:
         dim -- the dimension of the component to which the point belongs
         component_id -- the component number for this dimension, as assigned by Bertini
         pt -- the coordinates of the witness point (an mpc vector)
-        projective -- True if the point is projective, otherwise False
+        isprojective -- True if the point is projective, otherwise False
         """
         self._dim = dim
         self._component_id = component_id
@@ -37,7 +37,7 @@ class WitnessPoint(object):
             self._pt = (pt,)
         else:
             self._pt = tuple(pt)
-        self._projective = projective
+        self._isprojective = isprojective
 
     def __str__(self):
         return '(' + ', '.join(str(p) for p in self._pt) + ')'
@@ -55,11 +55,12 @@ class WitnessPoint(object):
     @property
     def component_id(self):
         return self._component_id
-    @component_id.setter
-    def component_id(self, c):
-        if type(c) != int:
-            raise(TypeError('component_id needs to be an int'))
-        self._component_id = c
+    @property
+    def pt(self):
+	return self._pt
+    @property
+    def isprojective(self):
+	return self._isprojective
 
 class WitnessSet(object):
 

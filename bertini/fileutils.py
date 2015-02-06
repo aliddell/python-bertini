@@ -26,6 +26,7 @@ def parse_witness_data(filename):
     codims = []
     for i in range(nonempty_codims):
         codim = int(lines[0])
+        codims.append({'codim':codim})
         num_points = int(lines[1])
         lines = lines[2:]
         # following block represents a single point; repeated for each
@@ -68,7 +69,7 @@ def parse_witness_data(filename):
                         'multiplicity':multiplicity,
                         'component number':component_number,
                         'deflations':deflations})
-        codims.append([codim,pts])
+        codims[-1]['points'] = pts
 
     # -1 designates the end of witness points
     lines = lines[1:]
@@ -181,12 +182,12 @@ def parse_witness_data(filename):
             p = [mpc(float(fraction(q[0])), float(fraction(q[1]))) for q in p]
 
         p = matrix(p)
-        codims[i].append({'A':A,
-                          'W':W,
-                          'H':H,
-                          'homVarConst':hvc,
-                          'B':B,
-                          'p':p})
+        codims[i]['A'] = A
+        codims[i]['W'] = W
+        codims[i]['H'] = H
+        codims[i]['homVarConst'] = hvc
+        codims[i]['B'] = B
+        codims[i]['p'] = p
 
     return codims
 
