@@ -46,7 +46,7 @@ class WitnessPoint(object):
         return 'WitnessPoint({0},{1},{2},projective={3})'.format(self._dim,
                                                                  self._component_id,
                                                                  self._pt,
-                                                                 self._projective)
+                                                                 self._isprojective)
 
     @property
     def dim(self):
