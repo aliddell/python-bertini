@@ -78,7 +78,7 @@ class PolynomialSystem(NAGobject):
         # check if any polynomials are actually not polynomials
         for p in self._polynomials:
             if not p.is_polynomial():
-                raise(NonPolynomialException(str(p))
+                raise(NonPolynomialException(str(p)))
         if variables and not hasattr(variables, '__iter__'):
             self._variables = (sympify(variables),)
         elif variables:
