@@ -182,8 +182,7 @@ class LinearSystem(PolynomialSystem):
         """
         polynomials  = self._polynomials
         variables  = self._variables
-        parameters = self._parameters
-        repstr = 'LinearSystem({0},{1})'.format(functions,variables)
+        repstr = 'LinearSystem({0},{1})'.format(polynomials,variables)
         return repstr
     
     def __getitem__(self, key):
