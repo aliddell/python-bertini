@@ -384,7 +384,7 @@ class WitnessPoint(NAGobject):
         """
         x.__str__() <==> str(x)
         """
-        return '(' + ', '.join(str(p) for p in self._pt) + ')'
+        return '(' + ','.join(str(p) for p in self._pt) + ')'
 
     def __repr__(self):
         """
@@ -433,14 +433,41 @@ class WitnessSet(NAGobject):
     """
     A witness set for a component
     """
-    def __init__(self, f, L, W, isprojective=True):
+    def __init__(self, system, slice, witness_points, isprojective=True):
         """Initialize the WitnessSet
         
         Keyword arguments:
-        f -- PolynomialSystem, system on which all the points vanish
-        L -- LinearSystem, system defining a generic linear space
-        W -- iterable of WitnessPoint objects,  witness point set, V(f) \cap V(L)
+        system -- PolynomialSystem, system on which all the points vanish
+        slice -- LinearSystem, system defining a generic linear space
+        witness_points -- iterable of WitnessPoint objects,  witness point set, V(f) \cap V(L)
+        isprojective -- boolean, True if the witness set describes a projective set
         """
-        self._f = f
-        self._L = L
-        self._W = W
+        self._system = system
+        self._slice = slice
+        self._witness_points = set(witness_points)
+        self._isprojective = isprojective
+    
+    def __repr__(self):
+        """
+        x.__repr__() <==> repr(x)
+        """
+        sy = self._system
+        sl = self._slice
+        wp = self._witness_points
+        ip = self._isprojective
+        repstr = 'WitnessSet({0},{1},{2},{3})'.format(repr(sy),repr(sl),repr(wp),ip)
+        
+        return repstr
+    
+    @property
+    def system(self):
+        return self._system
+    @property
+    def slice(self):
+        return self._slices
+    @property
+    def witness_points(self):
+        return self._witness_points
+    @property
+    def isprojective(self):
+        return self._isprojective
