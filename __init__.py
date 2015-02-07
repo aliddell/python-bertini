@@ -4,7 +4,7 @@ from NAG. It depends on NumPy, SciPy, SymPy, and MPMath."""
 
 from __future__ import absolute_import, print_function
 
-from naglib.release import __version__
+from naglib.release import __version__, __authors__
 from .exceptions import *
 
 import sys

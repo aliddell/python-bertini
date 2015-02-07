@@ -1,5 +1,7 @@
 from sympy import sympify
 
+from naglib.exceptions import NonPolynomialException, NonLinearException
+
 class NAGobject(object):
     """
     A meta class. Nothing here (yet)
@@ -9,8 +11,6 @@ class NAGobject(object):
 class IrreducibleComponent(NAGobject):
     """
     An irreducible component of an algebraic set
-    
-    Consists of 
     """
     def __init__(self, dim, component_id, degree, witness_set):
         """
@@ -75,6 +75,10 @@ class PolynomialSystem(NAGobject):
             self._polynomials = (sympify(polynomials),)
         else:
             self._polynomials = tuple(sympify(polynomials))
+        # check if any polynomials are actually not polynomials
+        for p in self._polynomials:
+            if not p.is_polynomial():
+                raise(NonPolynomialException(str(p))
         if variables and not hasattr(variables, '__iter__'):
             self._variables = (sympify(variables),)
         elif variables:
@@ -148,6 +152,12 @@ class LinearSystem(PolynomialSystem):
             self._polynomials = (sympify(polynomials),)
         else:
             self._polynomials = tuple(sympify(polynomials))
+        # check if any polynomials are actually not polynomials
+        for p in self._polynomials:
+            if not p.is_polynomial():
+                raise(NonPolynomialException(str(p)))
+            elif p.as_poly().degree() > 1:
+                raise(NonLinearException(str(p)))
         if variables and not hasattr(variables, '__iter__'):
             self._variables = (sympify(variables),)
         elif variables:
@@ -193,6 +203,12 @@ class LinearSystem(PolynomialSystem):
         polynomials = self._polynomials
         return polynomials[key]
     
+    @property
+    def polynomials(self):
+        return self._polynomials
+    @property
+    def variables(self):
+        return self._variables
     @property
     def shape(self):
         return self._shape

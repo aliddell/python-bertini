@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from subprocess import check_output, CalledProcessError
 
-from naglib.exceptions import BertiniError, NoBertiniError
+from naglib.exceptions import BertiniError, NoBertiniException
 
 def __os():
     from sys import platform
@@ -46,7 +46,14 @@ def __proc_err_output(output):
 BERTINI = __has_bertini()
 
 def call_bertini(input_file, start_file='', cmd=BERTINI):
-    """Call Bertini"""
+    """
+    Call Bertini
+    
+    Keyword arguments:
+    input_file -- string giving the path of a Bertini input file
+    start_file -- (optional) string giving the path of a Bertini start file
+    cmd -- (optional) string giving the path of the Bertini executable
+    """
     if not cmd:
         raise(NoBertiniError)
     if not start_file:
