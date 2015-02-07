@@ -1,15 +1,20 @@
 from __future__ import print_function
 
-from fractions import Fraction as fraction
 from os.path import isfile
 from sys import stderr, stdout
-import re
 
-from mpmath import mpc, matrix
+from mpmath import mpf, mpc, matrix
+from mpmath.rational import mpq
 
 from naglib.fileutils import striplines
 
 def parse_witness_data(filename):
+    """
+    Parse witness_data file into usable data
+    
+    Keyword arguments:
+    filename -- string, path to witness_data file
+    """
     if not isfile(filename):
         return None
 
@@ -191,9 +196,13 @@ def parse_witness_data(filename):
 
     return codims
 
-
 def read_input(filename):
-    """Read in an input file and parse out the variables, functions, etc"""
+    """
+    Read in an input file and parse out the variables, functions, etc
+    
+    Keyword arguments:
+    filename -- string, path to input file
+    """
     fh = open(filename, 'r')
     lines = striplines(fh.readlines())
     fh.close()
@@ -249,139 +258,89 @@ def read_input(filename):
 
     return (functions, variable_group)
 
-def parselines(lines, **kwargs):
-    """Returns a list of n-tuples of complex numbers, realized as ordered pairs"""
+def parselines(lines, tol=1e-15):
+    """
+    Return an mpmath matrix of mpc numbers
+    
+    Keyword arguments:
+    lines -- iterable of strings, first entry the number of points;
+                the rest, "%s %s" % real, imag
+    tol   -- optional numeric, smallest allowable nonzero value
+    """
     lines = striplines(lines)
     points = []
-
-    d_limit = 10**8
-
-    # parameters
-    if 'tol' in kwargs:
-        withtol = True
-        tol = kwargs['tol']
-    else:
-        withtol = False
-    if 'rational' in kwargs and kwargs['rational']:
-        rational = True
-    else:
-        rational = False
-    if 'limit' in kwargs and kwargs['limit']:
-        limit = True
-    else:
-        limit = False
 
     numpoints = int(lines[0])
     lines = lines[1:]
     length = len(lines)
-
     numvar = length//numpoints
 
-    for i in range(0,length,numvar):
+    for i in range(0, length, numvar):
         point = lines[i:i+numvar]
         point = [re.split(r'\s+', p) for p in point]
-        if withtol:
-            newpoint = []
-            for p in point:
-                if rational and limit:
-                    p0 = fraction(p[0]).limit_denominator(d_limit)
-                    p1 = fraction(p[1]).limit_denominator(d_limit)
-                elif rational:
-                    p0 = fraction(p[0])
-                    p1 = fraction(p[1])
-                else:
-                    p0 = float(p[0])
-                    p1 = float(p[1])
+        newpoint = []
+        for p in point:
+            re = mpf(p[0])
+            im = mpf(p[1])
 
-                if abs(p0) < tol:
-                    p[0] = 0
-                else:
-                    p[0] = p0
-                if abs(p1) < tol:
-                    p[1] = 0
-                else:
-                    p[1] = p1
-                newpoint.append(tuple(p))
-            points.append(tuple(newpoint))
-        else:
-            if rational and limit:
-                point = [(fraction(p[0]).limit_denominator(d_limit), fraction(p[1]).limit_denominator(d_limit)) for p in point]
-            elif rational:
-                point = [(fraction(p[0]), fraction(p[1])) for p in point]
-            else:
-                point = [(float(p[0]), float(p[1])) for p in point]
+            if abs(re) < tol:
+                re = 0
+            if abs(im) < tol:
+                im = 0
+                
+            newpoint.append(mpc(re, im))
+        points.append(matrix(newpoint))
 
-            points.append(tuple(point))
+    return set(points)
 
-    return list(set(points))
-
-def fprint(points, **kwargs):
-    """Prints a set of points in Bertini output fashion, optionally to a file"""
-    if 'filename' in kwargs:
-        usestdout = False
-        filename = kwargs['filename']
-        if isfile(filename) and 'overwrite' not in kwargs:
-            res = input('{0} already exists! Overwrite? '.format(filename)).lower()
-            if res[0] == 'y':
-                fh = open(filename, 'w')
-            else:
-                print('Bailing out', file=stderr)
-                res = None
-                return res
-        elif isfile(filename):
-            if kwargs['overwrite']:
-                fh = open(filename, 'w')
-            else:
-                print('Bailing out', file=stderr)
-                res = None
-                return res
-        else:
-            fh = open(filename, 'w')
+def fprint(points, filename=''):
+    """
+    Print a set of points in Bertini output fashion, optionally to a file
+    
+    Keyword arguments:
+    points   -- numeric iterable, the points to print
+    filename -- optional string, path to filename
+    rational -- optional boolean, if True, use mpq, otherwise print float
+                currently not implemented because mpq is not really workable
+    """
+    if filename:
+        fh = open(filename, 'w')
     else:
-        usestdout = True
         fh = stdout
 
     numpoints = len(points)
-    print('{0}'.format(numpoints), file=fh)
+    print('{0}\n'.format(numpoints), file=fh)
     for p in points:
-        for q in p:
-            print('{0} {1}'.format(q[0], q[1]), file=fh)
+        for coordinate in p:
+            re = coordinate.re
+            im = coordinate.im
+            print('{0} {1}'.format(re, im), file=fh)
         print('', file=fh)
 
-    if not usestdout:
+    if filename:
         fh.close()
     return
 
-def readfile(filename, **kwargs):
-    """Reads in a file and returns a set of n-tuples of complex numbers"""
+def readfile(filename, tol=1e-15):
+    ""
+    "Reads in a file and return a set of mpc numbers
+    """
     if not isfile(filename):
-        return None
-
-    # parameters
-    if 'tol' in kwargs:
-        withtol = True
-        tol = kwargs['tol']
-    else:
-        withtol = False
-    if 'rational' in kwargs and kwargs['rational']:
-        rational = True
-    else:
-        rational = False
-    if 'limit' in kwargs and kwargs['limit']:
-        limit = True
-    else:
-        limit = False
+        raise(IOError("can't find {0}".format(filename)))
 
     fh = open(filename, 'r')
     lines = fh.readlines()
     fh.close()
 
-    points = parselines(lines,**kwargs)
+    points = parselines(lines, tol=tol)
     return points
 
 def write_system(variables, params, functions, constants=None,
                  tracktype=0, phtpy=0, witness=0, filename='input'):
-
+    import re
+    """
+    Writes a system to a Bertini-format file
+    """
     # Python exponentiation: x**y; bertini exponentiation: x^y
     str_funcs = [re.sub(string=str(f), pattern=r'\*\*', repl='^') \
         for f in functions]

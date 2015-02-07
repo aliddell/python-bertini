@@ -11,7 +11,7 @@ from sympy import Matrix
 from naglib.core.datatypes import IrreducibleComponent
 from naglib.bertini.sysutils import call_bertini
 from naglib.fileutils import striplines
-from fileutils import striplines, write_system
+from naglib.bertini.fileutils import write_system
 
 def compute_NID(system):
     dirname = mkdtemp()
