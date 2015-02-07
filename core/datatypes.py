@@ -71,7 +71,7 @@ class PolynomialSystem(NAGobject):
                       I assume the function is not parameterized and
                       parameters becomes an empty tuple
         """
-        if not hasattr([polynomials, '__iter_'):
+        if not hasattr(polynomials, '__iter__'):
             self._polynomials = (sympify(polynomials),)
         else:
             self._polynomials = tuple(sympify(polynomials))
@@ -143,7 +143,7 @@ class LinearSystem(PolynomialSystem):
                      if None, 'variables' will be taken to be all
                      free symbols in 'functions'
         """
-        if not hasattr([polynomials, '__iter_'):
+        if not hasattr(polynomials, '__iter__'):
             self._polynomials = (sympify(polynomials),)
         else:
             self._polynomials = tuple(sympify(polynomials))
