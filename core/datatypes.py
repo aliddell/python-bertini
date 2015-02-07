@@ -159,6 +159,39 @@ class PolynomialSystem(NAGobject):
             opara = other._parameters
         return (spoly == opoly and svars == ovars and spara == opara)
     
+    def lmul(self, other):
+        """
+        x.lmul(y) <==> y*x
+        
+        Because SymPy and mpmath don't return NotImplemented, can't
+        override __rmul__
+        """
+        # multiply by an mpmatrix on the right
+        num_rows = self._shape[0]
+        polys = self._polynomials
+        if isinstance(other, mpmatrix):
+            if other.cols != num_rows:
+                raise(ValueError('dimensions not compatible for multiplication'))
+            res_polys = []
+            for i in range(other.rows):
+                res = sympify(0)
+                for j in range(num_rows):
+                    res += polys[j]*other[i,j]
+                res_polys.append(res)
+            
+            return PolynomialSystem(res_polys, self._variables, self._parameters)
+        elif isinstance(other, spmatrix):
+            if other.cols != num_rows:
+                raise(ShapeError('Matrices size mismatch'))
+            res_polys = []
+            for i in range(other.rows):
+                res = sympify(0)
+                for j in range(num_rows):
+                    res += polys[j]*other[i,j]
+                res_polys.append(res)
+            
+            return PolynomialSystem(res_polys)
+        
     @property
     def polynomials(self):
         return self._polynomials
@@ -259,9 +292,12 @@ class LinearSystem(PolynomialSystem):
             ovars = other._variables
         return (spoly == opoly and svars == ovars)
     
-    def __rmul__(self, other):
+    def lmul(self, other):
         """
-        x.__rmul__(y) <==> y*x
+        x.lmul(y) <==> y*x
+        
+        Because SymPy and mpmath don't return NotImplemented, can't
+        override __rmul__
         """
         # multiply by an mpmatrix on the right
         num_rows = self._shape[0]
