@@ -108,6 +108,7 @@ class PolynomialSystem(NAGobject):
         maxlen = max(strlens)
         fstrs = [f + ' '*(maxlen - len(f)) for f in fstrs]
         fstr = '\n'.join(['[{0}]'.format(f) for f in fstrs])
+        return fstr
     
     def __repr__(self):
         """
@@ -174,6 +175,7 @@ class LinearSystem(PolynomialSystem):
         maxlen = max(strlens)
         fstrs = [f + ' '*(maxlen - len(f)) for f in fstrs]
         fstr = '\n'.join(['[{0}]'.format(f) for f in fstrs])
+        return fstr
     
     def __repr__(self):
         """
