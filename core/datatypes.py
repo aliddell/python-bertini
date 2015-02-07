@@ -167,14 +167,13 @@ class LinearSystem(PolynomialSystem):
         """
         x.__str__() <==> str(x)
         """
-        return super(LinearSystem, self).__str__()
-        #polynomials = self._polynomials
-        ## even up the lengths of the function strings
-        #fstrs = [str(f) for f in polynomials]
-        #strlens = [len(f) for f in fstrs]
-        #maxlen = max(strlens)
-        #fstrs = [f + ' '*(maxlen - len(f)) for f in fstrs]
-        #fstr = '\n'.join(['[{0}]'.format(f) for f in fstrs])
+        polynomials = self._polynomials
+        # even up the lengths of the function strings
+        fstrs = [str(f) for f in polynomials]
+        strlens = [len(f) for f in fstrs]
+        maxlen = max(strlens)
+        fstrs = [f + ' '*(maxlen - len(f)) for f in fstrs]
+        fstr = '\n'.join(['[{0}]'.format(f) for f in fstrs])
     
     def __repr__(self):
         """
