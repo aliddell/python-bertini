@@ -58,11 +58,11 @@ class PolynomialSystem(NAGobject):
     """
     A polynomial system
     """
-    def __init__(self, functions, variables=None, parameters=None):
+    def __init__(self, polynomials, variables=None, parameters=None):
         """Initialize the PolynomialSystem object
         
         Keyword arguments:
-        functions -- an iterable of symbolic function arguments
+        polynomials -- an iterable of symbolic polynomials
         variables -- an iterable of the variables in the function;
                      if None, 'variables' will be taken to be all
                      free symbols in 'functions'
@@ -71,17 +71,17 @@ class PolynomialSystem(NAGobject):
                       I assume the function is not parameterized and
                       parameters becomes an empty tuple
         """
-        if not hasattr(functions, '__iter_'):
-            self._functions = (sympify(functions),)
+        if not hasattr([polynomials, '__iter_'):
+            self._polynomials = (sympify(polynomials),)
         else:
-            self._functions = tuple(sympify(functions))
+            self._polynomials = tuple(sympify(polynomials))
         if variables and not hasattr(variables, '__iter__'):
             self._variables = (sympify(variables),)
         elif variables:
             self._variables = tuple(sympify(variables))
         else: # variables not specified
             variable_list = set()
-            for f in self._functions:
+            for f in self._polynomials:
                 variable_list = variable_list.union(f.free_symbols)
             variable_list = list(variable_list)
             variable_strings = sorted([str(v) for v in variable_list])
@@ -93,13 +93,17 @@ class PolynomialSystem(NAGobject):
         else:
             self._parameters = ()
             
+        self._num_variables = len(self._variables)
+        self._num_polynomials = len(self._polynomials)
+        self._shape = (self._num_polynomials, self._num_variables)
+            
     def __str__(self):
         """
         x.__str__() <==> str(x)
         """
-        functions = self._functions
+        polynomials = self._polynomials
         # even up the lengths of the function strings
-        fstrs = [str(f) for f in functions]
+        fstrs = [str(f) for f in polynomials]
         strlens = [len(f) for f in fstrs]
         maxlen = max(strlens)
         fstrs = [f + ' '*(maxlen - len(f)) for f in fstrs]
@@ -109,7 +113,7 @@ class PolynomialSystem(NAGobject):
         """
         x.__repr__() <==> repr(x)
         """
-        functions  = self._functions
+        polynomials  = self._polynomials
         variables  = self._variables
         parameters = self._parameters
         repstr = 'PolynomialSystem({0},{1},{2})'.format(functions,variables,parameters)
@@ -119,17 +123,19 @@ class PolynomialSystem(NAGobject):
         """
         x.__getitem__(y) <==> x[y]
         """
-        functions = self._functions
-        return functions[key]
+        polynomials = self._polynomials
+        return polynomials[key]
     
-    def shape(
+    @property
+    def shape(self):
+        return self._shape
     
 class LinearSystem(PolynomialSystem):
     """
     A linear system
     """
-    def __init__(self, functions, variables=None):
-        """Initialize the PolynomialSystem object
+    def __init__(self, polynomials, variables=None):
+        """Initialize the LinearSystem object
         
         Keyword arguments:
         functions -- an iterable of symbolic function arguments
@@ -137,36 +143,59 @@ class LinearSystem(PolynomialSystem):
                      if None, 'variables' will be taken to be all
                      free symbols in 'functions'
         """
-        if not hasattr(functions, '__iter__'):
-            self._functions = (sympify(functions),)
+        if not hasattr([polynomials, '__iter_'):
+            self._polynomials = (sympify(polynomials),)
         else:
-            self._functions = tuple(sympify(functions))
+            self._polynomials = tuple(sympify(polynomials))
         if variables and not hasattr(variables, '__iter__'):
             self._variables = (sympify(variables),)
         elif variables:
             self._variables = tuple(sympify(variables))
         else: # variables not specified
             variable_list = set()
-            for f in self._functions:
+            for f in self._polynomials:
                 variable_list = variable_list.union(f.free_symbols)
             variable_list = list(variable_list)
             variable_strings = sorted([str(v) for v in variable_list])
             self._variables = sympify(variable_strings)
-
+            
+        self._num_variables = len(self._variables)
+        self._num_polynomials = len(self._polynomials)
+        self._shape = (self._num_polynomials, self._num_variables)
+            
     def __str__(self):
         """
         x.__str__() <==> str(x)
         """
         return super(LinearSystem, self).__str__()
-        
+        #polynomials = self._polynomials
+        ## even up the lengths of the function strings
+        #fstrs = [str(f) for f in polynomials]
+        #strlens = [len(f) for f in fstrs]
+        #maxlen = max(strlens)
+        #fstrs = [f + ' '*(maxlen - len(f)) for f in fstrs]
+        #fstr = '\n'.join(['[{0}]'.format(f) for f in fstrs])
+    
     def __repr__(self):
         """
         x.__repr__() <==> repr(x)
         """
-        functions  = self._functions
+        polynomials  = self._polynomials
         variables  = self._variables
+        parameters = self._parameters
         repstr = 'LinearSystem({0},{1})'.format(functions,variables)
         return repstr
+    
+    def __getitem__(self, key):
+        """
+        x.__getitem__(y) <==> x[y]
+        """
+        polynomials = self._polynomials
+        return polynomials[key]
+    
+    @property
+    def shape(self):
+        return self._shape
     
 class WitnessPoint(NAGobject):
     """
