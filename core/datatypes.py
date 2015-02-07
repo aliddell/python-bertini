@@ -135,10 +135,13 @@ class LinearSystem(PolynomialSystem):
                      if None, 'variables' will be taken to be all
                      free symbols in 'functions'
         """
-        if not hasattr(functions, '__iter_'):
+        #if not hasattr(functions, '__iter__'):
             self._functions = (sympify(functions),)
+            print('functions,')
         else:
             self._functions = tuple(sympify(functions))
+            print('tuple functions')
+        print(self._functions)
         if variables and not hasattr(variables, '__iter__'):
             self._variables = (sympify(variables),)
         elif variables:
