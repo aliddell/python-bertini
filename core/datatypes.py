@@ -135,7 +135,7 @@ class LinearSystem(PolynomialSystem):
                      if None, 'variables' will be taken to be all
                      free symbols in 'functions'
         """
-        #if not hasattr(functions, '__iter__'):
+        if not hasattr(functions, '__iter__'):
             self._functions = (sympify(functions),)
             print('functions,')
         else:
