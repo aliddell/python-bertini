@@ -139,7 +139,6 @@ class LinearSystem(PolynomialSystem):
             self._functions = (sympify(functions),)
         else:
             self._functions = tuple(sympify(functions))
-        print(self._functions)
         if variables and not hasattr(variables, '__iter__'):
             self._variables = (sympify(variables),)
         elif variables:
@@ -158,7 +157,7 @@ class LinearSystem(PolynomialSystem):
         """
         functions  = self._functions
         variables  = self._variables
-        repstr = 'LinearSystem({0},{1},{2})'.format(functions,variables)
+        repstr = 'LinearSystem({0},{1})'.format(functions,variables)
         return repstr
     
 class WitnessPoint(NAGobject):
