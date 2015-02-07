@@ -89,7 +89,7 @@ class PolynomialSystem(NAGobject):
                 variable_list = variable_list.union(f.free_symbols)
             variable_list = list(variable_list)
             variable_strings = sorted([str(v) for v in variable_list])
-            self._variables = sympify(variable_strings)            
+            self._variables = tuple(sympify(variable_strings))
         if parameters and not hasattr(parameters, '__iter__'):
             self._parameters = (sympify(parameters),)
         elif parameters:
@@ -121,7 +121,7 @@ class PolynomialSystem(NAGobject):
         polynomials  = self._polynomials
         variables  = self._variables
         parameters = self._parameters
-        repstr = 'PolynomialSystem({0},{1},{2})'.format(functions,variables,parameters)
+        repstr = 'PolynomialSystem({0},{1},{2})'.format(polynomials,variables,parameters)
         return repstr
     
     def __getitem__(self, key):
@@ -168,7 +168,7 @@ class LinearSystem(PolynomialSystem):
                 variable_list = variable_list.union(f.free_symbols)
             variable_list = list(variable_list)
             variable_strings = sorted([str(v) for v in variable_list])
-            self._variables = sympify(variable_strings)
+            self._variables = tuple(sympify(variable_strings))
             
         self._num_variables = len(self._variables)
         self._num_polynomials = len(self._polynomials)
