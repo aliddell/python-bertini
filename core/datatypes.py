@@ -1,4 +1,5 @@
-from sympy import sympify
+from mpmath import matrix as mpmatrix
+from sympy import sympify, ShapeError, Matrix as spmatrix
 
 from naglib.exceptions import NonPolynomialException, NonLinearException
 
@@ -17,10 +18,10 @@ class IrreducibleComponent(NAGobject):
         Initialize the IrreducibleComponent object.
         
         Keyword arguments:
-        dim -- the dimension of the component
-        component_id -- the component number for this dimension, as assigned by Bertini
-        degree -- the degree of the component
-        witness_set -- the witness set (type WitnessSet) describing this component
+        dim -- int, the dimension of the component
+        component_id -- int, the component number for this dimension, as assigned by Bertini
+        degree -- int, the degree of the component
+        witness_set -- WitnessSet, the witness set describing this component
         """
         self._dim = dim
         self._component_id = component_id
@@ -44,7 +45,7 @@ class IrreducibleComponent(NAGobject):
         cid = self._component_id
         deg = self._degree
         wst = self._witness_set
-        repstr = 'IrreducibleComponent({0},{1},{2},{3})'.format(dim,cid,deg,wst)
+        repstr = 'IrreducibleComponent({0},{1},{2},{3})'.format(dim,cid,deg,repr(wst))
         return self.__str__()
 
     @property
@@ -62,23 +63,25 @@ class PolynomialSystem(NAGobject):
         """Initialize the PolynomialSystem object
         
         Keyword arguments:
-        polynomials -- an iterable of symbolic polynomials
-        variables -- an iterable of the variables in the function;
+        polynomials -- iterable, symbolic polynomials
+        variables -- iterable, the variables in the system;
                      if None, 'variables' will be taken to be all
-                     free symbols in 'functions'
-        parameters -- an iterable of the parameters in the function,
+                     free symbols in 'polynomials'
+        parameters -- iterable, the parameters in the function,
                       if the function is parameterized; if None or empty,
-                      I assume the function is not parameterized and
-                      parameters becomes an empty tuple
+                      assume the function is not parameterized and
+                      'parameters' becomes an empty tuple
         """
         if not hasattr(polynomials, '__iter__'):
             self._polynomials = (sympify(polynomials),)
         else:
             self._polynomials = tuple(sympify(polynomials))
+            
         # check if any polynomials are actually not polynomials
         for p in self._polynomials:
             if not p.is_polynomial():
                 raise(NonPolynomialException(str(p)))
+            
         if variables and not hasattr(variables, '__iter__'):
             self._variables = (sympify(variables),)
         elif variables:
@@ -90,13 +93,15 @@ class PolynomialSystem(NAGobject):
             variable_list = list(variable_list)
             variable_strings = sorted([str(v) for v in variable_list])
             self._variables = tuple(sympify(variable_strings))
+            
         if parameters and not hasattr(parameters, '__iter__'):
             self._parameters = (sympify(parameters),)
         elif parameters:
             self._parameters = tuple(sympify(parameters))
         else:
             self._parameters = ()
-            
+        
+        self._degree = tuple([p.as_poly().degree() for p in self._polynomials])
         self._num_variables = len(self._variables)
         self._num_polynomials = len(self._polynomials)
         self._shape = (self._num_polynomials, self._num_variables)
@@ -131,6 +136,38 @@ class PolynomialSystem(NAGobject):
         polynomials = self._polynomials
         return polynomials[key]
     
+    def __eq__(self, other):
+        """
+        x.__eq__(y) <==> x == y
+        """
+        if not isinstance(other, PolynomialSystem):
+            return False
+        elif isinstance(other, LinearSystem) and self._parameters:
+            return False
+        elif isinstance(other, LinearSystem):
+            spoly = self._polynomials
+            opoly = other._polynomials
+            svars = self._variables
+            ovars = other._variables
+            return (spoly == opoly and svars == ovars)
+        else:
+            spoly = self._polynomials
+            opoly = other._polynomials
+            svars = self._variables
+            ovars = other._variables
+            spara = self._parameters
+            opara = other._parameters
+        return (spoly == opoly and svars == ovars and spara == opara)
+    
+    @property
+    def polynomials(self):
+        return self._polynomials
+    @property
+    def variables(self):
+        return self._variables
+    @property
+    def degree(self):
+        return self._degree
     @property
     def shape(self):
         return self._shape
@@ -138,6 +175,8 @@ class PolynomialSystem(NAGobject):
 class LinearSystem(PolynomialSystem):
     """
     A linear system
+    
+    !!!Use this only for slicing!!!
     """
     def __init__(self, polynomials, variables=None):
         """Initialize the LinearSystem object
@@ -152,12 +191,14 @@ class LinearSystem(PolynomialSystem):
             self._polynomials = (sympify(polynomials),)
         else:
             self._polynomials = tuple(sympify(polynomials))
+            
         # check if any polynomials are actually not polynomials
         for p in self._polynomials:
             if not p.is_polynomial():
                 raise(NonPolynomialException(str(p)))
             elif p.as_poly().degree() > 1:
                 raise(NonLinearException(str(p)))
+            
         if variables and not hasattr(variables, '__iter__'):
             self._variables = (sympify(variables),)
         elif variables:
@@ -203,6 +244,56 @@ class LinearSystem(PolynomialSystem):
         polynomials = self._polynomials
         return polynomials[key]
     
+    def __eq__(self, other):
+        """
+        x.__eq__(y) <==> x == y
+        """
+        if not isinstance(other, PolynomialSystem):
+            return False
+        elif isinstance(other, PolynomialSystem) and other._parameters:
+            return False
+        else:
+            spoly = self._polynomials
+            opoly = other._polynomials
+            svars = self._variables
+            ovars = other._variables
+        return (spoly == opoly and svars == ovars)
+    
+    def __rmul__(self, other):
+        """
+        x.__rmul__(y) <==> y*x
+        """
+        # multiply by an mpmatrix on the right
+        num_rows = self._shape[0]
+        polys = self._polynomials
+        if isinstance(other, mpmatrix):
+            if other.cols != num_rows:
+                raise(ValueError('dimensions not compatible for multiplication'))
+            res_polys = []
+            for i in range(num_rows):
+                res = sympify(0)
+                for j in range(other.cols):
+                    res += polys[j]*other[i,j]
+                res_polys.append(res)
+            
+            return LinearSystem(res_polys, self._variables)
+        elif isinstance(other, spmatrix):
+            if other.cols != num_rows:
+                raise(ShapeError('Matrices size mismatch'))
+            res_polys = []
+            for i in range(num_rows):
+                res = sympify(0)
+                for j in range(other.cols):
+                    res += polys[j]*other[i,j]
+                res_polys.append(res)
+            
+            try:
+                res = LinearSystem(res_polys)
+            except NonLinearException:
+                res = PolynomialSystem(res_polys)
+            
+            return res
+    
     @property
     def polynomials(self):
         return self._polynomials
@@ -230,9 +321,9 @@ class WitnessPoint(NAGobject):
         self._dim = dim
         self._component_id = component_id
         if not hasattr(pt, '__iter__'):
-            self._pt = (pt,)
+            self._pt = mpmatrix((pt,))
         else:
-            self._pt = tuple(pt)
+            self._pt = mpmatrix(pt)
         self._isprojective = isprojective
 
     def __str__(self):
@@ -249,7 +340,7 @@ class WitnessPoint(NAGobject):
         cid = self._component_id
         pt  = self._pt
         prj = self._isprojective
-        repstr = 'WitnessPoint({0},{1},{2},{3})'.format(dim,cid,pt,prj)
+        repstr = 'WitnessPoint({0},{1},{2},{3})'.format(dim,cid,repr(pt),prj)
         return repstr
     
     def dehomogenize(self):
@@ -265,9 +356,7 @@ class WitnessPoint(NAGobject):
             newpt = WitnessPoint(dim, component_id, pt, False)
         else:
             first = pt[0]
-            pt = pt[1:]
-            # first should not be equal to 0
-            pt = [pt[i]/first for i in range(len(pt))]
+            pt = pt[1:]/first # first should not be equal to 0 if homogenous
             newpt = WitnessPoint(dim, component_id, pt, False)
             
         return newpt
