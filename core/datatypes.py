@@ -122,6 +122,8 @@ class PolynomialSystem(NAGobject):
         functions = self._functions
         return functions[key]
     
+    def shape(
+    
 class LinearSystem(PolynomialSystem):
     """
     A linear system
@@ -150,6 +152,12 @@ class LinearSystem(PolynomialSystem):
             variable_list = list(variable_list)
             variable_strings = sorted([str(v) for v in variable_list])
             self._variables = sympify(variable_strings)
+
+    def __str__(self):
+        """
+        x.__str__() <==> str(x)
+        """
+        return super(LinearSystem, self).__str__()
         
     def __repr__(self):
         """
