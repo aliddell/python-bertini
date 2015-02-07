@@ -46,3 +46,16 @@ class NonLinearException(Exception):
         
     def __str__(self):
         return self.message
+    
+class AffineException(Exception):
+    """
+    AffineException
+    
+    Raise AffineException when user attempts to instantiate a
+    LinearSystem object with affine expressions
+    """
+    def __init__(self, polynomial):
+        self.message = 'polynomial {0} is affine; you want a *linear* system'.format(polynomial)
+        
+    def __str__(self):
+        return self.message
