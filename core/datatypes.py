@@ -1,6 +1,6 @@
 from sympy import sympify
 
-class NAGobject(type):
+class NAGobject(object):
     """
     A meta class. Nothing here (yet)
     """
