@@ -8,7 +8,7 @@ from tempfile import mkdtemp
 
 from sympy import Matrix
 
-from naglib.core.datatypes import Component
+from naglib.core.datatypes import IrreducibleComponent
 from naglib.bertini.sysutils import call_bertini
 from naglib.fileutils import striplines
 from fileutils import striplines, write_system
@@ -49,7 +49,7 @@ def get_components(dirname='.'):
             # capture number at end of line
             c = int(re.sub(r'[^(\d+$)]', '', l))
             if c not in dimcomponents:
-                components.append(Component(dim,1,None))
+                components.append(IrreducibleComponent(dim,1,None))
                 dimcomponents.add(c)
             else:
                 components[-1].degree += 1
