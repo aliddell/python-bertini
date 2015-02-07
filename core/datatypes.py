@@ -270,9 +270,9 @@ class LinearSystem(PolynomialSystem):
             if other.cols != num_rows:
                 raise(ValueError('dimensions not compatible for multiplication'))
             res_polys = []
-            for i in range(num_rows):
+            for i in range(other.rows):
                 res = sympify(0)
-                for j in range(other.cols):
+                for j in range(num_rows):
                     res += polys[j]*other[i,j]
                 res_polys.append(res)
             
@@ -281,9 +281,9 @@ class LinearSystem(PolynomialSystem):
             if other.cols != num_rows:
                 raise(ShapeError('Matrices size mismatch'))
             res_polys = []
-            for i in range(num_rows):
+            for i in range(other.rows):
                 res = sympify(0)
-                for j in range(other.cols):
+                for j in range(num_rows):
                     res += polys[j]*other[i,j]
                 res_polys.append(res)
             
