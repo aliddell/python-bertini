@@ -1,4 +1,4 @@
-from mpmath import matrix as mpmatrix
+from mpmath import zeros, matrix as mpmatrix
 from sympy import sympify, ShapeError, Matrix as spmatrix
 
 from naglib.exceptions import NonPolynomialException, NonLinearException
@@ -60,7 +60,8 @@ class PolynomialSystem(NAGobject):
     A polynomial system
     """
     def __init__(self, polynomials, variables=None, parameters=None):
-        """Initialize the PolynomialSystem object
+        """
+        Initialize the PolynomialSystem object
         
         Keyword arguments:
         polynomials -- iterable, symbolic polynomials
@@ -212,13 +213,14 @@ class LinearSystem(PolynomialSystem):
     !!!Use this only for slicing!!!
     """
     def __init__(self, polynomials, variables=None):
-        """Initialize the LinearSystem object
+        """
+        Initialize the LinearSystem object
         
         Keyword arguments:
-        functions -- an iterable of symbolic function arguments
-        variables -- an iterable of the variables in the function;
+        polynomials -- iterable, symbolic polynomials
+        variables -- iterable, the variables in the system;
                      if None, 'variables' will be taken to be all
-                     free symbols in 'functions'
+                     free symbols in 'polynomials'
         """
         if not hasattr(polynomials, '__iter__'):
             self._polynomials = (sympify(polynomials),)
@@ -329,6 +331,22 @@ class LinearSystem(PolynomialSystem):
                 res = PolynomialSystem(res_polys)
             
             return res
+        
+    def matrix(self):
+        """
+        Create an mpmath matrix from the LinearSystem
+        """
+        
+        polynomials = self._polynomials
+        variables = self._variables
+        shape = self._shape
+        
+        res = zeros(*shape)
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                res[i,j] = polynomials[i].coeff(variables[j])
+                
+        return res
     
     @property
     def polynomials(self):
@@ -349,10 +367,10 @@ class WitnessPoint(NAGobject):
         Initialize the WitnessPoint object.
 
         Keyword arguments:
-        dim -- the dimension of the component to which the point belongs
-        component_id -- the component number for this dimension, as assigned by Bertini
-        pt -- the coordinates of the witness point (an mpc vector)
-        isprojective -- True if the point is projective, otherwise False
+        dim -- int, the dimension of the component to which the point belongs
+        component_id -- int, the component number for this dimension, as assigned by Bertini
+        pt -- numeric iterable, the coordinates of the witness point
+        isprojective -- boolean, True if the point is projective, otherwise False
         """
         self._dim = dim
         self._component_id = component_id
@@ -419,9 +437,9 @@ class WitnessSet(NAGobject):
         """Initialize the WitnessSet
         
         Keyword arguments:
-        f -- the system (type PolynomialSystem) on which all the points vanish
-        L -- the system (type LinearSystem) defining a generic linear space
-        W -- the witness point set, V(f) \cap V(L)
+        f -- PolynomialSystem, system on which all the points vanish
+        L -- LinearSystem, system defining a generic linear space
+        W -- iterable of WitnessPoint objects,  witness point set, V(f) \cap V(L)
         """
         self._f = f
         self._L = L
