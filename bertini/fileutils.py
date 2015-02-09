@@ -1,12 +1,12 @@
 from __future__ import print_function
 
+from fractions import Fraction as fraction
 from os.path import isfile
 from sys import stderr, stdout
 
-from mpmath import mpf, mpc, matrix
-from mpmath.rational import mpq
+from mpmath import mpf, mpc, matrix as mpmatrix
 
-from naglib.fileutils import striplines
+from naglib.misc import striplines
 
 def parse_witness_data(filename):
     """
@@ -16,7 +16,7 @@ def parse_witness_data(filename):
     filename -- string, path to witness_data file
     """
     if not isfile(filename):
-        return None
+        raise(IOError("{0} does not exist".format(filename)))
 
     fh = open(filename, 'r')
     lines = striplines(fh.readlines())
@@ -44,7 +44,7 @@ def parse_witness_data(filename):
             for k in range(num_vars):
                 coord = lines[k].split(' ')
                 pt.append(mpc(*coord))
-            pt = tuple(pt)
+            pt = mpmatrix(pt)
             lines = lines[num_vars:]
             # the next point is the last approximation of the point
             # on the path before convergence
@@ -117,11 +117,11 @@ def parse_witness_data(filename):
             elif num_format == RATIONAL:
                 A = [mpc(float(fraction(a[0])), float(fraction(a[1]))) for a in A]
             A = [A[j:j+num_cols] for j in range(0,AW_size,num_cols)]
-            A = matrix(A)
+            A = mpmatrix(A)
 
             W = [int(w) for w in W] # W is integer-valued
             W = [W[j:j+num_cols] for j in range(0,AW_size,num_cols)]
-            W = matrix(W)
+            W = mpmatrix(W)
 
         # third, a vector H used for homogenization
         # random if projective input
@@ -136,7 +136,7 @@ def parse_witness_data(filename):
         elif num_format == RATIONAL:
             H = [mpc(float(fraction(h[0])), float(fraction(h[1]))) for h in H]
 
-        H = matrix(H)
+        H = mpmatrix(H)
         lines = lines[H_size:]
 
         # fourth, a number homVarConst
@@ -171,7 +171,7 @@ def parse_witness_data(filename):
             elif num_format == RATIONAL:
                 B = [mpc(float(fraction(b[0])), float(fraction(b[1]))) for b in B]
             B = [B[j:j+num_cols] for j in range(0,B_size,num_cols)]
-            B = matrix(B)
+            B = mpmatrix(B)
 
         # sixth and finally, vector p for patch coefficients
         p_size = int(lines[0])
@@ -186,7 +186,7 @@ def parse_witness_data(filename):
         elif num_format == RATIONAL:
             p = [mpc(float(fraction(q[0])), float(fraction(q[1]))) for q in p]
 
-        p = matrix(p)
+        p = mpmatrix(p)
         codims[i]['A'] = A
         codims[i]['W'] = W
         codims[i]['H'] = H
@@ -195,68 +195,6 @@ def parse_witness_data(filename):
         codims[i]['p'] = p
 
     return codims
-
-def read_input(filename):
-    """
-    Read in an input file and parse out the variables, functions, etc
-    
-    Keyword arguments:
-    filename -- string, path to input file
-    """
-    fh = open(filename, 'r')
-    lines = striplines(fh.readlines())
-    fh.close()
-
-    var_candidates = []
-    fun_candidates = []
-    for line in lines:
-        if 'variable_group' in line:
-            var_candidates.append(line)
-        if 'function' in line:
-            fun_candidates.append(line)
-
-    if len(var_candidates) == 0 or len(fun_candidates) == 0:
-        exit('malformed system file, pal')
-
-    if len(var_candidates) == 1:
-        variable_group = var_candidates[0]
-    else:
-        variable_group = None
-        for v in var_candidates:
-            if v.startswith('variable_group'):
-                variable_group = v
-                break
-        if not variable_group:
-            exit("where's your variable_group?")
-    if len(fun_candidates) == 1:
-        function_group = fun_candidates[0]
-    else:
-        function_group = None
-        for f in fun_candidates:
-            if f.startswith('function'):
-                function_group = f
-                break
-        if not function_group:
-            exit("where's your function?")
-
-    variable_group = re.sub(string=variable_group, pattern=r'variable_group\s+', repl='')
-    variable_group = re.sub(string=variable_group, pattern=r'\s*;\s*$', repl='')
-    variable_group = re.split(string=variable_group, pattern=r',\s*')
-
-    function_group = re.sub(string=function_group, pattern=r'function\s+', repl='')
-    function_group = re.sub(string=function_group, pattern=r'\s*;\s*$', repl='')
-    function_group = re.split(string=function_group, pattern=r',\s*')
-
-    # break out the functions
-    functions = []
-    for f in function_group:
-        for line in lines:
-            if line.startswith(f) and '=' in line:
-                functions.append(re.sub(string=line, pattern=r'\s*;\s*', repl=''))
-    if len(functions) != len(function_group):
-        exit("you either haven't defined all your functions or you've defined too many")
-
-    return (functions, variable_group)
 
 def parselines(lines, tol=1e-15):
     """
@@ -289,7 +227,7 @@ def parselines(lines, tol=1e-15):
                 im = 0
                 
             newpoint.append(mpc(re, im))
-        points.append(matrix(newpoint))
+        points.append(mpmatrix(newpoint))
 
     return set(points)
 
@@ -321,9 +259,9 @@ def fprint(points, filename=''):
         fh.close()
     return
 
-def readfile(filename, tol=1e-15):
-    ""
-    "Reads in a file and return a set of mpc numbers
+def read_points(filename, tol=1e-15):
+    """
+    Reads in a file and return a set of mpc numbers
     """
     if not isfile(filename):
         raise(IOError("can't find {0}".format(filename)))
@@ -335,42 +273,65 @@ def readfile(filename, tol=1e-15):
     points = parselines(lines, tol=tol)
     return points
 
-def write_system(variables, params, functions, constants=None,
-                 tracktype=0, phtpy=0, witness=0, filename='input'):
-    import re
+def write_input(system, config):
     """
     Writes a system to a Bertini-format file
+    
+    Keyword arguments:
+    system -- PolynomialSystem, the system we want to solve
+    config -- dict, the configurations for Bertini
     """
     # Python exponentiation: x**y; bertini exponentiation: x^y
-    str_funcs = [re.sub(string=str(f), pattern=r'\*\*', repl='^') \
-        for f in functions]
+    import re
+    
+    polynomials  = [p.factor() for p in system.polynomials]
+    variables    = system.variables
+    parameters   = system.parameters
+    isprojective = system.isprojective
+    num_polys    = system.shape[0]
+    
+    options = config.keys()
+    
+    if 'filename' not in options:
+        raise(IOError('no file to write to'))
+    else:
+        filename = config.pop('filename')
+        options = config.keys()
+    
+    str_poly = [str(p) for p in polynomials]
+    str_poly = [re.sub(string=p, pattern=r'\*\*', repl='^') for p in str_poly]
+    str_vars = [str(v) for v in variables]
+    str_pars = [str(p) for p in parameters]
+    
+    poly_names = ['f{0}'.format(i+1) for i in range(num_polys)]
+    polys_named = zip(poly_names, str_poly)
+    
+    poly_list = ','.join([f for f in poly_names])
+    vars_list = ','.join([v for v in str_vars])
+    pars_list = ','.join([p for p in str_pars])
 
     fh = open(filename, 'w')
-    fh.write('CONFIG\n')
-    fh.write('TrackType:{0};\n'.format(tracktype))
-    fh.write('ParameterHomotopy:{0};\n'.format(phtpy))
-    fh.write('ConstructWitnessSet:{0};\n'.format(witness))
-    fh.write('END\n')
-    fh.write('INPUT\n')
-
-    if phtpy:
-        fh.write('parameter {0};\n'.format(','.join([str(p) for p in params])))
-    # write out variable group
-    variable_group = ','.join([str(v) for v in variables])
-    fh.write('variable_group {0};\n'.format(variable_group))
-    if constants:
-        fh.write('constant {0};\n'.format(','.join(['rp{0}'.format(i) \
-            for i in range(len(constants))])))
-
-    function_group = ['f{0}'.format(i+1) for i in range(len(str_funcs))]
-    fh.write('function {0};\n'.format(','.join([f for f in function_group])))
-    if constants:
-        for i in range(len(constants)):
-            fh.write('rp{0} = {1};\n'.format(i, constants[i]))
-    for i in range(len(str_funcs)):
-        fh.write('f{0} = {1};\n'.format(i+1, str_funcs[i]))
-
-    fh.write('\n')
-
-    fh.write('END\n')
+    
+    # write the CONFIG section
+    print('CONFIG', file=fh)
+    for option in options:
+        print('{0}:{1};'.format(option, config[option]), file=fh)
+    print('END', file=fh)
+    
+    # write the INPUT section
+    print('INPUT', file=fh)
+    if isprojective:
+        print('hom_variable_group {0};'.format(vars_list), file=fh)
+    else:
+        print('variable_group {0};'.format(vars_list), file=fh)
+    if parameters:
+        print('parameter {0};'.format(pars_list), file=fh)
+    print('function {0};'.format(poly_list), file=fh)
+    
+    for p in polys_named:
+        # p is a key-value pair, e.g., ('f1', 'x^2 - 1')
+        print('{0} = {1};'.format(p[0], p[1]), file=fh)
+    print('END', file=fh)
+    
+    # finish up
     fh.close()

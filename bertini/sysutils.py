@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+from os import chdir
+from os.path import dirname
 from subprocess import check_output, CalledProcessError
 
 from naglib.exceptions import BertiniError, NoBertiniException
@@ -60,7 +62,9 @@ def call_bertini(input_file, start_file='', cmd=BERTINI):
         arg = [cmd, input_file]
     else:
         arg = [cmd, input_file, start_file]
-
+    wd = dirname(input_file)
+    if wd:
+        chdir(wd)
     try:
         output = check_output(arg)
     except CalledProcessError as e:

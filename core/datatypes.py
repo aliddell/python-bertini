@@ -1,7 +1,7 @@
 from mpmath import mpc, rand, matrix as mpmatrix, zeros as mpzeros
 from sympy import sympify, ShapeError, Matrix as spmatrix, zeros as spzeros
 
-from naglib.exceptions import NonPolynomialException, NonLinearException, AffineException
+from naglib.exceptions import NonPolynomialException, NonLinearException, AffineException, NonHomogeneousException
 
 class NAGobject(object):
     """
@@ -13,7 +13,7 @@ class IrreducibleComponent(NAGobject):
     """
     An irreducible component of an algebraic set
     """
-    def __init__(self, dim, component_id, degree, witness_set, isprojective=True):
+    def __init__(self, dim, component_id, witness_set, isprojective=True):
         """
         Initialize the IrreducibleComponent object.
         
@@ -21,15 +21,14 @@ class IrreducibleComponent(NAGobject):
         dim          -- int, the dimension of the component
         component_id -- int, the component number for this dimension, as
                         assigned by Bertini
-        degree       -- int, the degree of the component
         witness_set  -- WitnessSet, the witness set describing this component
         isprojective -- optional boolean, True if the system is projective,
                         otherwise, False (default: True)
         """
         self._dim = dim
         self._component_id = component_id
-        self._degree = degree
         self._witness_set = witness_set
+        self._degree = len(witness_set.witness_points)
 
     def __str__(self):
         """
@@ -38,7 +37,7 @@ class IrreducibleComponent(NAGobject):
         dim = self._dim
         cid = self._component_id
         deg = self._degree
-        return '{0}-dimensional {2} component of degree {1}'.format(dim,deg,cid)
+        return '{0}-dimensional component ({2}) of degree {1}'.format(dim,deg,cid)
 
     def __repr__(self):
         """
@@ -52,14 +51,20 @@ class IrreducibleComponent(NAGobject):
                                                                         cid,
                                                                         deg,
                                                                         repr(wst))
-        return self.__str__()
+        return repstr
 
     @property
     def degree(self):
         return self._degree
-    @degree.setter
-    def degree(self, deg):
-        self._degree = deg
+    @property
+    def dim(self):
+        return self._dim
+    @property
+    def component_id(self):
+        return self._component_id
+    @property
+    def witness_set(self):
+        return self._witness_set
 
 class PolynomialSystem(NAGobject):
     """
@@ -77,39 +82,60 @@ class PolynomialSystem(NAGobject):
         parameters   -- optional symbolic iterable, the parameters in the
                         system, if it is parameterized; if None or empty,
                         assume the system is not parameterized and
-                        'parameters' becomes None (default: None)
+                        'parameters' becomes () (default: None)
         isprojective -- optional boolean, True if the system is projective,
                         otherwise, False (default: True)
         """
-        
         self._polynomials = spmatrix(sympify(polynomials))
             
         # check if any polynomials are actually not polynomials
         for p in self._polynomials:
             if not p.is_polynomial():
                 raise(NonPolynomialException(str(p)))
-            
-        if variables:
-            self._variables = spmatrix(sympify(variables))
-        else: # variables not specified
-            variable_list = set()
-            for f in self._polynomials:
-                variable_list = variable_list.union(f.free_symbols)
-            variable_list = list(variable_list)
-            variable_strings = sorted([str(v) for v in variable_list])
-            self._variables = spmatrix(sympify(variable_strings))
+        
             
         if parameters:
             self._parameters = spmatrix(sympify(parameters))
         else:
-            self._parameters = None
+            self._parameters = ()
+        
+        if variables:
+            self._variables = spmatrix(sympify(variables))
+        else: # variables not specified
+            variable_list = set()
+            param_set = set(self._parameters)
+            for f in self._polynomials:
+                variable_list = variable_list.union(f.free_symbols)
+            variable_list = list(variable_list - param_set)
+            variable_strings = sorted([str(v) for v in variable_list])
+            self._variables = spmatrix(sympify(variable_strings))
+            
+        self._isprojective = isprojective
         
         d = []
-        for p in self._polynomials:
+        params = list(self._parameters)
+        ones = [1 for param in params]
+        paramsubs = zip(params,ones)
+        
+        # keep parameters out of degree calculation
+        for polyn in self._polynomials:
+            p = polyn.subs(paramsubs)
             if p.is_number:
-                d.append(0)
+                deg = 0
             else:
-                d.append(p.as_poly().degree())        
+                deg = p.as_poly().degree()
+            # check if polynomial is homogeneous
+            if isprojective:
+                terms = p.as_ordered_terms()
+                for t in terms:
+                    if t.is_number and deg != 0:
+                        raise(NonHomogeneousException(p))
+                    elif t.is_number:
+                        pass
+                    elif t.as_poly().degree() != deg:
+                        raise(NonHomogeneousException(p))
+            d.append(deg)
+            
         self._degree = tuple(d)
         self._num_variables = len(self._variables)
         self._num_polynomials = len(self._polynomials)
@@ -133,11 +159,13 @@ class PolynomialSystem(NAGobject):
         x.__repr__() <==> repr(x)
         """
         polynomials  = self._polynomials
-        variables  = self._variables
-        parameters = self._parameters
-        repstr = 'PolynomialSystem(\n{0},\n{1},\n{2})'.format(repr(polynomials),
-                                                              repr(variables),
-                                                              repr(parameters))
+        variables    = self._variables
+        parameters   = self._parameters
+        isprojective = self._isprojective
+        repstr = 'PolynomialSystem(\n{0},\n{1},\n{2}\n{3})'.format(repr(polynomials),
+                                                                   repr(variables),
+                                                                   repr(parameters),
+                                                                   repr(isprojective))
         
         return repstr
     
@@ -197,7 +225,79 @@ class PolynomialSystem(NAGobject):
             res = PolynomialSystem(res_polys)
             
             return res
+        
+    def homogenize(self):
+        """
+        Homogenize the system
+        
+        If already homogeneous, return self
+        """
+        polynomials = self._polynomials
+        polynomials = [p.expand() for p in polynomials]
+        variables = self._variables
+        parameters = self._parameters
+        degree = self._degree
+        
+        if self._isprojective:
+            return self
+        
+        # create a new homogenizing variable
+        p0 = 'p0'
+        while p0 in variables:
+            p0 += '0'
+            # shouldn't last too long
+        p0 = spmatrix([sympify(p0)])
+        
+        homvars = variables.row_insert(0, p0)
+        polyterms = [p.as_ordered_terms() for p in polynomials]
+        hompolys = []
+        
+        p0 = p0[0]
+        for i in range(len(polyterms)):
+            pdeg = degree[i]
+            polyterm = polyterms[i]
+            hompolyterm = []
+            for term in polyterm:
+                if term.is_number:
+                    hompolyterm.append(term*p0**pdeg)
+                else:
+                    tdeg = term.as_poly().degree()
+                    hompolyterm.append(term*p0**(pdeg-tdeg))
+            hompolys.append(sum(hompolyterm))
+        
+        hompolys = spmatrix(hompolys)
+        return PolynomialSystem(hompolys, homvars, parameters, isprojective=True)
     
+    def dehomogenize(self, homvar=None):
+        """
+        Dehomogenize the system
+        
+        If already nonhomogeneous, return self
+        """
+        hompolys = self._polynomials
+        hompolys = spmatrix([p.expand() for p in hompolys])
+        homvars = self._variables
+        parameters = self._parameters
+        degree = self._degree
+        
+        if not self._isprojective:
+            return self
+        
+        if not homvar:
+            homvar = homvars[0]
+            variables = spmatrix(homvars[1:])
+        elif homvar in homvars:
+            homvars = list(homvars)
+            dex = homvars.index(homvar)
+            homvars.pop(dex)
+            variables = spmatrix(homvars)
+        else:
+            raise(ValueError('homogenizing variable {0} not found'.format(homvar)))
+        
+        polynomials = hompolys.subs({homvar:1})
+        
+        return PolynomialSystem(polynomials, variables, parameters, isprojective=False)
+        
     def jacobian(self):
         """
         Returns the Jacobian, the polynomial system, and the variables,
@@ -260,6 +360,12 @@ class PolynomialSystem(NAGobject):
     @property
     def variables(self):
         return self._variables
+    @property
+    def parameters(self):
+        return self._parameters
+    @property
+    def isprojective(self):
+        return self._isprojective
     @property
     def degree(self):
         return self._degree
@@ -496,7 +602,6 @@ class WitnessPoint(NAGobject):
     @property
     def dim(self):
         return self._dim
-
     @property
     def component_id(self):
         return self._component_id
@@ -533,7 +638,10 @@ class WitnessSet(NAGobject):
         sl = self._slice
         wp = self._witness_points
         ip = self._isprojective
-        repstr = 'WitnessSet({0},{1},{2},{3})'.format(repr(sy),repr(sl),repr(wp),ip)
+        repstr = 'WitnessSet(\n{0},\n{1},\n{2},\n{3})'.format(repr(sy),
+                                                              repr(sl),
+                                                              repr(wp),
+                                                              ip)
         
         return repstr
     
@@ -542,7 +650,7 @@ class WitnessSet(NAGobject):
         return self._system
     @property
     def slice(self):
-        return self._slices
+        return self._slice
     @property
     def witness_points(self):
         return self._witness_points

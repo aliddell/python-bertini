@@ -16,8 +16,8 @@ class NoBertiniException(Exception):
     Raise NoBertiniException when Bertini can't be located on the system
     """
     def __init__(self):
-        self.message = "You don't seem to have Bertini installed anywhere " \
-                       "I can find it."
+        self.message = "you don't seem to have Bertini installed anywhere " \
+                       "I can find it"
     def __str__(self):
         return self.message
     
@@ -57,5 +57,17 @@ class AffineException(Exception):
     def __init__(self, polynomial):
         self.message = 'polynomial {0} is affine; you want a *linear* system'.format(polynomial)
         
+    def __str__(self):
+        return self.message
+    
+class NonHomogeneousException(Exception):
+    """
+    NonHomogeneousException
+    
+    Raise NonHomogeneousException when user attempts to instantiate
+    a projective system with nonhomogeneous polynomials
+    """
+    def __init__(self, polynomial):
+        self.message = 'polynomial {0} is not homogeneous; maybe use isprojective=False?'.format(polynomial)
     def __str__(self):
         return self.message
