@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+from os import chdir
+from os.path import dirname
 from subprocess import check_output, CalledProcessError
 
 from naglib.exceptions import BertiniError, NoBertiniException
@@ -45,25 +47,33 @@ def __proc_err_output(output):
 
 BERTINI = __has_bertini()
 
-def call_bertini(input_file, start_file='', cmd=BERTINI):
+def call_bertini(input_file, start_file='', cmd=BERTINI, stdin=None):
     """
     Call Bertini
     
     Keyword arguments:
-    input_file -- string giving the path of a Bertini input file
-    start_file -- (optional) string giving the path of a Bertini start file
-    cmd -- (optional) string giving the path of the Bertini executable
+    input_file -- string, the path of a Bertini input file
+    start_file -- optional string, the path of a Bertini start file
+    cmd        -- optional string, the path of the Bertini executable
+    redirect   -- optional string, path to stdin redirect
     """
     if not cmd:
         raise(NoBertiniError)
     if not start_file:
         arg = [cmd, input_file]
-    else:
+    elif start_file:
         arg = [cmd, input_file, start_file]
-
+        
+    wd = dirname(input_file)
+    if wd:
+        chdir(wd)
+    if stdin:
+        stdin = open(stdin, 'r')
     try:
-        output = check_output(arg)
+        output = check_output(arg, stdin=stdin)
     except CalledProcessError as e:
         raise(BertiniError(__proc_err_output(e.output)))
 
+    if stdin:
+        stdin.close()
     return output
