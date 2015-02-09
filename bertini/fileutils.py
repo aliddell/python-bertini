@@ -205,6 +205,7 @@ def parselines(lines, tol=1e-15):
                 the rest, "%s %s" % real, imag
     tol   -- optional numeric, smallest allowable nonzero value
     """
+    import re as regex
     lines = striplines(lines)
     points = []
 
@@ -215,7 +216,7 @@ def parselines(lines, tol=1e-15):
 
     for i in range(0, length, numvar):
         point = lines[i:i+numvar]
-        point = [re.split(r'\s+', p) for p in point]
+        point = [regex.split(r'\s+', p) for p in point]
         newpoint = []
         for p in point:
             re = mpf(p[0])
@@ -229,7 +230,7 @@ def parselines(lines, tol=1e-15):
             newpoint.append(mpc(re, im))
         points.append(mpmatrix(newpoint))
 
-    return set(points)
+    return list(set(points))
 
 def fprint(points, filename=''):
     """
@@ -250,8 +251,8 @@ def fprint(points, filename=''):
     print('{0}\n'.format(numpoints), file=fh)
     for p in points:
         for coordinate in p:
-            re = coordinate.re
-            im = coordinate.im
+            re = coordinate.real
+            im = coordinate.imag
             print('{0} {1}'.format(re, im), file=fh)
         print('', file=fh)
 

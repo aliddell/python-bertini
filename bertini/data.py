@@ -87,7 +87,7 @@ def get_components(dirname, system):
             slice = None
         for comp in dim_list.keys():
             ws = WitnessSet(system, slice, dim_list[comp], comp_isprojective)
-            component = IrreducibleComponent(dim, comp, ws, comp_isprojective)
+            component = IrreducibleComponent(system, dim, comp, ws, dirname, comp_isprojective)
             components.append(component)
             
         return components

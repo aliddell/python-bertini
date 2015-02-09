@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from mpmath import mpc, rand, matrix as mpmatrix, zeros as mpzeros
 from sympy import sympify, ShapeError, Matrix as spmatrix, zeros as spzeros
 
@@ -13,11 +15,13 @@ class IrreducibleComponent(NAGobject):
     """
     An irreducible component of an algebraic set
     """
-    def __init__(self, dim, component_id, witness_set, isprojective=True):
+    def __init__(self, system, dim, component_id, witness_set, dirname, isprojective=True):
         """
         Initialize the IrreducibleComponent object.
         
         Keyword arguments:
+        system       -- PolynomialSystem, defines the algebraic set of which
+                        self is an irreducible component
         dim          -- int, the dimension of the component
         component_id -- int, the component number for this dimension, as
                         assigned by Bertini
@@ -25,10 +29,13 @@ class IrreducibleComponent(NAGobject):
         isprojective -- optional boolean, True if the system is projective,
                         otherwise, False (default: True)
         """
+        self._system = system
         self._dim = dim
         self._component_id = component_id
         self._witness_set = witness_set
         self._degree = len(witness_set.witness_points)
+        self._dirname = dirname
+        self._isprojective = isprojective
 
     def __str__(self):
         """
@@ -52,7 +59,61 @@ class IrreducibleComponent(NAGobject):
                                                                         deg,
                                                                         repr(wst))
         return repstr
-
+    
+    def __eq__(self, other):
+        """
+        x.__eq__(y) <==> x == y
+        """
+        if not isinstance(other, IrreducibleComponent):
+            return False
+        
+        ssys = self._system
+        sdim = self._dim
+        scid = self._component_id
+        osys = other.system
+        odim = other.dim
+        ocid = other.component_id
+        eq = (ssys == osys and sdim == odim and scid == ocid)
+        
+        return eq
+    
+    def sample(self, numpoints=1, usebertini=True):
+        """
+        Sample a point from self
+        """
+        dim     = self._dim
+        comp_id = self._component_id
+        system  = self._system
+        
+        points = None
+        if usebertini:
+            from naglib.bertini.fileutils import write_input, read_points
+            from naglib.bertini.sysutils import call_bertini as call
+            
+            dirname = self._dirname
+            inputfile = dirname + '/input'
+            instructions = dirname + '/instructions'
+            sampled = dirname + '/sampled'
+            
+            # instructions to Bertini (redirect stdin)
+            fh = open(instructions, 'w')
+            print('{0}'.format(dim), file=fh) # sample from dimension 'dim'
+            print('{0}'.format(comp_id), file=fh) # sample from component 'comp_id'
+            print('{0}'.format(numpoints), file=fh) # sample 'numpoints' points
+            print('0', file=fh) # write point to a file
+            print(sampled, file=fh) # write to file 'sampled'
+            fh.close()
+        
+            config = {'filename':inputfile, 'TrackType':2}
+            write_input(system=system, config=config)
+            call(input_file=inputfile, stdin=instructions)
+            points = read_points(sampled)
+        
+        return points
+    
+    @property
+    def system(self):
+        return self._system
     @property
     def degree(self):
         return self._degree
@@ -107,7 +168,8 @@ class PolynomialSystem(NAGobject):
             for f in self._polynomials:
                 variable_list = variable_list.union(f.free_symbols)
             variable_list = list(variable_list - param_set)
-            variable_strings = sorted([str(v) for v in variable_list])
+            variable_strings = [str(v) for v in variable_list]
+            variable_strings.sort()
             self._variables = spmatrix(sympify(variable_strings))
             
         self._isprojective = isprojective
@@ -176,6 +238,46 @@ class PolynomialSystem(NAGobject):
         polynomials = self._polynomials
         return polynomials[key]
     
+    def __add__(self, other):
+        """
+        x.__add__(y) <==> x + y
+        """
+        spolct = self._shape[0]
+        opolct = other.shape[0]
+        isprojective = self._isprojective
+        if not isinstance(other, PolynomialSystem):
+            othertype = type(other)
+            errmsg = "unsupported operand type(s) for +: " \
+                "'PolynomialSystem' and '{0}'".format(othertype)
+            raise(TypeError(errmsg))
+        elif other.isprojective != isprojective:
+            errmsg = 'attempting to add systems of different types'
+            raise(ValueError(errmsg))
+        elif spolct != opolct:
+            errmsg = "don't know how to add systems of different sizes"
+            raise(ValueError(errmsg))
+        else:
+            svariables = self._variables
+            sparams    = self._parameters
+            spoly      = self._polynomials
+            ovariables = other.variables
+            oparams    = other.parameters
+            opoly      = other.polynomials
+            
+            variables  = set(svariables).union(set(ovariables))
+            parameters = set(sparams).union(set(oparams))
+            variables  = [str(v) for v in variables]
+            parameters = [str(p) for p in parameters]
+            variables.sort()
+            parameters.sort()
+            
+            variables  = sympify(variables)
+            parameters = sympify(parameters)
+            
+            polynomials = spoly + opoly
+            
+            return PolynomialSystem(polynomials, variables, parameters, isprojective)
+        
     def __eq__(self, other):
         """
         x.__eq__(y) <==> x == y
@@ -341,7 +443,7 @@ class PolynomialSystem(NAGobject):
         jac = self.jacobian()[0]
         jac = jac.subs(zip(variables, varsubs))
         
-        return jac.rank()
+        return jac.rank()            
         
     def subs(self, *args, **kwargs):
         """
@@ -350,9 +452,26 @@ class PolynomialSystem(NAGobject):
         """
         polynomials = self._polynomials
         psubs = polynomials.subs(*args, **kwargs)
-        ps = PolynomialSystem(psubs)
+        ps = PolynomialSystem(psubs, isprojective=self._isprojective)
         
-        return ps        
+        return ps
+    
+    def assign_parameters(self, params):
+        """
+        Set params as parameters in self
+        """
+        if not hasattr(params, '__iter__'):
+            params = [params]
+        params = set(sympify(params))
+        
+        sparams = set(self._parameters).union(params)
+        svars   = set(self._variables) - sparams
+        
+        str_pars = sorted([str(p) for p in sparams])
+        str_vars = sorted([str(v) for v in svars])
+        
+        self._parameters = spmatrix(sympify(str_pars))
+        self._variables  = spmatrix(sympify(str_vars))
         
     @property
     def polynomials(self):
