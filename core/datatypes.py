@@ -108,6 +108,8 @@ class IrreducibleComponent(NAGobject):
             write_input(system=system, config=config)
             call(input_file=inputfile, stdin=instructions)
             points = read_points(sampled)
+        else:
+            raise(NotImplementedError('nothing to use but bertini yet'))
         
         return points
     
