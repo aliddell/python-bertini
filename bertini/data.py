@@ -28,11 +28,11 @@ def compute_NID(system):
     write_input(system, config)
     call_bertini(input_file)
 
-    components = get_components(dirname, system)
+    components = __get_components(dirname, system)
 
     return components
 
-def get_components(dirname, system):
+def __get_components(dirname, system):
     variables = system.variables
     sys_isprojective = system.isprojective
     if sys_isprojective:
