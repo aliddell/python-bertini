@@ -196,7 +196,7 @@ def parse_witness_data(filename):
 
     return codims
 
-def parselines(lines, tol=1e-15):
+def parselines(lines, tol=1e-15, as_set=True):
     """
     Return an mpmath matrix of mpc numbers
     
@@ -230,7 +230,12 @@ def parselines(lines, tol=1e-15):
             newpoint.append(mpc(re, im))
         points.append(mpmatrix(newpoint))
 
-    return list(set(points))
+    if as_set:
+        points = list(set(points))
+    else:
+        points = list(points)
+
+    return points
 
 def fprint(points, filename=''):
     """
@@ -260,7 +265,7 @@ def fprint(points, filename=''):
         fh.close()
     return
 
-def read_points(filename, tol=1e-15):
+def read_points(filename, tol=1e-15, as_set=True):
     """
     Reads in a file and return a set of mpc numbers
     """
@@ -271,7 +276,7 @@ def read_points(filename, tol=1e-15):
     lines = fh.readlines()
     fh.close()
 
-    points = parselines(lines, tol=tol)
+    points = parselines(lines, tol=tol, as_set=as_set)
     return points
 
 def write_input(system, config):
