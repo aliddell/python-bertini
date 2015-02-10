@@ -1,116 +1,93 @@
 from __future__ import print_function
 
-import re
-
 from fractions import Fraction as fraction
 from os import chdir
+from os.path import isfile
+import re
 from tempfile import mkdtemp
 
-from sympy import Matrix
+from mpmath import matrix as mpmatrix
+from sympy import sympify, Matrix as spmatrix
 
-from naglib.core.datatypes import IrreducibleComponent
+from naglib.core.datatypes import LinearSystem, IrreducibleComponent, WitnessPoint, WitnessSet
 from naglib.bertini.sysutils import call_bertini
-from naglib.fileutils import striplines
-from fileutils import striplines, write_system
+from naglib.misc import striplines
+from naglib.bertini.fileutils import write_input, parse_witness_data
 
 def compute_NID(system):
+    """
+    Compute the numerical irreducible decomposition of
+    PolynomialSystem system
+    
+    Returns an iterable of IrreducibleComponent
+    """
     dirname = mkdtemp()
-    input_file = dirname + 'input'
+    input_file = dirname + '/input'
+    config = {'filename':input_file, 'TrackType':1}
 
-    variables = set()
-    for f in system:
-        variables = variables.union(f.free_symbols)
-
-    write_system(variables=variables, params=None, functions=system,
-                 constants=None, tracktype=1, filename=input_file)
-    chdir(dirname)
+    write_input(system, config)
     call_bertini(input_file)
 
-    components = get_components(dirname)
+    components = __get_components(dirname, system)
 
     return components
 
-def get_components(dirname='.'):
-    # this is a quite crude way to get the NID
-    # this will change in the near future
-    main_data = dirname + '/main_data'
-    fh = open(main_data, 'r')
-    lines = striplines(fh.readlines())
-    fh.close()
-
+def __get_components(dirname, system):
+    variables = system.variables
+    sys_isprojective = system.isprojective
+    if sys_isprojective:
+        proj_dim = len(variables)
+    else:
+        proj_dim = len(variables) + 1
+    
+    witness_file = dirname + '/witness_data'
+    witness_data = parse_witness_data(witness_file)
+    
     components = []
-    dim = -1
-    dimcomponents = set()
-    for l in lines:
-        if l.startswith('----------DIMENSION'):
-            dim = int(re.sub(r'(DIMENSION|\-|\s+)', '', l))
-            dimcomponents = set()
-        elif l.startswith('Component number'):
-            # capture number at end of line
-            c = int(re.sub(r'[^(\d+$)]', '', l))
-            if c not in dimcomponents:
-                components.append(IrreducibleComponent(dim,1,None))
-                dimcomponents.add(c)
-            else:
-                components[-1].degree += 1
-
-    return components
-
-def jacobian(F, variables):
-    return Matrix([[f.diff(v) for v in variables] for f in F])
-
-def real(points, **kwargs):
-    """Returns the subset of real points from a given complex set"""
-    # parameters
-    if 'tol' in kwargs:
-        tol = kwargs['tol']
-    else:
-        tol = 1e-10
-
-
-    real_points = []
-
-    for p in points:
-        isreal = True
-        for pi in p:
-            compart = pi[1]
-            if abs(compart) > tol:
-                isreal = False
-                break
-
-        if isreal:
-            real_points.append(p)
-
-    return real_points
-
-def tofloat(points):
-    new_points = []
-
-    for p in points:
-        q = []
-        for pi in p:
-            q.append((float(pi[0]),float(pi[1])))
-        new_points.append(tuple(q))
-
-    return new_points
-
-def torational(points,**kwargs):
-    if 'limit' in kwargs and kwargs['limit']:
-        limit = True
-        d_limit = 10**8
-    else:
-        limit = False
-
-    new_points = []
-
-    for p in points:
-        q = []
-        for pi in p:
-            if limit:
-                qi = (fraction(pi[0]).limit_denominator(d_limit),fraction(pi[1]))
-            else:
-                qi = (fraction(pi[0]),fraction(pi[1]))
-            q.append(qi)
-        new_points.append(tuple(q))
-
-    return new_points
+    
+    for c in witness_data:
+        codim       = c['codim']
+        homVarConst = c['homVarConst']
+        points      = c['points']
+        B           = c['B']
+        
+        comp_isprojective = homVarConst == 0
+        if comp_isprojective and sys_isprojective:
+            dim = proj_dim - codim
+            if B is not None:
+                B = sympify(B.tolist())
+        elif comp_isprojective: # and not sys_isprojective
+            dim = proj_dim - codim - 1
+            if B is not None:
+                homcol = B.column(0)
+                B1 = B.tolist()
+                for row in range(len(B1)):
+                    B1[row] = mpmatrix(B1[row][1:])
+                    B1[row] = list(B1[row]/homcol[row])
+                B = spmatrix(sympify(B1))
+            
+        dim_list = {}
+        
+        for point in points:
+            comp_id = point['component number']
+            coord = point['coordinates']
+            if comp_isprojective and not sys_isprojective:
+                # dehomogenize
+                coord = coord[1:]/coord[0]
+            pt = WitnessPoint(dim, comp_id, coord, comp_isprojective)
+            
+            if not dim_list.has_key(comp_id):
+                dim_list[comp_id] = []
+                
+            dim_list[comp_id].append(pt)
+        
+        if B is not None:
+            slice = LinearSystem(B*variables, variables)
+        else:
+            slice = None
+        for comp in dim_list.keys():
+            ws = WitnessSet(system, slice, dim_list[comp], comp_isprojective)
+            component = IrreducibleComponent(system, dim, comp, ws, dirname, comp_isprojective)
+            components.append(component)
+            
+        return components
