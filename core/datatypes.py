@@ -153,7 +153,7 @@ class PolynomialSystem(NAGobject):
         from re import sub as resub
 
         if type(polynomials) == str:
-            polynomials = [resub(r'\^', r'\*\*', polynomials]
+            polynomials = [resub(r'\^', r'\*\*', polynomials)]
 
         self._polynomials = spmatrix(sympify(polynomials))
             
