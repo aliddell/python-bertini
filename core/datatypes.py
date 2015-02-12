@@ -149,13 +149,18 @@ class PolynomialSystem(NAGobject):
         isprojective -- optional boolean, True if the system is projective,
                         otherwise, False (default: True)
         """
+        # check if 'polynomials' is a string and/or contains '^' for exp
+        from re import sub as resub
+
+        if type(polynomials) == str:
+            polynomials = [resub(r'\^', r'\*\*', polynomials]
+
         self._polynomials = spmatrix(sympify(polynomials))
             
         # check if any polynomials are actually not polynomials
         for p in self._polynomials:
             if not p.is_polynomial():
                 raise(NonPolynomialException(str(p)))
-        
             
         if parameters:
             self._parameters = spmatrix(sympify(parameters))

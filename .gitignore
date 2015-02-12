@@ -1,7 +1,2 @@
-# IDE files
-*.kdev4
-# .pyc files
-*.pyc
-
 # old code, to be put back later maybe
 old_code
