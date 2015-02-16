@@ -232,8 +232,6 @@ def parselines(lines, tol=1e-15, as_set=True):
 
     if as_set:
         points = list(set(points))
-    else:
-        points = list(points)
 
     return points
 
@@ -326,12 +324,12 @@ def write_input(system, config):
     
     # write the INPUT section
     print('INPUT', file=fh)
+    if parameters:
+        print('parameter {0};'.format(pars_list), file=fh)
     if isprojective:
         print('hom_variable_group {0};'.format(vars_list), file=fh)
     else:
         print('variable_group {0};'.format(vars_list), file=fh)
-    if parameters:
-        print('parameter {0};'.format(pars_list), file=fh)
     print('function {0};'.format(poly_list), file=fh)
     
     for p in polys_named:

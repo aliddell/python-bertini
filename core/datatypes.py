@@ -192,7 +192,7 @@ class PolynomialSystem(NAGobject):
             if p.is_number:
                 deg = 0
             else:
-                deg = p.as_poly().degree()
+                deg = p.as_poly().total_degree()
             # check if polynomial is homogeneous
             if isprojective:
                 terms = p.as_ordered_terms()
@@ -335,6 +335,23 @@ class PolynomialSystem(NAGobject):
             
             return res
         
+    def assign_parameters(self, params):
+        """
+        Set params as parameters in self
+        """
+        if not hasattr(params, '__iter__'):
+            params = [params]
+        params = set(sympify(params))
+        
+        sparams = set(self._parameters).union(params)
+        svars   = set(self._variables) - sparams
+        
+        str_pars = sorted([str(p) for p in sparams])
+        str_vars = sorted([str(v) for v in svars])
+        
+        self._parameters = spmatrix(sympify(str_pars))
+        self._variables  = spmatrix(sympify(str_vars))
+        
     def homogenize(self):
         """
         Homogenize the system
@@ -440,17 +457,52 @@ class PolynomialSystem(NAGobject):
         for i in range(len(varsubs)):
             # rand()/rand() can vary magnitude satisfactorily
             try:
-                re = rand()/rand()
-                im = rand()/rand()
+                real = rand()/rand()
+                imag = rand()/rand()
             except ZeroDivisionError:
                 # try again
                 return self.rank()
-            varsubs[i] = mpc(re, im)
+            varsubs[i] = mpc(real, imag)
             
         jac = self.jacobian()[0]
         jac = jac.subs(zip(variables, varsubs))
         
-        return jac.rank()            
+        # TODO: allow user to specify tolerance (what is 'zero')
+        return jac.rank()
+    
+    def solve(self, usebertini=True):
+        """
+        Solve the system
+        
+        If non-square, return the NID
+        """
+        rank = self.rank()
+        polynomials = self._polynomials
+        variables   = self._variables
+        parameters  = self._parameters
+        
+        if usebertini:
+            from tempfile import mkdtemp
+            from naglib import TEMPDIR as basedir
+            from naglib.bertini.sysutils import call_bertini
+            from naglib.bertini.fileutils import write_input, read_points
+            from naglib.bertini.data import compute_NID
+            
+            if rank != len(polynomials) or rank != len(variables):
+                return compute_NID(self)
+            else:
+                dirname  = mkdtemp(basedir)
+                filename = dirname + '/input'
+                config   = {'filename': filename,
+                            'TrackType': 0}
+                
+                write_input(self, config)
+                call_bertini(filename)
+                points = read_points(dirname + '/finite_solutions', as_set=False)
+                
+                return points
+        else:
+            raise(NotImplementedError('nothing to use but bertini yet'))
         
     def subs(self, *args, **kwargs):
         """
@@ -462,23 +514,6 @@ class PolynomialSystem(NAGobject):
         ps = PolynomialSystem(psubs, isprojective=self._isprojective)
         
         return ps
-    
-    def assign_parameters(self, params):
-        """
-        Set params as parameters in self
-        """
-        if not hasattr(params, '__iter__'):
-            params = [params]
-        params = set(sympify(params))
-        
-        sparams = set(self._parameters).union(params)
-        svars   = set(self._variables) - sparams
-        
-        str_pars = sorted([str(p) for p in sparams])
-        str_vars = sorted([str(v) for v in svars])
-        
-        self._parameters = spmatrix(sympify(str_pars))
-        self._variables  = spmatrix(sympify(str_vars))
         
     @property
     def polynomials(self):
