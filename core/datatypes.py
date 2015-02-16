@@ -470,11 +470,16 @@ class PolynomialSystem(NAGobject):
         # TODO: allow user to specify tolerance (what is 'zero')
         return jac.rank()
     
-    def solve(self, usebertini=True):
+    def solve(self, final_params=None, usebertini=True):
         """
-        Solve the system
+        Solve the system. If non-square, return the NID
         
-        If non-square, return the NID
+        If the system has parameters and you don't supply
+        final parameters, solve the system with random
+        start parameters, return the solutions and the start parameters.
+        If you do supply final parameters, solve the system with 
+        random start parameters, then solve again and return the
+        start parameters
         """
         rank = self.rank()
         polynomials = self._polynomials
@@ -485,11 +490,47 @@ class PolynomialSystem(NAGobject):
             from tempfile import mkdtemp
             from naglib import TEMPDIR as basedir
             from naglib.bertini.sysutils import call_bertini
-            from naglib.bertini.fileutils import write_input, read_points
+            from naglib.bertini.fileutils import write_input, read_points, fprint
             from naglib.bertini.data import compute_NID
             
             if rank != len(polynomials) or rank != len(variables):
                 return compute_NID(self)
+            elif parameters and not final_params:
+                dirname  = mkdtemp(basedir)
+                filename = dirname + '/input'
+                config   = {'filename': filename,
+                            'TrackType': 0,
+                            'ParameterHomotopy':1}
+                
+                write_input(self, config)
+                call_bertini(filename)
+                points = read_points(dirname + '/finite_solutions', as_set=False)
+                start_params = read_points(dirname + '/start_parameters', as_set=False)
+                
+                return points, start_params
+            elif parameters:
+                dirname  = mkdtemp(basedir)
+                filename = dirname + '/input'
+                config   = {'filename': filename,
+                            'TrackType': 0,
+                            'ParameterHomotopy':1}
+                write_input(self, config)
+                
+                call_bertini(filename)
+                
+                start_params = read_points(dirname + '/start_parameters', as_set=False)
+                
+                config   = {'filename': filename,
+                            'TrackType': 0,
+                            'ParameterHomotopy':2}
+                write_input(self, config)
+                
+                fprint(final_params, dirname + '/final_parameters')
+                
+                call_bertini(filename)
+                
+                points = read_points(dirname + '/finite_solutions', as_set=False)
+                return points, start_params
             else:
                 dirname  = mkdtemp(basedir)
                 filename = dirname + '/input'

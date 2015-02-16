@@ -18,7 +18,8 @@ del sys
 
 import os
 TEMPDIR = '/tmp/naglib'
-os.makedirs(TEMPDIR)
+if not os.path.exists(TEMPDIR):
+    os.makedirs(TEMPDIR)
 del os
 
 def __naglib_debug():
