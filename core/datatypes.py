@@ -352,6 +352,9 @@ class PolynomialSystem(NAGobject):
         self._parameters = spmatrix(sympify(str_pars))
         self._variables  = spmatrix(sympify(str_vars))
         
+        # update shape
+        self._shape = (len(self._polynomials), len(self._variables))
+        
     def homogenize(self):
         """
         Homogenize the system
