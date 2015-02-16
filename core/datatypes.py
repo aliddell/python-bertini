@@ -499,7 +499,7 @@ class PolynomialSystem(NAGobject):
             if rank != len(polynomials) or rank != len(variables):
                 return compute_NID(self)
             elif parameters and not final_params:
-                dirname  = mkdtemp(basedir)
+                dirname  = mkdtemp(prefix=basedir)
                 filename = dirname + '/input'
                 config   = {'filename': filename,
                             'TrackType': 0,
@@ -512,7 +512,7 @@ class PolynomialSystem(NAGobject):
                 
                 return points, start_params
             elif parameters:
-                dirname  = mkdtemp(basedir)
+                dirname  = mkdtemp(prefix=basedir)
                 filename = dirname + '/input'
                 config   = {'filename': filename,
                             'TrackType': 0,
@@ -535,7 +535,7 @@ class PolynomialSystem(NAGobject):
                 points = read_points(dirname + '/finite_solutions', as_set=False)
                 return points, start_params
             else:
-                dirname  = mkdtemp(basedir)
+                dirname  = mkdtemp(prefix=basedir)
                 filename = dirname + '/input'
                 config   = {'filename': filename,
                             'TrackType': 0}

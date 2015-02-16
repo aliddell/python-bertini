@@ -9,6 +9,7 @@ from tempfile import mkdtemp
 from mpmath import matrix as mpmatrix
 from sympy import sympify, Matrix as spmatrix
 
+from naglib import TEMPDIR as basedir
 from naglib.core.datatypes import LinearSystem, IrreducibleComponent, WitnessPoint, WitnessSet
 from naglib.bertini.sysutils import call_bertini
 from naglib.misc import striplines
@@ -81,7 +82,7 @@ def compute_NID(system):
     
     Returns an iterable of IrreducibleComponent
     """
-    dirname = mkdtemp()
+    dirname = mkdtemp(prefix=basedir)
     input_file = dirname + '/input'
     config = {'filename':input_file, 'TrackType':1}
 
