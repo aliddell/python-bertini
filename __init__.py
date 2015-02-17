@@ -39,6 +39,7 @@ def cleanup():
     if NAGLIB_DEBUG:
         pass
     else:
+        import os
         import shutil
         if os.path.exists(TEMPDIR):
             shutil.rmtree(TEMPDIR)
