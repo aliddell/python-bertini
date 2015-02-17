@@ -263,7 +263,7 @@ def fprint(points, filename=''):
         fh.close()
     return
 
-def read_points(filename, tol=1e-15, as_set=True):
+def read_points(filename, tol=1e-15, as_set=False):
     """
     Reads in a file and return a set of mpc numbers
     """

@@ -17,10 +17,9 @@ else:  # Python 3
 del sys
 
 import os
-TEMPDIR = '/tmp/naglib'
+TEMPDIR = '/tmp/naglib/'
 if not os.path.exists(TEMPDIR):
     os.makedirs(TEMPDIR)
-del os
 
 def __naglib_debug():
     # helper function so we don't import os globally
@@ -41,5 +40,7 @@ def cleanup():
         pass
     else:
         import shutil
-        shutil.rmtree(TEMPDIR)
-    
+        if os.path.exists(TEMPDIR):
+            shutil.rmtree(TEMPDIR)
+
+del os
