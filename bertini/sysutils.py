@@ -42,8 +42,10 @@ def __proc_err_output(output):
         return output
     else:
         l = lines[dex]
-        lines[dex] = l[l.index(' ')+1:] # strip 'ERROR: '
-        return '\n'.join(lines[dex:])
+        # strip 'ERROR: '
+        lines[dex] = l[l.index(' ')+1:]
+        # strip 'Bertini will now exit due to this error'
+        return '\n'.join(lines[dex:-1])
 
 BERTINI = __has_bertini()
 
