@@ -559,6 +559,7 @@ class PolynomialSystem(NAGobject):
                 #points = read_points(dirname + '/finite_solutions', as_set=False)
                 #return points, start_params
             elif parameters: # and start_params and final_params
+                print('elif parameters')
                 dirname  = mkdtemp(prefix=basedir)
                 filename = dirname + '/input'
                 config   = {'filename': filename,

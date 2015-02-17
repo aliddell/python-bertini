@@ -20,6 +20,7 @@ import os
 TEMPDIR = '/tmp/naglib/'
 if not os.path.exists(TEMPDIR):
     os.makedirs(TEMPDIR)
+del os
 
 def __naglib_debug():
     # helper function so we don't import os globally
@@ -38,10 +39,9 @@ from .core import *
 def cleanup():
     if NAGLIB_DEBUG:
         pass
-    else:
-        import os
-        import shutil
-        if os.path.exists(TEMPDIR):
-            shutil.rmtree(TEMPDIR)
-
-del os
+    # bug here
+    #else:
+        #import os
+        #import shutil
+        #if os.path.exists(TEMPDIR):
+            #shutil.rmtree(TEMPDIR)
