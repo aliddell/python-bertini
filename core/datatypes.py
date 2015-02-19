@@ -3,7 +3,7 @@ from __future__ import print_function
 from mpmath import mpc, rand, matrix as mpmatrix, zeros as mpzeros
 from sympy import sympify, ShapeError, Matrix as spmatrix, zeros as spzeros
 
-from naglib.exceptions import NonPolynomialException, NonLinearException, AffineException, NonHomogeneousException
+from naglib.exceptions import BertiniError, NonPolynomialException, NonLinearException, AffineException, NonHomogeneousException
 
 class NAGobject(object):
     """
@@ -473,7 +473,7 @@ class PolynomialSystem(NAGobject):
         # TODO: allow user to specify tolerance (what is 'zero')
         return jac.rank()
     
-    def solve(self, start_params=None, final_params=None, usebertini=True):
+    def solve(self, start_params=None, final_params=None, start=None, usebertini=True):
         """
         Solve the system. If non-square, return the NID
         
@@ -558,14 +558,16 @@ class PolynomialSystem(NAGobject):
                 
                 #points = read_points(dirname + '/finite_solutions', as_set=False)
                 #return points, start_params
+            elif parameters and not start:
+                raise(BertiniError("'start' does not exist!!!"))
             elif parameters: # and start_params and final_params
-                print('elif parameters')
                 dirname  = mkdtemp(prefix=basedir)
                 filename = dirname + '/input'
                 config   = {'filename': filename,
                             'TrackType': 0,
                             'ParameterHomotopy':2}
                 
+                fprint(start, dirname + '/start')
                 fprint(start_params, dirname + '/start_parameters')
                 fprint(final_params, dirname + '/final_parameters')
 
