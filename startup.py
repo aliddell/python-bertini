@@ -14,7 +14,7 @@ if not os.path.exists(TEMPDIR):
     os.makedirs(TEMPDIR)
 del os
 
-
+# determine whether we are testing/debugging or not
 def __naglib_debug():
     # helper function so we don't import os globally
     import os
@@ -25,6 +25,7 @@ def __naglib_debug():
         raise RuntimeError('unrecognized value for NAGLIB_DEBUG: {0}'.format(debug_str))
 NAGLIB_DEBUG = __naglib_debug()
 
+# register a cleanup function on exit
 import atexit
 @atexit.register
 def cleanup():

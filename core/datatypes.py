@@ -15,7 +15,7 @@ class IrreducibleComponent(NAGobject):
     """
     An irreducible component of an algebraic set
     """
-    def __init__(self, system, dim, component_id, witness_set, dirname, isprojective=True):
+    def __init__(self, system, dim, component_id, witness_set, dirname, isprojective=False):
         """
         Initialize the IrreducibleComponent object.
         
@@ -128,12 +128,40 @@ class IrreducibleComponent(NAGobject):
     @property
     def witness_set(self):
         return self._witness_set
+    
+class Point(NAGObject):
+    """
+    A point in affine or projective space
+    """
+    def __init__(self, coordinates, isprojective=False):
+        """
+        Initialize the Point object
+        """
+        # ensure not actually a Point object
+        if isinstance(coordinates, Point):
+            return coordinates
+        
+        if not hasattr(coordinates, '__iter__'):
+            coordinates = [coordinates]
+        else:
+            coordinates = list(coordinates)
+        
+        coordinates = [sympify(c) for c in coordinates]
+        self._coordinates = spmatrix(coordinates)
+        self._isprojective = isprojective
+        if isprojective:
+            if coordinates[0] == 0:
+                raise(AffineException("projective points can't be 0 in the first entry"))
+            self._dim = len(self._coordinates) - 1
+        else:
+            self._dim = len(self._coordinates)
+        
 
 class PolynomialSystem(NAGobject):
     """
     A polynomial system
     """
-    def __init__(self, polynomials, variables=None, parameters=None, isprojective=True):
+    def __init__(self, polynomials, variables=None, parameters=None, isprojective=False):
         """
         Initialize the PolynomialSystem object
         
@@ -626,7 +654,7 @@ class LinearSystem(PolynomialSystem):
     
     !!!Use this only for slicing!!!
     """
-    def __init__(self, polynomials, variables=None, isprojective=True):
+    def __init__(self, polynomials, variables=None, isprojective=False):
         """
         Initialize the LinearSystem object
         
@@ -662,7 +690,8 @@ class LinearSystem(PolynomialSystem):
         for p in self._polynomials:
             psub = p.subs(zip(self._variables, spzeros(*self._variables.shape)))
             if psub != 0:
-                raise(AffineException(str(p)))
+                errmsg = 'polynomial {0} is not linear'.format(p)
+                raise(AffineException(errmsg))
             
         self._num_variables = len(self._variables)
         self._num_polynomials = len(self._polynomials)
@@ -787,7 +816,7 @@ class WitnessPoint(NAGobject):
     """
     A single witness point for an irreducible component
     """
-    def __init__(self, dim, component_id, pt, isprojective=True):
+    def __init__(self, dim, component_id, pt, isprojective=False):
         """
         Initialize the WitnessPoint object.
 
@@ -863,7 +892,7 @@ class WitnessSet(NAGobject):
     """
     A witness set for a component
     """
-    def __init__(self, system, slice, witness_points, isprojective=True):
+    def __init__(self, system, slice, witness_points, isprojective=False):
         """Initialize the WitnessSet
         
         Keyword arguments:

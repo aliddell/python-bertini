@@ -5,6 +5,7 @@ from os.path import isfile
 from sys import stderr, stdout
 
 from mpmath import mpf, mpc, matrix as mpmatrix
+from sympy import Rational
 
 from naglib.misc import striplines
 

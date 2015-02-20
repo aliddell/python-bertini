@@ -51,11 +51,10 @@ class AffineException(Exception):
     """
     AffineException
     
-    Raise AffineException when user attempts to instantiate a
-    LinearSystem object with affine expressions
+    Raise AffineException when there is a projective/affine mismatch
     """
-    def __init__(self, polynomial):
-        self.message = 'polynomial {0} is affine; you want a *linear* system'.format(polynomial)
+    def __init__(self, message):
+        self.message = message
         
     def __str__(self):
         return self.message
