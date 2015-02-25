@@ -685,7 +685,7 @@ class PolynomialSystem(NAGobject):
         
         return jac,polynomials,variables
     
-    def rank(self):
+    def rank(self, tol=1e-15):
         """
         Return a numeric value, the rank of the Jacobian at
         a 'generic' point.
@@ -713,8 +713,9 @@ class PolynomialSystem(NAGobject):
         jac = self.jacobian()[0]
         jac = jac.subs(zip(variables, varsubs))
         
-        # TODO: allow user to specify tolerance (what is 'zero')
-        return jac.rank()
+        # allow user to specify tolerance (what is 'zero')
+        iszero = lambda x, tol=tol: True if abs(x) < tol else False
+        return jac.rank(iszero)
     
     def solve(self, start_params=None, final_params=None, start=None, usebertini=True):
         """
