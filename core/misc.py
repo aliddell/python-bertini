@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function
-
 def scalar_num(x):
     """
     Determine if x is a scalar type for purposes of multiplication
