@@ -9,28 +9,11 @@ from tempfile import mkdtemp
 from mpmath import matrix as mpmatrix
 from sympy import sympify, Matrix as spmatrix
 
+from naglib import TEMPDIR as basedir
 from naglib.core.datatypes import LinearSystem, IrreducibleComponent, WitnessPoint, WitnessSet
 from naglib.bertini.sysutils import call_bertini
-from naglib.misc import striplines
+from naglib.core.misc import striplines
 from naglib.bertini.fileutils import write_input, parse_witness_data
-
-def compute_NID(system):
-    """
-    Compute the numerical irreducible decomposition of
-    PolynomialSystem system
-    
-    Returns an iterable of IrreducibleComponent
-    """
-    dirname = mkdtemp()
-    input_file = dirname + '/input'
-    config = {'filename':input_file, 'TrackType':1}
-
-    write_input(system, config)
-    call_bertini(input_file)
-
-    components = __get_components(dirname, system)
-
-    return components
 
 def __get_components(dirname, system):
     variables = system.variables
@@ -91,3 +74,22 @@ def __get_components(dirname, system):
             components.append(component)
             
         return components
+
+def compute_NID(system):
+    """
+    Compute the numerical irreducible decomposition of
+    PolynomialSystem system
+    
+    Returns an iterable of IrreducibleComponent
+    """
+    dirname = mkdtemp(prefix=basedir)
+    input_file = dirname + '/input'
+    config = {'filename':input_file, 'TrackType':1}
+
+    write_input(system, config)
+    call_bertini(input_file)
+
+    components = __get_components(dirname, system)
+
+    return components
+

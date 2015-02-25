@@ -3,8 +3,8 @@ from __future__ import print_function
 from mpmath import mpc, rand, matrix as mpmatrix, zeros as mpzeros
 from sympy import sympify, ShapeError, Matrix as spmatrix, zeros as spzeros
 
-from naglib.exceptions import NonPolynomialException, NonLinearException, AffineException, NonHomogeneousException
-
+from naglib.exceptions import BertiniError, NonPolynomialException, NonLinearException, AffineException, NonHomogeneousException
+    
 class NAGobject(object):
     """
     A meta class. Nothing here (yet)
@@ -15,7 +15,7 @@ class IrreducibleComponent(NAGobject):
     """
     An irreducible component of an algebraic set
     """
-    def __init__(self, system, dim, component_id, witness_set, dirname, isprojective=True):
+    def __init__(self, system, dim, component_id, witness_set, dirname, isprojective=False):
         """
         Initialize the IrreducibleComponent object.
         
@@ -128,12 +128,255 @@ class IrreducibleComponent(NAGobject):
     @property
     def witness_set(self):
         return self._witness_set
-
+    
+class Point(NAGobject):
+    """
+    A point in affine or projective space
+    """
+    
+    def __init__(self, coordinates, isprojective=False):
+        """
+        Initialize the Point object
+        """
+        try:
+            coordinates = list(coordinates)
+        except TypeError:
+            coordinates = [coordinates]
+        
+        coordinates = [sympify(c) for c in coordinates]
+        self._coordinates = spmatrix(coordinates)
+        self._isprojective = isprojective
+        if isprojective:
+            if coordinates[0] == 0:
+                raise(AffineException("projective points can't be 0 in the first entry"))
+            self._dim = len(self._coordinates) - 1
+        else:
+            self._dim = len(self._coordinates)
+    
+    def __str__(self):
+        """
+        x.__str__ <==> str(x)
+        """
+        coordinates = self._coordinates
+        repstr = '(' + ', '.join([str(c) for c in coordinates]) + ')'
+        
+        return repstr
+    
+    def __repr__(self):
+        """
+        x.__repr__ <==> repr(x)
+        """
+        coordinates  = self._coordinates
+        isprojective = self._isprojective
+        repstr = 'Point(\n{0},\n{1})'.format(coordinates,
+                                             isprojective)
+        
+        return repstr
+    
+    def __add__(self, other):
+        """
+        x.__add__(y) <==> x + y
+        """
+        if not isinstance(other, Point):
+            t = type(other)
+            raise(TypeError("unsupported operand type(s) for +: 'Point' and '{0}'".format(t)))
+        
+        sco = self._coordinates
+        oco = other._coordinates
+        sdi = self._dim
+        odi = other._dim
+        spr = self._isprojective
+        opr = other._isprojective
+        
+        if sdi != odi:
+            raise(ShapeError('Point dimension mismatch'))
+        elif spr != opr:
+            raise(ValueError("Can't add projective and affine Points"))
+        
+        summa = sco + oco
+        if sum(summa) == 0 and spr:
+            raise ValueError('Projective points cannot be zero')
+        return Point(list(sco + oco), spr)
+    
+    def __sub__(self, other):
+        """
+        x.__sub__(y) <==> x - y
+        """
+        if not isinstance(other, Point):
+            t = type(other)
+            raise(TypeError("unsupported operand type(s) for -: 'Point' and '{0}'".format(t)))
+        
+        return self + -other
+    
+    def __neg__(self):
+        """
+        x.__neg__() <==> -x
+        """
+        coordinates  = self._coordinates
+        isprojective = self._isprojective
+        
+        return Point(list(-coordinates), isprojective)
+    
+    def __mul__(self, other):
+        """
+        x.__mul__(y) <==> x*y
+        """
+        from naglib.misc import scalar_num
+        if not scalar_num(other):
+            t = type(other)
+            raise(TypeError("unsupported operand type(s) for *: 'Point' and '{0}'".format(t)))
+        else:
+            other = sympify(other)
+            coordinates = self._coordinates
+            isprojective = self._isprojective
+            if other == 0 and isprojective:
+                raise ValueError('Projective points cannot be zero')
+            return Point(other * coordinates, isprojective)
+        
+    def __rmul__(self, other):
+        """
+        x.__rmul__(y) <==> y*x
+        """
+        from naglib.misc import scalar_num
+        if not scalar_num(other):
+            raise NotImplementedError()
+        else:
+            return self*other
+        
+    def __div__(self, other):
+        """
+        x.__div__(y) <==> x/y
+        """
+        from naglib.misc import scalar_num
+        if not scalar_num(other):
+            t = type(other)
+            raise(TypeError("unsupported operand type(s) for /: 'Point' and '{0}'".format(t)))
+        else:
+            other = sympify(other)
+            coordinates = self._coordinates
+            isprojective = self._isprojective
+            if other == 0:
+                raise ZeroDivisionError('division by zero')
+            return Point((1.0/other) * coordinates, isprojective)
+    
+    def __abs__(self):
+        """
+        x.__abs__ <==> abs(x)
+        """
+        coordinates = self._coordinates
+        
+        return coordinates.norm()
+    
+    def __eq__(self, other):
+        """
+        x.__eq__(y) <==> x == y
+        """
+        if not isinstance(other, Point):
+            return False
+        sco = self._coordinates
+        oco = other._coordinates
+        spr = self._isprojective
+        opr = other._isprojective
+        
+        return (sco == oco) and (spr == opr)
+    
+    def __getitem__(self, key):
+        """
+        x.__getitem__(y) <==> x[y]
+        """
+        coordinates = self._coordinates
+        
+        return coordinates[key]
+    
+    def __setitem__(self, key, value):
+        """
+        x.__setitem__(y, z) <==> x[y] = z
+        """
+        from naglib.misc import scalar_num
+        if not scalar_num(value):
+            raise(TypeError('Must assign a number'))
+        
+        coordinates = self._coordinates
+        isprojective = self._isprojective
+        if isprojective and key == 0 and value == 0:
+            raise(ValueError('Projective points cannot have zero in the first coordinate'))
+            
+        coordinates[key] = sympify(value)
+        
+    def __setslice__(self, i, j, sequence):
+        """
+        x.__setslice__(i,j,sequence) <==> x[i:j] = sequence
+        """
+        from naglib.misc import scalar_num
+        coordinates = self._coordinates
+        isprojective = self._isprojective
+        
+        sequence = sympify(list(sequence))
+        for s in sequence:
+            if not scalar_num(s):
+                raise(TypeError('Must assign a number'))
+                
+        cocopy = coordinates[:]
+        cocopy[i:j] = sequence
+        
+        if isprojective and cocopy[0] == 0:
+            raise(ValueError('Projective points cannot have zero in the first coordinate'))
+        self._coordinates = spmatrix(cocopy)
+        if isprojective:
+            self._dim = len(self._coordinates) - 1
+        else:
+            self._dim = len(self._coordinates)
+    
+    def norm(self, ord=None):
+        """
+        Return the norm of Point
+        Acceptable values:
+        None <==> 2-norm
+         inf <==> max(abs(x))
+        -inf <==> min(abs(x))
+          n  <==> sum(abs(x)**n)**(1./n)
+        """
+        coordinates = self._coordinates
+        
+        return coordinates.norm(ord)
+    
+    def normalized(self):
+        """
+        Return the normalized version of ``self''
+        """
+        coordinates = self._coordinates
+        isprojective = self._isprojective
+        
+        return Point(coordinates.normalized(), isprojective)
+    
+    def homscale(self):
+        """
+        Return Point with coordinates rescaled
+        """
+        coordinates = self._coordinates
+        isprojective = self._isprojective
+        
+        if isprojective:
+            c1 = coordinates[0]
+            return self/c1
+        else:
+            raise(ValueError("Won't scale affine points"))
+        
+    @property
+    def coordinates(self):
+        return self._coordinates
+    @property
+    def isprojective(self):
+        return self._isprojective
+    @property
+    def dim(self):
+        return self._dim
+        
 class PolynomialSystem(NAGobject):
     """
     A polynomial system
     """
-    def __init__(self, polynomials, variables=None, parameters=None, isprojective=True):
+    def __init__(self, polynomials, variables=None, parameters=None, isprojective=False):
         """
         Initialize the PolynomialSystem object
         
@@ -149,13 +392,18 @@ class PolynomialSystem(NAGobject):
         isprojective -- optional boolean, True if the system is projective,
                         otherwise, False (default: True)
         """
+        # check if 'polynomials' is a string and/or contains '^' for exp
+        from re import sub as resub
+
+        if type(polynomials) == str:
+            polynomials = [resub(r'\^', r'**', polynomials)]
+
         self._polynomials = spmatrix(sympify(polynomials))
             
         # check if any polynomials are actually not polynomials
         for p in self._polynomials:
             if not p.is_polynomial():
                 raise(NonPolynomialException(str(p)))
-        
             
         if parameters:
             self._parameters = spmatrix(sympify(parameters))
@@ -187,7 +435,7 @@ class PolynomialSystem(NAGobject):
             if p.is_number:
                 deg = 0
             else:
-                deg = p.as_poly().degree()
+                deg = p.as_poly().total_degree()
             # check if polynomial is homogeneous
             if isprojective:
                 terms = p.as_ordered_terms()
@@ -330,6 +578,26 @@ class PolynomialSystem(NAGobject):
             
             return res
         
+    def assign_parameters(self, params):
+        """
+        Set params as parameters in self
+        """
+        if not hasattr(params, '__iter__'):
+            params = [params]
+        params = set(sympify(params))
+        
+        sparams = set(self._parameters).union(params)
+        svars   = set(self._variables) - sparams
+        
+        str_pars = sorted([str(p) for p in sparams])
+        str_vars = sorted([str(v) for v in svars])
+        
+        self._parameters = spmatrix(sympify(str_pars))
+        self._variables  = spmatrix(sympify(str_vars))
+        
+        # update shape
+        self._shape = (len(self._polynomials), len(self._variables))
+        
     def homogenize(self):
         """
         Homogenize the system
@@ -417,7 +685,7 @@ class PolynomialSystem(NAGobject):
         
         return jac,polynomials,variables
     
-    def rank(self):
+    def rank(self, tol=1e-15):
         """
         Return a numeric value, the rank of the Jacobian at
         a 'generic' point.
@@ -435,17 +703,136 @@ class PolynomialSystem(NAGobject):
         for i in range(len(varsubs)):
             # rand()/rand() can vary magnitude satisfactorily
             try:
-                re = rand()/rand()
-                im = rand()/rand()
+                real = rand()/rand()
+                imag = rand()/rand()
             except ZeroDivisionError:
                 # try again
                 return self.rank()
-            varsubs[i] = mpc(re, im)
+            varsubs[i] = mpc(real, imag)
             
         jac = self.jacobian()[0]
         jac = jac.subs(zip(variables, varsubs))
         
-        return jac.rank()            
+        # allow user to specify tolerance (what is 'zero')
+        iszero = lambda x, tol=tol: True if abs(x) < tol else False
+        return jac.rank(iszero)
+    
+    def solve(self, start_params=None, final_params=None, start=None, usebertini=True):
+        """
+        Solve the system. If non-square, return the NID
+        
+        If the system has parameters and you don't supply
+        final parameters, solve the system with random
+        start parameters, return the solutions and the start parameters.
+        If you do supply final parameters, solve the system with 
+        random start parameters, then solve again and return the
+        start parameters
+        """
+        rank = self.rank()
+        polynomials = self._polynomials
+        variables   = self._variables
+        parameters  = self._parameters
+        
+        if usebertini:
+            from tempfile import mkdtemp
+            from naglib import TEMPDIR as basedir
+            from naglib.bertini.sysutils import call_bertini
+            from naglib.bertini.fileutils import write_input, read_points, fprint
+            from naglib.bertini.data import compute_NID
+            
+            if rank != len(polynomials) or rank != len(variables):
+                return compute_NID(self)
+            elif parameters and not start_params and not final_params:
+                dirname  = mkdtemp(prefix=basedir)
+                filename = dirname + '/input'
+                config   = {'filename': filename,
+                            'TrackType': 0,
+                            'ParameterHomotopy':1}
+                
+                write_input(self, config)
+                call_bertini(filename)
+                points = read_points(dirname + '/finite_solutions', as_set=False)
+                sp = read_points(dirname + '/start_parameters', as_set=False)
+                
+                return points, sp
+            elif parameters and not start_params:
+                dirname  = mkdtemp(prefix=basedir)
+                filename = dirname + '/input'
+                config   = {'filename': filename,
+                            'TrackType': 0,
+                            'ParameterHomotopy':1}
+                write_input(self, config)
+                
+                call_bertini(filename)
+                
+                start_params = read_points(dirname + '/start_parameters', as_set=False)
+                
+                config   = {'filename': filename,
+                            'TrackType': 0,
+                            'ParameterHomotopy':2}
+                write_input(self, config)
+                
+                fprint(final_params, dirname + '/final_parameters')
+                
+                call_bertini(filename)
+                
+                points = read_points(dirname + '/finite_solutions', as_set=False)
+                return points, start_params
+            elif parameters and not final_params:
+                return self.subs(zip(parameters, start_params)).solve()
+                #dirname  = mkdtemp(prefix=basedir)
+                #filename = dirname + '/input'
+                #config   = {'filename': filename,
+                            #'TrackType': 0,
+                            #'ParameterHomotopy':1}
+                #write_input(self, config)
+                
+                #call_bertini(filename)
+                
+                #start_params = read_points(dirname + '/start_parameters', as_set=False)
+                
+                #config   = {'filename': filename,
+                            #'TrackType': 0,
+                            #'ParameterHomotopy':2}
+                #write_input(self, config)
+                
+                #fprint(start_params, dirname + '/final_parameters')
+                
+                #call_bertini(filename)
+                
+                #points = read_points(dirname + '/finite_solutions', as_set=False)
+                #return points, start_params
+            elif parameters and not start:
+                raise(BertiniError("'start' does not exist!!!"))
+            elif parameters: # and start_params and final_params
+                dirname  = mkdtemp(prefix=basedir)
+                filename = dirname + '/input'
+                config   = {'filename': filename,
+                            'TrackType': 0,
+                            'ParameterHomotopy':2}
+                
+                fprint(start, dirname + '/start')
+                fprint(start_params, dirname + '/start_parameters')
+                fprint(final_params, dirname + '/final_parameters')
+
+                write_input(self, config)
+                call_bertini(filename)
+                points = read_points(dirname + '/finite_solutions', as_set=False)
+                
+                return points
+            else:
+                dirname  = mkdtemp(prefix=basedir)
+                filename = dirname + '/input'
+                config   = {'filename': filename,
+                            'TrackType': 0}
+                
+                write_input(self, config)
+                call_bertini(filename)
+                points = read_points(dirname + '/finite_solutions', as_set=False)
+                
+                return points
+        else:
+            raise(NotImplementedError('nothing to use but bertini yet'))
         
     def subs(self, *args, **kwargs):
         """
@@ -457,23 +844,6 @@ class PolynomialSystem(NAGobject):
         ps = PolynomialSystem(psubs, isprojective=self._isprojective)
         
         return ps
-    
-    def assign_parameters(self, params):
-        """
-        Set params as parameters in self
-        """
-        if not hasattr(params, '__iter__'):
-            params = [params]
-        params = set(sympify(params))
-        
-        sparams = set(self._parameters).union(params)
-        svars   = set(self._variables) - sparams
-        
-        str_pars = sorted([str(p) for p in sparams])
-        str_vars = sorted([str(v) for v in svars])
-        
-        self._parameters = spmatrix(sympify(str_pars))
-        self._variables  = spmatrix(sympify(str_vars))
         
     @property
     def polynomials(self):
@@ -500,7 +870,7 @@ class LinearSystem(PolynomialSystem):
     
     !!!Use this only for slicing!!!
     """
-    def __init__(self, polynomials, variables=None, isprojective=True):
+    def __init__(self, polynomials, variables=None, isprojective=False):
         """
         Initialize the LinearSystem object
         
@@ -536,7 +906,8 @@ class LinearSystem(PolynomialSystem):
         for p in self._polynomials:
             psub = p.subs(zip(self._variables, spzeros(*self._variables.shape)))
             if psub != 0:
-                raise(AffineException(str(p)))
+                errmsg = 'polynomial {0} is not linear'.format(p)
+                raise(AffineException(errmsg))
             
         self._num_variables = len(self._variables)
         self._num_polynomials = len(self._polynomials)
@@ -657,11 +1028,11 @@ class LinearSystem(PolynomialSystem):
     def shape(self):
         return self._shape
     
-class WitnessPoint(NAGobject):
+class WitnessPoint(Point):
     """
     A single witness point for an irreducible component
     """
-    def __init__(self, dim, component_id, pt, isprojective=True):
+    def __init__(self, coordinates, component_id, isprojective=False):
         """
         Initialize the WitnessPoint object.
 
@@ -674,32 +1045,20 @@ class WitnessPoint(NAGobject):
         isprojective -- optional boolean, True if the system is projective,
                         otherwise False (default: True)
         """
-        self._dim = dim
+        super(WitnessPoint, self).__init__(coordinates, isprojective)
         self._component_id = component_id
-        if not hasattr(pt, '__iter__'):
-            self._pt = mpmatrix((pt,))
-        else:
-            self._pt = mpmatrix(pt)
-        self._isprojective = isprojective
-
-    def __str__(self):
-        """
-        x.__str__() <==> str(x)
-        """
-        return '(' + ','.join(str(p) for p in self._pt) + ')'
+        
 
     def __repr__(self):
         """
         x.__repr__() <==> repr(x)
         """
-        dim = self._dim
         cid = self._component_id
-        pt  = self._pt
+        cor = self._coordinates
         prj = self._isprojective
-        repstr = 'WitnessPoint(\n{0},\n{1},\n{2},\n{3})'.format(dim,
-                                                                cid,
-                                                                repr(pt),
-                                                                prj)
+        repstr = 'WitnessPoint(\n{0},\n{1},\n{2})'.format(repr(cor),
+                                                          cid,
+                                                          prj)
         return repstr
     
     def dehomogenize(self):
@@ -708,36 +1067,26 @@ class WitnessPoint(NAGobject):
         
         Returns a new WitnessPoint object
         """
-        dim = self._dim
         component_id = self._component_id
-        pt = self._pt
+        coordinates = self._coordinates
         if not self._isprojective:
-            newpt = WitnessPoint(dim, component_id, pt, False)
+            newpt = WitnessPoint(coordinates, component_id, False)
         else:
             first = pt[0]
             pt = pt[1:]/first # first should not be equal to 0 if homogenous
-            newpt = WitnessPoint(dim, component_id, pt, False)
+            newpt = WitnessPoint(coordinates, component_id, False)
             
         return newpt
-
-    @property
-    def dim(self):
-        return self._dim
+    
     @property
     def component_id(self):
         return self._component_id
-    @property
-    def pt(self):
-        return self._pt
-    @property
-    def isprojective(self):
-        return self._isprojective
 
 class WitnessSet(NAGobject):
     """
     A witness set for a component
     """
-    def __init__(self, system, slice, witness_points, isprojective=True):
+    def __init__(self, system, slice, witness_points, isprojective=False):
         """Initialize the WitnessSet
         
         Keyword arguments:
