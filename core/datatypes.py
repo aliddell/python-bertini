@@ -138,14 +138,10 @@ class Point(NAGobject):
         """
         Initialize the Point object
         """
-        # ensure not actually a Point object
-        if isinstance(coordinates, Point):
-            return coordinates
-        
-        if not hasattr(coordinates, '__iter__'):
-            coordinates = [coordinates]
-        else:
+        try:
             coordinates = list(coordinates)
+        except TypeError:
+            coordinates = [coordinates]
         
         coordinates = [sympify(c) for c in coordinates]
         self._coordinates = spmatrix(coordinates)
@@ -1050,6 +1046,7 @@ class WitnessPoint(Point):
         """
         super(WitnessPoint, self).__init__(coordinates, isprojective)
         self._component_id = component_id
+        
 
     def __repr__(self):
         """
@@ -1069,15 +1066,14 @@ class WitnessPoint(Point):
         
         Returns a new WitnessPoint object
         """
-        dim = self._dim
         component_id = self._component_id
-        pt = self._pt
+        coordinates = self._coordinates
         if not self._isprojective:
-            newpt = WitnessPoint(dim, component_id, pt, False)
+            newpt = WitnessPoint(coordinates, component_id, False)
         else:
             first = pt[0]
             pt = pt[1:]/first # first should not be equal to 0 if homogenous
-            newpt = WitnessPoint(dim, component_id, pt, False)
+            newpt = WitnessPoint(coordinates, component_id, False)
             
         return newpt
     

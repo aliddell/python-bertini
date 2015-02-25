@@ -12,7 +12,7 @@ from sympy import sympify, Matrix as spmatrix
 from naglib import TEMPDIR as basedir
 from naglib.core.datatypes import LinearSystem, IrreducibleComponent, WitnessPoint, WitnessSet
 from naglib.bertini.sysutils import call_bertini
-from naglib.misc import striplines
+from naglib.core.misc import striplines
 from naglib.bertini.fileutils import write_input, parse_witness_data
 
 def __get_components(dirname, system):

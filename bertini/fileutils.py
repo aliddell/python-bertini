@@ -4,10 +4,10 @@ from fractions import Fraction as fraction
 from os.path import isfile
 from sys import stderr, stdout
 
-from mpmath import mpf, mpc, matrix as mpmatrix
-from sympy import Rational
+from sympy import I, Integer, Float, Rational, Matrix as spmatrix
 
-from naglib.misc import striplines
+from naglib.core.datatypes import Point, WitnessPoint
+from naglib.core.misc import striplines
 
 def parse_witness_data(filename):
     """
@@ -44,8 +44,8 @@ def parse_witness_data(filename):
             pt = []
             for k in range(num_vars):
                 coord = lines[k].split(' ')
-                pt.append(mpc(*coord))
-            pt = mpmatrix(pt)
+                pt.append(Float(coord[0]) + I*Float(coord[1]))
+            pt = spmatrix(pt)
             lines = lines[num_vars:]
             # the next point is the last approximation of the point
             # on the path before convergence
@@ -54,7 +54,7 @@ def parse_witness_data(filename):
             approx_pt = []
             for k in range(num_vars):
                 coord = lines[k].split(' ')
-                approx_pt.append(mpc(*coord))
+                approx_pt.append(Float(coord[0]) + I*Float(coord[1]))
 
             lines = lines[num_vars:]
             condition_number = float(lines[0])
@@ -112,17 +112,17 @@ def parse_witness_data(filename):
 
             A = [a.split(' ') for a in A] # A is complex-valued
             if num_format == INT:
-                A = [mpc(int(a[0]), int(a[1])) for a in A]
+                A = [Integer(a[0]) + I*Integer(a[1]) for a in A]
             elif num_format == DOUBLE:
-                A = [mpc(float(a[0]), float(a[1])) for a in A]
+                A = [Float(a[0]) + I*Float(a[1]) for a in A]
             elif num_format == RATIONAL:
-                A = [mpc(float(fraction(a[0])), float(fraction(a[1]))) for a in A]
+                A = [Rational(a[0]) + I*Rational(a[1]) for a in A]
             A = [A[j:j+num_cols] for j in range(0,AW_size,num_cols)]
-            A = mpmatrix(A)
+            A = spmatrix(A)
 
             W = [int(w) for w in W] # W is integer-valued
             W = [W[j:j+num_cols] for j in range(0,AW_size,num_cols)]
-            W = mpmatrix(W)
+            W = spmatrix(W)
 
         # third, a vector H used for homogenization
         # random if projective input
@@ -131,24 +131,24 @@ def parse_witness_data(filename):
         H = lines[:H_size]
         H = [h.split(' ') for h in H] # H is complex-valued
         if num_format == INT:
-            H = [mpc(int(h[0]), int(h[1])) for h in H]
+            H = [Integer(h[0]) + I*Integer(h[1]) for h in H]
         elif num_format == DOUBLE:
-            H = [mpc(float(h[0]), float(h[1])) for h in H]
+            H = [Float(h[0]) + I*Float(h[1]) for h in H]
         elif num_format == RATIONAL:
-            H = [mpc(float(fraction(h[0])), float(fraction(h[1]))) for h in H]
+            H = [Rational(h[0]) + I*Rational(h[1]) for h in H]
 
-        H = mpmatrix(H)
+        H = spmatrix(H)
         lines = lines[H_size:]
 
         # fourth, a number homVarConst
         # 0 for affine, random for projective
         hvc = lines[0].split(' ')
         if num_format == INT:
-            hvc = mpc(int(hvc[0]), int(hvc[1]))
+            hvc = Integer(hvc[0]) + I*Integer(hvc[1])
         elif num_format == DOUBLE:
-            hvc = mpc(float(hvc[0]), float(hvc[1]))
+            hvc = Float(hvc[0]) + I*Float(hvc[1])
         elif num_format == RATIONAL:
-            hvc = mpc(float(fraction(hvc[0])), float(fraction(hvc[1])))
+            hvc = Rational(hvc[0]) + I*Rational(hvc[1])
 
         lines = lines[1:]
 
@@ -166,13 +166,13 @@ def parse_witness_data(filename):
 
             B = [b.split(' ') for b in B] # B is complex-valued
             if num_format == INT:
-                B = [mpc(int(b[0]), int(b[1])) for b in B]
+                B = [Integer(b[0]) + I*Integer(b[1]) for b in B]
             elif num_format == DOUBLE:
-                B = [mpc(float(b[0]), float(b[1])) for b in B]
+                B = [Float(b[0]) + I*Float(b[1]) for b in B]
             elif num_format == RATIONAL:
-                B = [mpc(float(fraction(b[0])), float(fraction(b[1]))) for b in B]
+                B = [Rational(b[0]) + I*Rational(b[1]) for b in B]
             B = [B[j:j+num_cols] for j in range(0,B_size,num_cols)]
-            B = mpmatrix(B)
+            B = spmatrix(B)
 
         # sixth and finally, vector p for patch coefficients
         p_size = int(lines[0])
@@ -181,13 +181,13 @@ def parse_witness_data(filename):
         p = lines[:p_size]
         p = [q.split(' ') for q in p]
         if num_format == INT:
-            p = [mpc(int(q[0]), int(q[1])) for q in p]
+            p = [Integer(q[0]) + I*Integer(q[1]) for q in p]
         elif num_format == DOUBLE:
-            p = [mpc(float(q[0]), float(q[1])) for q in p]
+            p = [Float(q[0]) + I*Float(q[1]) for q in p]
         elif num_format == RATIONAL:
-            p = [mpc(float(fraction(q[0])), float(fraction(q[1]))) for q in p]
+            p = [Rational(q[0]) + I*Rational(q[1]) for q in p]
 
-        p = mpmatrix(p)
+        p = spmatrix(p)
         codims[i]['A'] = A
         codims[i]['W'] = W
         codims[i]['H'] = H
@@ -220,16 +220,16 @@ def parselines(lines, tol=1e-15, as_set=True):
         point = [regex.split(r'\s+', p) for p in point]
         newpoint = []
         for p in point:
-            re = mpf(p[0])
-            im = mpf(p[1])
+            re = Float(p[0])
+            im = Float(p[1])
 
             if abs(re) < tol:
                 re = 0
             if abs(im) < tol:
                 im = 0
                 
-            newpoint.append(mpc(re, im))
-        points.append(mpmatrix(newpoint))
+            newpoint.append(re + I*im)
+        points.append(Point(newpoint))
 
     if as_set:
         points = list(set(points))
