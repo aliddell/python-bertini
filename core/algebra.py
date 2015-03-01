@@ -103,7 +103,7 @@ class PolynomialSystem(NAGobject):
             if p.is_number:
                 deg = 0
             else:
-                deg = p.as_poly().total_degree()
+                deg = p.as_poly(domain='CC').total_degree()
             # check if polynomial is homogeneous
             if self._homvar:
                 terms = p.as_ordered_terms()
@@ -113,7 +113,7 @@ class PolynomialSystem(NAGobject):
                         raise NonHomogeneousException(msg)
                     elif t.is_number:
                         pass
-                    elif t.as_poly().total_degree() != deg:
+                    elif t.as_poly(domain='CC').total_degree() != deg:
                         msg = "polynomial {0} is not homogeneous".format(p)
                         raise NonHomogeneousException(msg)
             d.append(deg)
@@ -436,7 +436,7 @@ class PolynomialSystem(NAGobject):
         homvars = [p0] + variables
         hompolys = []
         for p in polynomials:
-            d = p.as_poly().total_degree()
+            d = p.as_poly(domain='CC').total_degree()
             hp = (p0**d * p.subs(varsubs)).expand()
             hompolys.append(hp)
         return PolynomialSystem(hompolys, homvars, parameters, p0)
@@ -645,7 +645,7 @@ class PolynomialSystem(NAGobject):
             if p.is_number:
                 deg = 0
             else:
-                deg = p.as_poly().total_degree()
+                deg = p.as_poly(domain='CC').total_degree()
             # now check if polynomial is homogeneous
             terms = p.as_ordered_terms()
             for t in terms:
@@ -654,7 +654,7 @@ class PolynomialSystem(NAGobject):
                     raise NonHomogeneousException(msg)
                 elif t.is_number:
                     pass
-                elif t.as_poly().total_degree() != deg:
+                elif t.as_poly(domain='CC').total_degree() != deg:
                     msg = "polynomial {0} is not homogeneous".format(p)
                     raise NonHomogeneousException(msg)
         
