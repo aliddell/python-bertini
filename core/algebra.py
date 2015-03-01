@@ -334,6 +334,8 @@ class PolynomialSystem(NAGobject):
         """
         concatenate a polynomial at the end of self
         """
+        if not other:
+            return self
         other = sympify(other)
         try:
             other = spmatrix(other)
@@ -345,6 +347,14 @@ class PolynomialSystem(NAGobject):
         
         newpols = polynomials.col_join(other)
         return PolynomialSystem(newpols, parameters=parameters, homvar=homvar)
+    
+    def copy(self):
+        polynomials = self._polynomials.copy()
+        variables   = self._variables.copy()
+        parameters  = self._parameters.copy()
+        homvar      = self._homvar.copy()
+        
+        return PolynomialSystem(polynomials, variables, parameters, homvar)
         
     def dehomogenize(self):
         """
