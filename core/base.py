@@ -178,6 +178,20 @@ class Point(NAGobject):
         cocopy[i:j] = sequence
         self._coordinates = spmatrix(cocopy)
         
+    def cat(self, other):
+        """
+        concatenate other onto self
+        """
+        cls = self.__class__
+        if not isinstance(other, cls):
+            t = type(other)
+            msg = "I don't know how to concatenate type {0} to type {1}".format(t, cls)
+            raise TypeError(msg)
+        scoords = list(self._coordinates)
+        ocoords = list(other._coordinates)
+        
+        return cls(scoords + ocoords)
+        
     def float(self, prec=None):
         # TODO: allow argument to prec to mean something
         cls = self.__class__
