@@ -4,7 +4,7 @@ from fractions import Fraction as fraction
 from os.path import isfile
 from sys import stderr, stdout
 
-from sympy import I, Integer, Float, Rational, Matrix as spmatrix
+from sympy import I, Integer, Float, Rational, Matrix as spmatrix, sympify
 
 from naglib.core import AffinePoint, ProjectivePoint, WitnessPoint
 from naglib.core.misc import striplines
@@ -277,6 +277,7 @@ def fprint(points, filename=''):
     print('{0}\n'.format(numpoints), file=fh)
     for p in points:
         for coordinate in p:
+            coordinate = sympify(coordinate)
             real, imag = coordinate.as_real_imag()
             print('{0} {1}'.format(real, imag), file=fh)
         print('', file=fh)
