@@ -6,6 +6,7 @@ from sys import stderr, stdout
 
 from sympy import I, Integer, Float, Rational, Matrix as spmatrix, sympify
 
+from naglib.startup import TOL
 from naglib.core import AffinePoint, ProjectivePoint, WitnessPoint
 from naglib.core.misc import striplines
 
@@ -201,7 +202,7 @@ def parse_witness_data(filename):
 
     return codims,retlines
 
-def parselines(lines, tol=1e-15, projective=False, as_set=False):
+def parselines(lines, tol=TOL, projective=False, as_set=False):
     """    
     Keyword arguments:
     lines -- iterable of strings, first entry the number of points;
@@ -213,6 +214,8 @@ def parselines(lines, tol=1e-15, projective=False, as_set=False):
     points = []
 
     numpoints = int(lines[0])
+    if numpoints == 0:
+        return points
     lines = lines[1:]
     length = len(lines)
     numvar = length//numpoints
@@ -241,7 +244,7 @@ def parselines(lines, tol=1e-15, projective=False, as_set=False):
 
     return points
 
-def read_points(filename, tol=1e-15, projective=False, as_set=False):
+def read_points(filename, tol=TOL, projective=False, as_set=False):
     """
     Reads in a file and return a set of mpc numbers
     """

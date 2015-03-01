@@ -158,6 +158,9 @@ class PolynomialSystem(NAGobject):
         polynomials = self._polynomials
         return polynomials[key]
     
+    def __eq__(self, other):
+        return self.equals(other, strict=True)
+    
     def __neg__(self):
         """
         x.__neg___() <==> -x
@@ -316,6 +319,22 @@ class PolynomialSystem(NAGobject):
         
         self._parameters = spmatrix(sympify(str_pars))
         self._variables  = spmatrix(sympify(str_vars))
+        
+    def cat(self, other):
+        """
+        concatenate a polynomial at the end of self
+        """
+        other = sympify(other)
+        try:
+            other = spmatrix(other)
+        except TypeError:
+            other = spmatrix([other])
+        parameters = self._parameters
+        polynomials = self._polynomials
+        homvar = self._homvar
+        
+        newpols = polynomials.col_join(other)
+        return PolynomialSystem(newpols, parameters=parameters, homvar=homvar)
         
     def dehomogenize(self):
         """
@@ -512,7 +531,6 @@ class PolynomialSystem(NAGobject):
         random start parameters, then solve again and return the
         start parameters
         """
-        rank = self.rank()
         polynomials = self._polynomials
         variables   = self._variables
         parameters  = self._parameters
@@ -524,7 +542,7 @@ class PolynomialSystem(NAGobject):
             from naglib.bertini.fileutils import write_input, read_points, fprint
             from naglib.bertini.data import compute_NID
             
-            if rank != len(polynomials) or rank != len(variables):
+            if len(variables) > len(polynomials): # underdetermined
                 return compute_NID(self)
             elif parameters and not start_params and not final_params:
                 dirname  = mkdtemp(prefix=basedir)

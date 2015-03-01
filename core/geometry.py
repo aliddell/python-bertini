@@ -8,7 +8,7 @@ class IrreducibleComponent(NAGobject):
     """
     An irreducible component of an algebraic set
     """
-    def __init__(self, witness_set, dim, component_id, wdinfo):
+    def __init__(self, witness_set, dim, component_id, wdinfo=None):
         """
         Initialize the IrreducibleComponent object.
         
@@ -39,9 +39,8 @@ class IrreducibleComponent(NAGobject):
         """
         dim = self._dim
         cid = self._component_id
-        deg = self._degree
         wst = self._witness_set
-        repstr = 'IrreducibleComponent({0},{1},{2},{3})'.format(dim,cid,deg,repr(wst))
+        repstr = 'IrreducibleComponent({0},{1},{2})'.format(repr(wst),dim,cid)
         return repstr
     
     #def __eq__(self, other):
