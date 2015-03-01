@@ -277,9 +277,8 @@ def fprint(points, filename=''):
     print('{0}\n'.format(numpoints), file=fh)
     for p in points:
         for coordinate in p:
-            re = coordinate.real
-            im = coordinate.imag
-            print('{0} {1}'.format(re, im), file=fh)
+            real, imag = coordinate.as_real_imag()
+            print('{0} {1}'.format(real, imag), file=fh)
         print('', file=fh)
 
     if filename:
