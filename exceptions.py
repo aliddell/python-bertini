@@ -1,72 +1,66 @@
+class NAGlibBaseException(Exception):
+    """
+    Base exception type
+    """
+    def __init__(self, message):
+        self.message = message
+    
+    def __str__(self):
+        return self.message
+    
+class AffineInfinityException(NAGlibBaseException):
+    """
+    """
+    def __init__(self, message):
+        super(InfinityException, self).__init__(message)
+    
 class BertiniError(Exception):
-    """BertiniError
+    """
+    BertiniError
     
     Raise BertiniError when Bertini returns nonzero exit status
     """
     def __init__(self, message):
-        self.message = message
+        super(BertiniError, self).__init__(message)
+    
+class ExitSpaceError(NAGlibBaseException):
+    """
+    """
+    def __init__(self, message):
+        super(ExitSpaceError, self).__init__(message)
 
-    def __str__(self):
-        return self.message
-
-class NoBertiniException(Exception):
+class NoBertiniException(NAGlibBaseException):
     """
     NoBertiniException
     
     Raise NoBertiniException when Bertini can't be located on the system
     """
     def __init__(self):
-        self.message = "you don't seem to have Bertini installed anywhere " \
-                       "I can find it"
-    def __str__(self):
-        return self.message
+        msg = "you don't seem to have Bertini installed anywhere I can find it"
+        super(NoBertiniException, self).__init__(msg)
     
-class NonPolynomialException(Exception):
+class NonPolynomialException(NAGlibBaseException):
     """
     NonPolynomialException
     
     Raise NonPolynomialException when user attempts to instantiate a
     PolynomialSystem or LinearSystem object with non-polynomials
     """
-    def __init__(self, function):
-        self.message = 'function {0} is not a polynomial'.format(function)
-    
-    def __str__(self):
-        return self.message
-    
-class NonLinearException(Exception):
-    """
-    NonLinearException
-    
-    Raise NonLinearException when user attempts to instantiate a
-    LinearSystem object with nonlinear polynomials
-    """
-    def __init__(self, polynomial):
-        self.message = 'polynomial {0} is nonlinear'.format(polynomial)
-        
-    def __str__(self):
-        return self.message
-    
-class AffineException(Exception):
-    """
-    AffineException
-    
-    Raise AffineException when there is a projective/affine mismatch
-    """
     def __init__(self, message):
-        self.message = message
-        
-    def __str__(self):
-        return self.message
+        super(NonPolynomialException, self).__init__(message)
     
-class NonHomogeneousException(Exception):
+class NonHomogeneousException(NAGlibBaseException):
     """
     NonHomogeneousException
     
     Raise NonHomogeneousException when user attempts to instantiate
     a projective system with nonhomogeneous polynomials
     """
-    def __init__(self, polynomial):
-        self.message = 'polynomial {0} is not homogeneous; maybe use isprojective=False?'.format(polynomial)
-    def __str__(self):
-        return self.message
+    def __init__(self, message):
+        super(NonHomogeneousException, self).__init__(message)
+        
+class WitnessDataException(NAGlibBaseException):
+    """
+    """
+    def __init__(self, message):
+        super(WitnessDataException, self).__init__(message)

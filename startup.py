@@ -1,4 +1,7 @@
 """Define constants and register exit functions"""
+TOL = 1e-15
+DPS = 16
+
 import sys
 if sys.version_info[0] == 2 and sys.version_info[1] < 6:
     raise ImportError("Python Version 2.7 or above is required for NAGlib.")

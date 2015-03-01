@@ -6,8 +6,10 @@ from sys import stderr, stdout
 
 from sympy import I, Integer, Float, Rational, Matrix as spmatrix
 
-from naglib.core.datatypes import Point, WitnessPoint
+from naglib.core import AffinePoint, ProjectivePoint, WitnessPoint
 from naglib.core.misc import striplines
+
+# read utils
 
 def parse_witness_data(filename):
     """
@@ -17,10 +19,12 @@ def parse_witness_data(filename):
     filename -- string, path to witness_data file
     """
     if not isfile(filename):
-        raise(IOError("{0} does not exist".format(filename)))
+        msg = "{0} does not exist".format(filename)
+        raise IOError(msg)
 
     fh = open(filename, 'r')
-    lines = striplines(fh.readlines())
+    retlines = striplines(fh.readlines())
+    lines = retlines[:]
     fh.close()
 
     num_vars, nonempty_codims = int(lines[0]), int(lines[1])
@@ -192,21 +196,19 @@ def parse_witness_data(filename):
         codims[i]['W'] = W
         codims[i]['H'] = H
         codims[i]['homVarConst'] = hvc
-        codims[i]['B'] = B
+        codims[i]['slice'] = B
         codims[i]['p'] = p
 
-    return codims
+    return codims,retlines
 
-def parselines(lines, tol=1e-15, as_set=True):
-    """
-    Return an mpmath matrix of mpc numbers
-    
+def parselines(lines, tol=1e-15, projective=False, as_set=False):
+    """    
     Keyword arguments:
     lines -- iterable of strings, first entry the number of points;
                 the rest, "%s %s" % real, imag
     tol   -- optional numeric, smallest allowable nonzero value
     """
-    import re as regex
+    from re import split as resplit
     lines = striplines(lines)
     points = []
 
@@ -217,24 +219,44 @@ def parselines(lines, tol=1e-15, as_set=True):
 
     for i in range(0, length, numvar):
         point = lines[i:i+numvar]
-        point = [regex.split(r'\s+', p) for p in point]
+        point = [resplit(r'\s+', p) for p in point]
         newpoint = []
         for p in point:
-            re = Float(p[0])
-            im = Float(p[1])
+            real = Float(p[0])
+            imag = Float(p[1])
 
-            if abs(re) < tol:
-                re = 0
-            if abs(im) < tol:
-                im = 0
+            if abs(real) < tol:
+                real = 0
+            if abs(imag) < tol:
+                imag = 0
                 
-            newpoint.append(re + I*im)
-        points.append(Point(newpoint))
+            newpoint.append(real + I*imag)
+        if projective:
+            points.append(ProjectivePoint(newpoint))
+        else:
+            points.append(AffinePoint(newpoint))
 
     if as_set:
         points = list(set(points))
 
     return points
+
+def read_points(filename, tol=1e-15, projective=False, as_set=False):
+    """
+    Reads in a file and return a set of mpc numbers
+    """
+    if not isfile(filename):
+        msg = "{0} does not exist".format(filename)
+        raise IOError(msg)
+
+    fh = open(filename, 'r')
+    lines = striplines(fh.readlines())
+    fh.close()
+
+    points = parselines(lines, tol=tol, projective=projective, as_set=as_set)
+    return points
+
+# write utils
 
 def fprint(points, filename=''):
     """
@@ -264,20 +286,6 @@ def fprint(points, filename=''):
         fh.close()
     return
 
-def read_points(filename, tol=1e-15, as_set=False):
-    """
-    Reads in a file and return a set of mpc numbers
-    """
-    if not isfile(filename):
-        raise(IOError("can't find {0}".format(filename)))
-
-    fh = open(filename, 'r')
-    lines = fh.readlines()
-    fh.close()
-
-    points = parselines(lines, tol=tol, as_set=as_set)
-    return points
-
 def write_input(system, config):
     """
     Writes a system to a Bertini-format file
@@ -292,7 +300,7 @@ def write_input(system, config):
     polynomials  = [p.factor() for p in system.polynomials]
     variables    = system.variables
     parameters   = system.parameters
-    isprojective = system.isprojective
+    homvar       = system.homvar
     num_polys    = system.shape[0]
     
     options = config.keys()
@@ -327,7 +335,7 @@ def write_input(system, config):
     print('INPUT', file=fh)
     if parameters:
         print('parameter {0};'.format(pars_list), file=fh)
-    if isprojective:
+    if homvar:
         print('hom_variable_group {0};'.format(vars_list), file=fh)
     else:
         print('variable_group {0};'.format(vars_list), file=fh)

@@ -1,4 +1,4 @@
-from __future__ import absolute_import, print_function
-
-from .datatypes import *
-from .misc import *
+from .algebra import PolynomialSystem
+from .base import AffinePoint, ProjectivePoint
+from .geometry import IrreducibleComponent
+from .witnessdata import WitnessPoint, WitnessSet
