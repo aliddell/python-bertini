@@ -1,3 +1,5 @@
+from sympy import I, Float, Rational
+
 from naglib.startup import TOL, DPS
 from naglib.exceptions import ExitSpaceError, WitnessDataException
 from naglib.core.base import NAGobject, Point, AffinePoint, ProjectivePoint
@@ -32,9 +34,10 @@ class WitnessPoint(Point):
         """
         x.__repr__() <==> repr(x)
         """
-        coordinates = self._coordinates
-        cid = self._component_id
-        is_projective = self._is_projective
+        floatme = self.float()
+        coordinates = floatme._coordinates
+        cid = floatme._component_id
+        is_projective = floatme._is_projective
         
         if is_projective:
             coorstr = 'ProjectivePoint([' + ','.join([str(c) for c in coordinates]) + '])'
@@ -74,6 +77,31 @@ class WitnessPoint(Point):
             point = AffinePoint(coordinates)
             
         return WitnessPoint(point, component_id)
+    
+    def float(self, prec=None):
+        # TODO: allow argument to prec to mean something
+        coordinates = self._coordinates
+        component_id = self._component_id
+        newcoords = []
+        for c in coordinates:
+            real,imag = c.as_real_imag()
+            real = Float(real)
+            imag = Float(imag)
+            newcoords.append(real + I*imag)
+            
+        return WitnessPoint(newcoords, component_id, self._is_projective)
+    
+    def rational(self):
+        coordinates = self._coordinates
+        component_id = self._component_id
+        newcoords = []
+        for c in coordinates:
+            real,imag = c.as_real_imag()
+            real = Rational(real)
+            imag = Rational(imag)
+            newcoords.append(real + I*imag)
+            
+        return WitnessPoint(newcoords, component_id, self._is_projective)
     
     @property
     def component_id(self):

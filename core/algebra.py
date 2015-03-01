@@ -158,6 +158,16 @@ class PolynomialSystem(NAGobject):
         polynomials = self._polynomials
         return polynomials[key]
     
+    def __getslice__(self, i, j):
+        """
+        x.__getslice__(i,j) <==> x[i:j]
+        """
+        polynomials = self._polynomials
+        return spmatrix(polynomials[i:j])
+    
+    def __len__(self):
+        return len(self._polynomials)
+    
     def __eq__(self, other):
         return self.equals(other, strict=True)
     
@@ -486,6 +496,28 @@ class PolynomialSystem(NAGobject):
         res = PolynomialSystem(res_polys)
             
         return res
+    
+    def pop(self, index=-1):
+        polynomials = list(self._polynomials)
+        variables = self._variables
+        parameters = self._parameters
+        
+        poly = polynomials.pop(index)
+        polynomials = spmatrix(polynomials)
+        free_sym = polynomials.free_symbols
+        sympars = set(parameters).intersection(free_sym)
+        symvars = set(variables).intersection(free_sym)
+        
+        varstr = sorted([str(v) for v in symvars])
+        parstr = sorted([str(p) for p in sympars])
+        
+        variables = sympify(varstr)
+        parameters = sympify(parstr)
+        self._polynomials = polynomials
+        self._variables = spmatrix(variables)
+        self._parameters = spmatrix(parameters)
+        
+        return poly
     
     def rank(self, tol=TOL):
         """
