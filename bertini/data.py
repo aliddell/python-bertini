@@ -80,7 +80,7 @@ def get_components(dirname, system):
             dim_list[comp_id].append(pt)
         
         for comp_id in dim_list.keys():
-            ws = WitnessSet(system, slice, dim_list[comp_id])
+            ws = WitnessSet(system.copy(), slice, dim_list[comp_id])
             component = IrreducibleComponent(ws, dim, comp_id, wdinfo)
             components.append(component)
             
