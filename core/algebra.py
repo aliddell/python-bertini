@@ -514,15 +514,20 @@ class PolynomialSystem(NAGobject):
         
         poly = polynomials.pop(index)
         polynomials = spmatrix(polynomials)
-        free_sym = polynomials.free_symbols
-        sympars = set(parameters).intersection(free_sym)
-        symvars = set(variables).intersection(free_sym)
-        
-        varstr = sorted([str(v) for v in symvars])
-        parstr = sorted([str(p) for p in sympars])
-        
-        variables = sympify(varstr)
-        parameters = sympify(parstr)
+        if len(polynomials) > 0:
+            free_sym = polynomials.free_symbols
+            sympars = set(parameters).intersection(free_sym)
+            symvars = set(variables).intersection(free_sym)
+            
+            varstr = sorted([str(v) for v in symvars])
+            parstr = sorted([str(p) for p in sympars])
+            
+            variables = sympify(varstr)
+            parameters = sympify(parstr)
+        else:
+            variables = []
+            parameters = []
+            
         self._polynomials = polynomials
         self._variables = spmatrix(variables)
         self._parameters = spmatrix(parameters)
