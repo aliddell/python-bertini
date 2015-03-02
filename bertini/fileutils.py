@@ -24,8 +24,10 @@ def parse_witness_data(filename):
         raise IOError(msg)
 
     fh = open(filename, 'r')
-    retlines = striplines(fh.readlines())
-    lines = retlines[:]
+    retlines = striplines(fh.readlines(), nonempty=False)
+    fh.close()
+    fh = open(filename, 'r')
+    lines = striplines(fh.readlines())
     fh.close()
 
     num_vars, nonempty_codims = int(lines[0]), int(lines[1])
