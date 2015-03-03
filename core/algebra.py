@@ -64,9 +64,12 @@ class PolynomialSystem(NAGobject):
             param_set = set(self._parameters)
             # gather free symbols from each polynomial
             free_sym = [p.free_symbols for p in self._polynomials]
-            variable_list = reduce(lambda x, y: x.union(y), free_sym)
-            # remove parameters from set of free symbols
-            variable_list = list(variable_list.difference(param_set))
+            if free_sym:
+                variable_list = reduce(lambda x, y: x.union(y), free_sym)
+                # remove parameters from set of free symbols
+                variable_list = list(variable_list.difference(param_set))
+            else:
+                variable_list = []
             variable_strings = [str(v) for v in variable_list]
             variable_strings.sort()
             variables = sympify(variable_strings)
