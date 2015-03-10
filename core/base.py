@@ -204,10 +204,18 @@ class Point(NAGobject):
             newcoords.append(real + I*imag)
             
         return cls(newcoords)
+
+    def insert(self, index, item):
+        if not scalar_num(item):
+            msg = "only takes scalar number types"
+            raise TypeError(msg)
+        coordinates = list(self._coordinates)
+        coordinates.insert(index, item)
+        self._coordinates = spmatrix(coordinates)
     
-    def is_zero(self, tol=TOL):
+    def is_zero(self, tol=TOL*10):
         coordinates = self._coordinates
-        summa = sum([abs(c) for c in coordinates])
+        summa = sum([abs(c)**2 for c in coordinates])**0.5
         return summa < tol
     
     def normalized(self):
@@ -217,6 +225,13 @@ class Point(NAGobject):
         coordinates = self._coordinates
         return self.__class__(coordinates.normalized())
     
+    def pop(self, index=-1):
+        coordinates = list(self._coordinates)
+        popped = coordinates.pop(index)
+        self._coordinates = spmatrix(coordinates)
+        
+        return popped
+
     def rational(self):
         cls = self.__class__
         coordinates = self._coordinates
@@ -237,7 +252,7 @@ class Point(NAGobject):
         
     @property
     def coordinates(self):
-        return self._coordinates
+        return list(self._coordinates)
     
     @property
     def is_real(self):
@@ -251,8 +266,6 @@ class AffinePoint(Point):
     """
     def __init__(self, coordinates):
         super(AffinePoint, self).__init__(coordinates)
-        
-        self._dim = len(self._coordinates)
         
     def __repr__(self):
         coordinates = list(self._coordinates)
@@ -297,13 +310,13 @@ class AffinePoint(Point):
     
     @property
     def dim(self):
-        return self._dim
+        return len(self._coordinates)
     
 class ProjectivePoint(Point):
     """
     Point object living in affine space
     """
-    def __init__(self, coordinates, tol=TOL):
+    def __init__(self, coordinates, tol=TOL*10):
         super(ProjectivePoint, self).__init__(coordinates)
         
         if self.is_zero(tol):
@@ -459,7 +472,7 @@ class ProjectivePoint(Point):
     
     @property
     def dim(self):
-        return self._dim
+        return len(self._coordinates)-1
     @property
     def tol(self):
         return self._tol

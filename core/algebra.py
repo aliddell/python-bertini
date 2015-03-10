@@ -2,7 +2,7 @@ from sympy import I, Matrix as spmatrix, sympify, zeros
 
 from naglib.startup import TOL
 from naglib.exceptions import BertiniError, NonPolynomialException, NonHomogeneousException
-from naglib.core.base import NAGobject, scalar_num, AffinePoint
+from naglib.core.base import NAGobject, scalar_num, Point, AffinePoint
         
 class PolynomialSystem(NAGobject):
     """
@@ -445,6 +445,8 @@ class PolynomialSystem(NAGobject):
             raise ValueError(msg)
         elif len(parpt) != len(parameters):
             msg = "point {0} is not a valid parameter for {1}".format(parpt, self)
+
+        parpt = reduce(lambda x,y: x.cat(y), parpt)
         
         varsubs = dict(zip(variables, varpt) + zip(parameters, parpt))
         
@@ -509,6 +511,41 @@ class PolynomialSystem(NAGobject):
         res = PolynomialSystem(res_polys)
             
         return res
+
+    def fix_parameters(self, parsubs):
+        """
+        Substitute parsubs in for parameters
+        """
+        polynomials = self._polynomials
+        parameters = self._parameters
+        if type(parsubs) == dict:
+            toreplace    = parsubs.keys()
+            replacements = parsubs.values()
+        elif len(parsubs) > len(parameters):
+            toreplace    = parameters
+            replacements = parsubs[:len(parameters)]
+        elif len(parsubs) < len(parameters):
+            toreplace    = parameters[:len(parsubs)]
+            replacements = parsubs
+        else:
+            toreplace    = parameters
+            replacements = parsubs
+        
+        tosub = dict()
+        for p,q in zip(toreplace,replacements):
+            if not scalar_num(q) and len(q) > 1:
+                msg = 'cannot substitute {0}'.format(q)
+                raise TypeError(msg)
+            if isinstance(q, Point):
+                q = q.coordinates[0]
+            tosub[p] = q
+        polynomials = polynomials.subs(tosub)
+        parameters = set(parameters).difference(set(toreplace))
+        if parameters:
+            parameters = sorted([str(p) for p in parameters])
+            parameters = sympify(parameters)
+        self._parameters = parameters
+        self._polynomials = polynomials
     
     def pop(self, index=-1):
         polynomials = list(self._polynomials)

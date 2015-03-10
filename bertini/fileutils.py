@@ -50,8 +50,8 @@ def parse_witness_data(filename):
             lines = lines[1:]
             pt = []
             for k in range(num_vars):
-                coord = lines[k].split(' ')
-                pt.append(Float(coord[0], DPS) + I*Float(coord[1], DPS))
+                real,imag = lines[k].split(' ')
+                pt.append(Float(real, max(len(real),DPS)) + I*Float(imag, max(len(real), DPS)))
             pt = spmatrix(pt)
             lines = lines[num_vars:]
             # the next point is the last approximation of the point
@@ -60,8 +60,8 @@ def parse_witness_data(filename):
             lines = lines[1:]
             approx_pt = []
             for k in range(num_vars):
-                coord = lines[k].split(' ')
-                approx_pt.append(Float(coord[0], DPS) + I*Float(coord[1], DPS))
+                real,imag = lines[k].split(' ')
+                approx_pt.append(Float(real, max(len(real),DPS)) + I*Float(imag, max(len(real), DPS)))
 
             lines = lines[num_vars:]
             condition_number = float(lines[0])
@@ -121,7 +121,10 @@ def parse_witness_data(filename):
             if num_format == INT:
                 A = [Integer(a[0]) + I*Integer(a[1]) for a in A]
             elif num_format == DOUBLE:
-                A = [Float(a[0], DPS) + I*Float(a[1], DPS) for a in A]
+                for j in range(len(A)):
+                    a = A[j]
+                    real,imag = a.split(' ')
+                    A[j] = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(real), DPS))
             elif num_format == RATIONAL:
                 A = [Rational(a[0]) + I*Rational(a[1]) for a in A]
             A = [A[j:j+num_cols] for j in range(0,AW_size,num_cols)]
@@ -140,7 +143,10 @@ def parse_witness_data(filename):
         if num_format == INT:
             H = [Integer(h[0]) + I*Integer(h[1]) for h in H]
         elif num_format == DOUBLE:
-            H = [Float(h[0], DPS) + I*Float(h[1], DPS) for h in H]
+            for j in range(len(H)):
+                h = H[j]
+                real,imag = h.split(' ')
+                H[j] = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(real),DPS))
         elif num_format == RATIONAL:
             H = [Rational(h[0]) + I*Rational(h[1]) for h in H]
 
@@ -153,7 +159,8 @@ def parse_witness_data(filename):
         if num_format == INT:
             hvc = Integer(hvc[0]) + I*Integer(hvc[1])
         elif num_format == DOUBLE:
-            hvc = Float(hvc[0], DPS) + I*Float(hvc[1], DPS)
+            real,imag = hvc
+            hvc = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(imag),DPS))
         elif num_format == RATIONAL:
             hvc = Rational(hvc[0]) + I*Rational(hvc[1])
 
@@ -175,7 +182,9 @@ def parse_witness_data(filename):
             if num_format == INT:
                 B = [Integer(b[0]) + I*Integer(b[1]) for b in B]
             elif num_format == DOUBLE:
-                B = [Float(b[0], DPS) + I*Float(b[1], DPS) for b in B]
+                for j in range(len(B)):
+                    real,imag = B[j]
+                    B[j] = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(imag),DPS))
             elif num_format == RATIONAL:
                 B = [Rational(b[0]) + I*Rational(b[1]) for b in B]
             B = [B[j:j+num_cols] for j in range(0,B_size,num_cols)]
@@ -190,7 +199,9 @@ def parse_witness_data(filename):
         if num_format == INT:
             p = [Integer(q[0]) + I*Integer(q[1]) for q in p]
         elif num_format == DOUBLE:
-            p = [Float(q[0], DPS) + I*Float(q[1], DPS) for q in p]
+            for j in range(len(p)):
+                real,imag = p[j]
+                p[j] = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(imag),DPS))
         elif num_format == RATIONAL:
             p = [Rational(q[0]) + I*Rational(q[1]) for q in p]
 
@@ -227,8 +238,9 @@ def parselines(lines, tol=TOL, projective=False, as_set=False):
         point = [resplit(r'\s+', p) for p in point]
         newpoint = []
         for p in point:
-            real = Float(p[0], DPS)
-            imag = Float(p[1], DPS)
+            real,imag = p
+            real = Float(real, max(len(real),DPS))
+            imag = Float(imag, max(len(imag),DPS))
 
             if abs(real) < tol:
                 real = 0
@@ -281,7 +293,7 @@ def fprint(points, filename=''):
     numpoints = len(points)
     print('{0}\n'.format(numpoints), file=fh)
     for p in points:
-        for coordinate in p:
+        for coordinate in p.coordinates:
             coordinate = sympify(coordinate)
             real, imag = coordinate.as_real_imag()
             print('{0} {1}'.format(real, imag), file=fh)
