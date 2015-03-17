@@ -74,6 +74,8 @@ def parse_witness_data(filename):
             pt_type = int(lines[4])
             multiplicity = int(lines[5])
             component_number = int(lines[6])
+            if component_number == -1:
+                raw_input(filename + ' has strange witness_data')
             deflations = int(lines[7])
             lines = lines[8:]
             pts.append({'coordinates':pt,

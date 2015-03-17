@@ -12,7 +12,7 @@ class AffineInfinityException(NAGlibBaseException):
     """
     """
     def __init__(self, message):
-        super(InfinityException, self).__init__(message)
+        super(AffineInfinityException, self).__init__(message)
     
 class BertiniError(Exception):
     """
