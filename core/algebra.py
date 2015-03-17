@@ -92,8 +92,11 @@ class PolynomialSystem(NAGobject):
                 raise ValueError(msg)
             
             self._homvar = spmatrix(homvar)
+            self._domain = len(self._variables) - 1
         else:
             self._homvar = spmatrix()
+            self._domain = len(self._variables)
+            
             
         d = []
         params = list(self._parameters)
@@ -445,8 +448,9 @@ class PolynomialSystem(NAGobject):
             raise ValueError(msg)
         elif len(parpt) != len(parameters):
             msg = "point {0} is not a valid parameter for {1}".format(parpt, self)
-
-        parpt = reduce(lambda x,y: x.cat(y), parpt)
+        
+        if parpt:
+            parpt = reduce(lambda x,y: x.cat(y), parpt)
         
         varsubs = dict(zip(variables, varpt) + zip(parameters, parpt))
         
@@ -715,7 +719,7 @@ class PolynomialSystem(NAGobject):
         ps = PolynomialSystem(psubs)
         
         return ps
-        
+    
     @property
     def polynomials(self):
         return self._polynomials

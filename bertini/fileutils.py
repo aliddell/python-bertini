@@ -10,6 +10,9 @@ from naglib.startup import TOL, DPS
 from naglib.core import AffinePoint, ProjectivePoint, WitnessPoint
 from naglib.core.misc import striplines
 
+def dps(s):
+    return max(DPS, len(s))
+
 # read utils
 
 def parse_witness_data(filename):
@@ -51,7 +54,7 @@ def parse_witness_data(filename):
             pt = []
             for k in range(num_vars):
                 real,imag = lines[k].split(' ')
-                pt.append(Float(real, max(len(real),DPS)) + I*Float(imag, max(len(real), DPS)))
+                pt.append(Float(real, dps(real)) + I*Float(imag, dps(imag)))
             pt = spmatrix(pt)
             lines = lines[num_vars:]
             # the next point is the last approximation of the point
@@ -61,7 +64,7 @@ def parse_witness_data(filename):
             approx_pt = []
             for k in range(num_vars):
                 real,imag = lines[k].split(' ')
-                approx_pt.append(Float(real, max(len(real),DPS)) + I*Float(imag, max(len(real), DPS)))
+                approx_pt.append(Float(real, dps(real)) + I*Float(imag, dps(imag)))
 
             lines = lines[num_vars:]
             condition_number = float(lines[0])
@@ -124,7 +127,7 @@ def parse_witness_data(filename):
                 for j in range(len(A)):
                     a = A[j]
                     real,imag = a.split(' ')
-                    A[j] = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(real), DPS))
+                    A[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
             elif num_format == RATIONAL:
                 A = [Rational(a[0]) + I*Rational(a[1]) for a in A]
             A = [A[j:j+num_cols] for j in range(0,AW_size,num_cols)]
@@ -146,7 +149,7 @@ def parse_witness_data(filename):
             for j in range(len(H)):
                 h = H[j]
                 real,imag = h.split(' ')
-                H[j] = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(real),DPS))
+                H[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
         elif num_format == RATIONAL:
             H = [Rational(h[0]) + I*Rational(h[1]) for h in H]
 
@@ -160,7 +163,7 @@ def parse_witness_data(filename):
             hvc = Integer(hvc[0]) + I*Integer(hvc[1])
         elif num_format == DOUBLE:
             real,imag = hvc
-            hvc = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(imag),DPS))
+            hvc = Float(real, dps(real)) + I*Float(imag, dps(imag))
         elif num_format == RATIONAL:
             hvc = Rational(hvc[0]) + I*Rational(hvc[1])
 
@@ -184,7 +187,7 @@ def parse_witness_data(filename):
             elif num_format == DOUBLE:
                 for j in range(len(B)):
                     real,imag = B[j]
-                    B[j] = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(imag),DPS))
+                    B[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
             elif num_format == RATIONAL:
                 B = [Rational(b[0]) + I*Rational(b[1]) for b in B]
             B = [B[j:j+num_cols] for j in range(0,B_size,num_cols)]
@@ -201,7 +204,7 @@ def parse_witness_data(filename):
         elif num_format == DOUBLE:
             for j in range(len(p)):
                 real,imag = p[j]
-                p[j] = Float(real, max(len(real),DPS)) + I*Float(imag, max(len(imag),DPS))
+                p[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
         elif num_format == RATIONAL:
             p = [Rational(q[0]) + I*Rational(q[1]) for q in p]
 
@@ -239,8 +242,8 @@ def parselines(lines, tol=TOL, projective=False, as_set=False):
         newpoint = []
         for p in point:
             real,imag = p
-            real = Float(real, max(len(real),DPS))
-            imag = Float(imag, max(len(imag),DPS))
+            real = Float(real, dps(real))
+            imag = Float(imag, dps(imag))
 
             if abs(real) < tol:
                 real = 0

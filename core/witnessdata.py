@@ -124,7 +124,7 @@ class WitnessSet(NAGobject):
         """Initialize the WitnessSet
         
         Keyword arguments:
-        polynomials -- PolynomialSystem, system on which all the points vanish
+        system -- PolynomialSystem, system on which all the points vanish
         slice -- LinearSystem, system defining a generic linear space
         witness_points -- iterable of WitnessPoint objects,  witness point set, V(f) \cap V(L)
         """
