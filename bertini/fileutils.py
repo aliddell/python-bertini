@@ -6,6 +6,7 @@ from sys import stderr, stdout
 
 from sympy import I, Integer, Float, Rational, Matrix as spmatrix, sympify
 
+from naglib.exceptions import UnclassifiedException
 from naglib.startup import TOL, DPS
 from naglib.core import AffinePoint, ProjectivePoint, WitnessPoint
 from naglib.core.misc import striplines
@@ -75,7 +76,8 @@ def parse_witness_data(filename):
             multiplicity = int(lines[5])
             component_number = int(lines[6])
             if component_number == -1:
-                raw_input(filename + ' has strange witness_data')
+                msg = "components in {0} have unclassified points".format(filename)
+                raise UnclassifiedException(msg)
             deflations = int(lines[7])
             lines = lines[8:]
             pts.append({'coordinates':pt,

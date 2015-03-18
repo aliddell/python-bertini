@@ -9,6 +9,7 @@ from tempfile import mkdtemp
 from sympy import sympify, Matrix as spmatrix
 
 from naglib import TEMPDIR as basedir
+from naglib.exceptions import UnclassifiedException
 from naglib.core import IrreducibleComponent, AffinePoint, ProjectivePoint, WitnessPoint, WitnessSet
 from naglib.core.algebra import LinearSlice
 from naglib.core.misc import striplines
@@ -29,7 +30,10 @@ def get_components(dirname, system):
     homvar  = homsys.homvar
     
     witness_file = dirname + '/witness_data'
-    witness_data,wdinfo = parse_witness_data(witness_file)
+    try:
+        witness_data,wdinfo = parse_witness_data(witness_file)
+    except UnclassifiedException:
+        raise
     
     components = []
     
@@ -49,17 +53,8 @@ def get_components(dirname, system):
             slice = None
         if comp_isprojective and system.homvar:
             dim = proj_dim - codim
-            #if slice is not None:
-                #slice = sympify(slice.tolist())
         elif comp_isprojective: # and not sys_homvar
             dim = proj_dim - codim - 1
-            #if slice is not None:
-                #homcol = slice.column(0)
-                #B1 = slice.tolist()
-                #for row in range(len(B1)):
-                    #B1[row] = spmatrix(B1[row][1:])
-                    #B1[row] = list(B1[row]/homcol[row])
-                #slice = spmatrix(sympify(B1))
             
         dim_list = {}
         

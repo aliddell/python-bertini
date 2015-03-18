@@ -36,8 +36,8 @@ class NoBertiniException(NAGlibBaseException):
     Raise NoBertiniException when Bertini can't be located on the system
     """
     def __init__(self):
-        msg = "you don't seem to have Bertini installed anywhere I can find it"
-        super(NoBertiniException, self).__init__(msg)
+        message = "you don't seem to have Bertini installed anywhere I can find it"
+        super(NoBertiniException, self).__init__(message)
     
 class NonPolynomialException(NAGlibBaseException):
     """
@@ -58,6 +58,12 @@ class NonHomogeneousException(NAGlibBaseException):
     """
     def __init__(self, message):
         super(NonHomogeneousException, self).__init__(message)
+        
+class UnclassifiedException(NAGlibBaseException):
+    """
+    """
+    def __init__(self, message):
+        super(UnclassifiedException, self).__init__(message)
         
 class WitnessDataException(NAGlibBaseException):
     """
