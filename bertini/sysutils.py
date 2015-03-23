@@ -64,7 +64,7 @@ class BertiniRun(NAGobject):
     #TTPROJECTION = 5
     #TTSTAB = 6
     #TTREGEN = 7
-    def __init__(self, system, **kwargs): #start=(), startp=(), finalp=(), config={}, stdin=None):
+    def __init__(self, system, start=(), startp=(), finalp=(), config={}, stdin=None):   
         from tempfile import mkdtemp
         self._dirname = mkdtemp(prefix=TEMPDIR)
         self._bertini = BERTINI
