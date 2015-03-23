@@ -289,8 +289,6 @@ def fprint(points, filename=''):
     Keyword arguments:
     points   -- numeric iterable, the points to print
     filename -- optional string, path to filename
-    rational -- optional boolean, if True, use mpq, otherwise print float
-                currently not implemented because mpq is not really workable
     """
     if filename:
         fh = open(filename, 'w')
