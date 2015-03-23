@@ -1,7 +1,8 @@
 from __future__ import print_function
 
+from naglib.bertini.sysutils import BertiniRun
 from naglib.startup import TEMPDIR as basedir
-from naglib.core.base import NAGobject
+from naglib.core.base import NAGobject, Point, AffinePoint, ProjectivePoint
 from naglib.core.witnessdata import WitnessPoint, WitnessSet
 
 class IrreducibleComponent(NAGobject):
@@ -58,8 +59,40 @@ class IrreducibleComponent(NAGobject):
         #ocid = other.component_id
         #eq = (ssys == osys and sdim == odim and scid == ocid)
         
+    def contains(self, other):
+        """
+        Return True if self contains other
+        """
+        if type(other) not in (tuple, list, AffinePoint, ProjectivePoint):
+            msg = "cannot understand data type"
+            raise TypeError(msg)
+        elif isinstance(other, Point):
+            other = [other]
+        
+        numpoints = len(other)
+        from tempfile import mkdtemp
+        from naglib.bertini.fileutils import striplines, write_input, fprint
+        from naglib.bertini.sysutils import call_bertini
+        system = self._witness_set.system
+        dirname = mkdtemp(prefix=basedir)
+        inputf = dirname + '/input'
+        fprint(other, dirname + '/member_points')
+        config = {'filename':inputf, 'TrackType':3}
+        write_input(system, config)
+        self.write_witness(dirname)
+        call_bertini(inputf)
+        fh = open(dirname + '/output_membership', 'r')
+        lines = striplines(fh.readlines())
+        indices = [lines.index('Testing {0}'.format(i)) for i in range(numpoints)] + [len(lines)]
+        truevals = [False for i in range(numpoints)]
+        for i in range(numpoints):
+            if indices[i+1] - indices[i] > 4:
+               truevals[i] = True
+        
+        return truevals
+        
         #return eq
-    def equals(self, other, strict=True):
+    def equals(self, other):
         pass
     
     def sample(self, numpoints=1, usebertini=True):
@@ -69,7 +102,6 @@ class IrreducibleComponent(NAGobject):
         dim     = self._dim
         comp_id = self._component_id
         system  = self.witness_set.system
-        wdinfo  = self._wdinfo
         
         points = None
         if usebertini:
@@ -78,16 +110,12 @@ class IrreducibleComponent(NAGobject):
             from naglib.bertini.sysutils import call_bertini as call
             
             dirname = mkdtemp(prefix=basedir)
-            wdfile = dirname + '/witness_data'
             inputfile = dirname + '/input'
             instructions = dirname + '/instructions'
             sampled = dirname + '/sampled'
             
             # write out witness_data file
-            fh = open(wdfile, 'w')
-            for line in wdinfo:
-                print(line, file=fh)
-            fh.close()
+            self.write_witness(dirname)
             
             # instructions to Bertini (redirect stdin)
             fh = open(instructions, 'w')
@@ -108,6 +136,14 @@ class IrreducibleComponent(NAGobject):
         
         return points
     
+    def write_witness(self, dirname):
+        wdinfo = self._wdinfo
+        wdfile = dirname + '/witness_data'
+        fh = open(wdfile, 'w')
+        for line in wdinfo:
+            print(line, file=fh)
+        fh.close()
+            
     @property
     def system(self):
         return self._witness_set.system

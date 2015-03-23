@@ -52,41 +52,80 @@ def __proc_err_output(output):
 BERTINI = __has_bertini()
 
 class BertiniRun(NAGobject):
-    #TTEVALSYS = -4
-    #TTEVALSYSJAC = -3
-    #TTNEWTON = -2
-    #TTNEWTJAC = -1
-    #TTSOLVE = 0
-    #TTNID = 1
-    #TTSAMPLE = 2
-    #TTMEMBER = 3
-    #TTPRINT = 4
-    #TTPROJECTION = 5
-    #TTSTAB = 6
-    #TTREGEN = 7
-    def __init__(self, system, start=(), startp=(), finalp=(), config={}, stdin=None):   
+    TEVALP = -4
+    TEVALPJ = -3
+    TNEWTP = -2
+    TNEWTPJ = -1
+    TZERODIM = 0
+    TPOSDIM = 1
+    TSAMPLE = 2
+    TMEMTEST = 3
+    TPRINTP = 4
+    TPROJECT = 5
+    TISOSTAB = 6
+    TREGENEXT = 7
+    def __init__(self, system, tracktype=self.TZERODIM, config={}, **kwargs):
+        kkeys = kwargs.keys()
+        ckeys = [k.lower() for k in config.keys()]
+        msg = ''
+        if tracktype not in range(-4,8):
+            msg = 'specify an integer TrackType between -4 and 7 (inclusive)'
+            raise ValueError(msg)
+        if tracktype in (self.TEVALP, self.TEVALPJ, self.TNEWTP, self.TNEWTPJ, self.TMEMTEST) and 'points' not in kkeys:
+            msg = "specify a point or points to evaluate with the keyword argument `points'"
+        else:
+            self._points = kwargs['points']
+        if tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTP, self.TPROJECT, self.TREGENEXT) and 'component' not in kkeys:
+            msg = "specify a component with the keyword argument `component'"
+        else:
+            self._component = kwargs['component']
+        if tracktype == self.TPROJECT and 'projection' not in kkeys:
+            msg = "specify the variables onto which you wish to project with the keyword argument `projection'"
+        else:
+            self._projection = kwargs['projection']
+        if tracktype == self.TISOSTAB and 'point' not in kkeys:
+            msg = "specify a point to with the keyword argument `point'"
+        else:
+            self._point = kwargs['point']
+        if msg:
+            raise KeyError(msg)
+        
+        # parameter homotopy
+        if tracktype != self.TZERODIM and 'parameterhomotopy' in ckeys:
+            ckeys2 = config.keys()
+            for k in ckeys2:
+                if k.lower() == 'parameterhomotopy':
+                    phtpy = k
+                    break
+            if config[phtpy] > 0:
+                msg = 'ParameterHomotopy is only appropriate for zero-dimensional solves'
+                raise KeyError(msg)
+        
+        if 'start' in kkeys:
+            start = kwargs['start']
+            if type(start) not in (tuple, list):
+                start = [start]
+            self._start = start
+        if 'start_parameters' in kkeys:
+            startp = kwargs['start_parameters']
+            if type(startp) not in (tuple, list):
+                startp = [startp]
+            self._start_parameters = startp
+        if 'final_parameters' in kkeys:
+            finalp = kwargs['final_parameters']
+            if type(finalp) not in (tuple, list):
+                finalp = [finalp]
+            self._final_parameters = finalp
+            
         from tempfile import mkdtemp
         self._dirname = mkdtemp(prefix=TEMPDIR)
         self._bertini = BERTINI
         self._system = system
-        if start and type(start) not in (tuple, list):
-            start = [start]
-        self._start = start
-        if startp and type(startp) not in (tuple, list):
-            startp = [startp]
-        self._startparams = startp
-        if finalp and type(finalp) not in (tuple, list):
-            finalp = [finalp]
-        self._finalparams = finalp
-        if config and not hasattr(config, 'keys'):
-            msg = 'cannot understand keyword arguments'
-            raise TypeError(msg)
         self._config = config
-        self._stdin = stdin
         self._complete = False
-        self.__inputf = []
+        self._inputf = []
         
-    def __proc_err_output(self, output):
+    def _proc_err_output(self, output):
         lines = output.split('\n')
         dex = -1
         for l in lines:
@@ -101,7 +140,7 @@ class BertiniRun(NAGobject):
             # strip 'Bertini will now exit due to this error'
             return '\n'.join(lines[dex:-1])
         
-    def __recover_input(self):
+    def _recover_input(self):
         """
         Reads main_data and recovers the input file
         needed to reproduce a run
@@ -117,10 +156,15 @@ class BertiniRun(NAGobject):
             msg = 'no main_data file!'
             raise BertiniError(msg)
         inlines = lines[dex+1:]
+        while inlines[0] == '\n':
+            inlines = inlines[1:]
+            
+        dex = lines.index('END;\n')
+        inlines = inlines[:dex+1]        
         
         return inlines
         
-    def __write(self, ifile=False):
+    def _write(self, ifile=False):
         from os.path import exists
         from re import sub as resub
         
@@ -190,14 +234,14 @@ class BertiniRun(NAGobject):
             startfile = ''
         
         ### write the start_parameters file, if there are start parameters
-        startparams = self._startparams
+        startparams = self._start_parameters
         if startparams:
             from naglib.bertini.fileutils import fprint
             startpfile = dirname + '/start_parameters'
             fprint(startparams, startpfile)
        
        ### write the final_parameters file, if there are final parameters
-        finalparams = self._finalparams
+        finalparams = self._final_parameters
         if finalparams:
             from naglib.bertini.fileutils import fprint
             finalpfile = dirname + '/final_parameters'
@@ -209,7 +253,7 @@ class BertiniRun(NAGobject):
         if not self._complete:
             return self.run()
         else:
-            ifile = self.__inputf
+            ifile = self._inputf
             fh = open(self._dirname + '/input', 'w')
             for line in ifile:
                 fh.write(line)
@@ -222,7 +266,7 @@ class BertiniRun(NAGobject):
             raise(NoBertiniException)
         stdin = self._stdin
         dirname = self._dirname
-        input_file,startfile = self.__write()
+        input_file,startfile = self._write()
         
         if not startfile:
             arg = [cmd, input_file]
@@ -235,14 +279,14 @@ class BertiniRun(NAGobject):
         try:
             output = check_output(arg, stdin=stdin)
         except CalledProcessError as e:
-            msg = self.__proc_err_output(e.output)
+            msg = self._proc_err_output(e.output)
             raise BertiniError(msg)
 
         if stdin:
             stdin.close()
             
         self._complete = True
-        self.__inputf = self.__recover_input()
+        self._inputf = self._recover_input()
         return output
         
     @property
@@ -259,7 +303,7 @@ class BertiniRun(NAGobject):
         return self._dirname
     @property
     def inputf(self):
-        return self.__inputf
+        return self._inputf
 
 def call_bertini(input_file, start_file='', cmd=BERTINI, stdin=None):
     """
