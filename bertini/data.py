@@ -16,7 +16,7 @@ from naglib.core.misc import striplines
 from naglib.bertini.sysutils import call_bertini
 from naglib.bertini.fileutils import write_input, parse_witness_data
 
-def get_components(dirname, system):
+def get_components(system, witness_data):
     #variables = system.variables
     #sys_homvar = system.homvar
     if system.homvar:
@@ -29,11 +29,14 @@ def get_components(dirname, system):
     homvars = homsys.variables
     homvar  = homsys.homvar
     
-    witness_file = dirname + '/witness_data'
-    try:
-        witness_data,wdinfo = parse_witness_data(witness_file)
-    except UnclassifiedException:
-        raise
+    #witness_file = dirname + '/' + filename
+    #try:
+        #witness_data = parse_witness_data(witness_file)
+    #except UnclassifiedException:
+        #raise
+    
+    #if return_parsed:
+        #return witness_data
     
     components = []
     
@@ -76,7 +79,7 @@ def get_components(dirname, system):
         
         for comp_id in dim_list.keys():
             ws = WitnessSet(system.copy(), slice, dim_list[comp_id])
-            component = IrreducibleComponent(ws, dim, comp_id, wdinfo[:])
+            component = IrreducibleComponent(ws, codim, comp_id, wdinfo[:])
             components.append(component)
             
     return components

@@ -9,18 +9,18 @@ class IrreducibleComponent(NAGobject):
     """
     An irreducible component of an algebraic set
     """
-    def __init__(self, witness_set, dim, component_id, wdinfo=None):
+    def __init__(self, witness_set, codim, component_id, wdinfo=None):
         """
         Initialize the IrreducibleComponent object.
         
         Keyword arguments:
         witness_set  -- WitnessSet, the witness set describing this component
-        dim          -- int, the dimension of the component
+        codim        -- int, the codimension of the component
         component_id -- int, the component number for this dimension
         wdinfo       -- list, the lines of the witness_data file
         """
         self._witness_set = witness_set
-        self._dim = dim
+        self._codim = codim
         self._component_id = component_id
         self._degree = len(witness_set.witness_points)
         self._wdinfo = wdinfo
@@ -29,19 +29,19 @@ class IrreducibleComponent(NAGobject):
         """
         x.__str__() <==> str(x)
         """
-        dim = self._dim
+        codim = self._codim
         cid = self._component_id
         deg = self._degree
-        return '{0}-dimensional irreducible component ({2}) of degree {1}'.format(dim,deg,cid)
+        return '{0}-dimensional irreducible component ({2}) of degree {1}'.format(codim,deg,cid)
 
     def __repr__(self):
         """
         x.__repr__() <==> repr(x)
         """
-        dim = self._dim
+        codim = self._codim
         cid = self._component_id
         wst = self._witness_set
-        repstr = 'IrreducibleComponent({0},{1},{2})'.format(repr(wst),dim,cid)
+        repstr = 'IrreducibleComponent({0},{1},{2})'.format(repr(wst),codim,cid)
         return repstr
     
     #def __eq__(self, other):
@@ -99,7 +99,7 @@ class IrreducibleComponent(NAGobject):
         """
         Sample a point from self
         """
-        dim     = self._dim
+        dim     = self.dim
         comp_id = self._component_id
         system  = self.witness_set.system
         
@@ -136,26 +136,30 @@ class IrreducibleComponent(NAGobject):
         
         return points
     
-    def write_witness(self, dirname):
+    def write_witness(self, dirname, wdf='witness_data'):
         wdinfo = self._wdinfo
-        wdfile = dirname + '/witness_data'
+        wdfile = dirname + '/' + wdf
         fh = open(wdfile, 'w')
         for line in wdinfo:
             print(line, file=fh)
         fh.close()
-            
+    
     @property
-    def system(self):
-        return self._witness_set.system
+    def codim(self):
+        return self._codim
+    @property
+    def component_id(self):
+        return self._component_id
     @property
     def degree(self):
         return self._degree
     @property
     def dim(self):
-        return self._dim
+        variables = self.system.variables
+        return len(variables) - self._codim
     @property
-    def component_id(self):
-        return self._component_id
+    def system(self):
+        return self._witness_set.system
     @property
     def witness_set(self):
         return self._witness_set

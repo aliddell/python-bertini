@@ -106,20 +106,15 @@ class PolynomialSystem(NAGobject):
         # keep parameters out of degree calculation
         for poly in self._polynomials:
             p = poly.subs(paramsubs)
-            if p.is_number:
+            if p.is_number: # p should never be a number, but...
                 deg = 0
             else:
-                deg = p.as_poly(domain='CC').total_degree()
+                polyp = p.as_poly(domain='CC')
+                deg = polyp.total_degree()
             # check if polynomial is homogeneous
-            if self._homvar:
-                terms = p.as_ordered_terms()
-                for t in terms:
-                    if t.is_number and deg != 0:
-                        msg = "polynomial {0} is not homogeneous".format(p)
-                        raise NonHomogeneousException(msg)
-                    elif t.is_number:
-                        pass
-                    elif t.as_poly(domain='CC').total_degree() != deg:
+                if self._homvar:
+                    polyp = p.as_poly(domain='CC')
+                    if not polyp.is_homogeneous:
                         msg = "polynomial {0} is not homogeneous".format(p)
                         raise NonHomogeneousException(msg)
             d.append(deg)
@@ -456,38 +451,23 @@ class PolynomialSystem(NAGobject):
         
         return AffinePoint(polynomials.evalf(subs=varsubs))
         
-    def homogenize(self):
+    def homogenize(self, homvar):
         """
         Homogenize the system
         
         If already homogeneous, return self
         """
-        polynomials = [p.expand() for p in self._polynomials]
+        polynomials = [p.as_poly(domain='CC') for p in self._polynomials]
         variables = list(self._variables)
         parameters = list(self._parameters)
         degree = self.degree
         
         if self._homvar:
             return self
-        
-        # create a new homogenizing variable
-        p0 = sympify('p')
-        while p0 in variables or p0 in parameters:
-            p0 = str(p0)
-            p0 += '0'
-            p0 = sympify(p0)
-            # shouldn't last too long
-        
-        varsubs = [v/p0 for v in variables]
-        varsubs = zip(variables, varsubs)
-        
-        homvars = [p0] + variables
-        hompolys = []
-        for p in polynomials:
-            d = p.as_poly(domain='CC').total_degree()
-            hp = (p0**d * p.subs(varsubs)).expand()
-            hompolys.append(hp)
-        return PolynomialSystem(hompolys, homvars, parameters, p0)
+                
+        homvars = [homvar] + variables
+        hompolys = [p.homogenize(homvar).as_expr() for p in polynomials]
+        return PolynomialSystem(hompolys, homvars, parameters, homvar)
         
     def jacobian(self):
         """

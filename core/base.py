@@ -444,8 +444,10 @@ class ProjectivePoint(Point):
             raise ExitSpaceError(msg)
     
     def at_infinity(self, tol=TOL):
-        c1 = self._coordinates[0]
-        return abs(c1) < tol
+        coordinates = self._coordinates
+        c0 = coordinates[0]
+        div_coord = [c0/c for c in coordinates[1:]]
+        return sum([abs(c)**2 for c in div_coord])**(0.5) < tol
     
     def canonical(self):
         """
