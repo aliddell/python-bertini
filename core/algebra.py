@@ -464,7 +464,8 @@ class PolynomialSystem(NAGobject):
         
         if self._homvar:
             return self
-                
+        
+        homvar = sympify(homvar)
         homvars = [homvar] + variables
         hompolys = [p.homogenize(homvar).as_expr() for p in polynomials]
         return PolynomialSystem(hompolys, homvars, parameters, homvar)
@@ -608,80 +609,30 @@ class PolynomialSystem(NAGobject):
         
         if usebertini:
             from tempfile import mkdtemp
-            from naglib import TEMPDIR as basedir
-            from naglib.bertini.sysutils import call_bertini
-            from naglib.bertini.fileutils import write_input, read_points, fprint
-            from naglib.bertini.data import compute_NID
+            from naglib.bertini.sysutils import BertiniRun
             
-            if len(variables) > len(polynomials): # underdetermined
-                return compute_NID(self)
-            elif parameters and not start_params and not final_params:
-                dirname  = mkdtemp(prefix=basedir)
-                filename = dirname + '/input'
-                config   = {'filename': filename,
-                            'TrackType': 0,
-                            'ParameterHomotopy':1}
-                
-                write_input(self, config)
-                call_bertini(filename)
-                points = read_points(dirname + '/finite_solutions', as_set=False)
-                sp = read_points(dirname + '/start_parameters', as_set=False)
-                
-                return points, sp
-            elif parameters and not start_params:
-                dirname  = mkdtemp(prefix=basedir)
-                filename = dirname + '/input'
-                config   = {'filename': filename,
-                            'TrackType': 0,
-                            'ParameterHomotopy':1}
-                write_input(self, config)
-                
-                call_bertini(filename)
-                
-                start_params = read_points(dirname + '/start_parameters', as_set=False)
-                
-                config   = {'filename': filename,
-                            'TrackType': 0,
-                            'ParameterHomotopy':2}
-                write_input(self, config)
-                
-                fprint(final_params, dirname + '/final_parameters')
-                
-                call_bertini(filename)
-                
-                points = read_points(dirname + '/finite_solutions', as_set=False)
-                return points, start_params
-            elif parameters and not final_params:
-                return self.subs(zip(parameters, start_params)).solve()
-            elif parameters and not start:
-                raise(BertiniError("'start' does not exist!!!"))
-            elif parameters: # and start_params and final_params
-                dirname  = mkdtemp(prefix=basedir)
-                filename = dirname + '/input'
-                config   = {'filename': filename,
-                            'TrackType': 0,
-                            'ParameterHomotopy':2}
-                
-                fprint(start, dirname + '/start')
-                fprint(start_params, dirname + '/start_parameters')
-                fprint(final_params, dirname + '/final_parameters')
-
-                write_input(self, config)
-                call_bertini(filename)
-                points = read_points(dirname + '/finite_solutions', as_set=False)
-                
-                return points
+            if len(variables) > len(polynomials) or self.rank() < len(polynomials): # underdetermined
+                solve_run = BertiniRun(self, 1)
+                return solve_run.run()
+            elif parameters:
+                if start_params and final_params:
+                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':2},start_parameters=start_params,final_parameters=final_params)
+                    return solve_run.run()
+                elif start_params:
+                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':2},start_parameters=start_params)
+                    return solve_run.run()
+                elif final_params:
+                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':1})
+                    solutions,start_params = solve_run.run()
+                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':2},start_parameters=start_params,final_parameters=final_params)
+                    solutions = solve_run.run()
+                    return solutions,start_params
+                else:
+                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':1})
+                    return solve_run.run()
             else:
-                dirname  = mkdtemp(prefix=basedir)
-                filename = dirname + '/input'
-                config   = {'filename': filename,
-                            'TrackType': 0}
-                
-                write_input(self, config)
-                call_bertini(filename)
-                points = read_points(dirname + '/finite_solutions', as_set=False)
-                
-                return points
+                solve_run = BertiniRun(self,0)
+                return solve_run.run()
         else:
             msg = "nothing to use yet but Bertini"
             raise NotImplementedError(msg)
@@ -784,7 +735,7 @@ class LinearSlice(NAGobject):
         """
         x.__repr__() <==> repr(x)
         """
-        coeffs = self._coeffs
+        coeffs = self._coeffs.n()
         variables = self._variables
         homvar = self._homvar
         repstr = 'LinearSlice({0},{1},{2})'.format(coeffs, variables, homvar)

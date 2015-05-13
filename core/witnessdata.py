@@ -24,26 +24,30 @@ class WitnessPoint(Point):
         elif isinstance(coordinates, ProjectivePoint):
             self._is_projective = True
             
-        # sanity check projective point
-        if self._is_projective:
-            summa = sum([abs(c) for c in self._coordinates])
-            if summa < TOL:
-                raise ExitSpaceError('{0} is not in projective space'.format(list(self._coordinates)))
+        # TODO: sanity check projective point
 
     def __repr__(self):
         """
         x.__repr__() <==> repr(x)
         """
-        floatme = self.float()
-        coordinates = floatme._coordinates
-        cid = floatme._component_id
-        is_projective = floatme._is_projective
+        coordinates = [str(c.n()) for c in self._coordinates]
+        component_id = self._component_id
+        is_projective = self._is_projective
         
         if is_projective:
-            coorstr = 'ProjectivePoint([' + ','.join([str(c) for c in coordinates]) + '])'
+            repstr = 'ProjectivePoint(['
+            if len(coordinates) > 6:
+                repstr += ', '.join(coordinates[:3] + ['...'] + coordinates[-3:]) + '])'
+            else:
+                repstr = 'ProjectivePoint({0})'.format(', '.join(coordinates))
         else:
-            coorstr = 'AffinePoint([' + ','.join([str(c) for c in coordinates]) + '])'
-        repstr = 'WitnessPoint({0},{1})'.format(coorstr,cid)
+            repstr = 'AffinePoint(['
+            if len(coordinates) > 6:
+                repstr += ', '.join(coordinates[:3] + ['...'] + coordinates[-3:]) + '])'
+            else:
+                repstr = 'AffinePoint({0})'.format(', '.join(coordinates))
+        
+        repstr = 'WitnessPoint({0},{1})'.format(repstr, component_id)
         
         return repstr
     
@@ -120,7 +124,7 @@ class WitnessSet(NAGobject):
     """
     A witness set for a component
     """
-    def __init__(self, system, slice, witness_points):
+    def __init__(self, system, slice, witness_points, witness_data):
         """Initialize the WitnessSet
         
         Keyword arguments:
@@ -130,6 +134,7 @@ class WitnessSet(NAGobject):
         """
         self._system = system
         self._slice = slice
+        self._witness_data = witness_data
         try:
             self._witness_points = list(witness_points)
         except TypeError:
@@ -168,6 +173,9 @@ class WitnessSet(NAGobject):
     @property
     def slice(self):
         return self._slice
+    @property
+    def witness_data(self):
+        return self._witness_data
     @property
     def witness_points(self):
         return self._witness_points

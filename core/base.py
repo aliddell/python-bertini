@@ -268,8 +268,12 @@ class AffinePoint(Point):
         super(AffinePoint, self).__init__(coordinates)
         
     def __repr__(self):
-        coordinates = list(self._coordinates)
-        repstr = 'AffinePoint({0})'.format(coordinates)
+        coordinates = [str(c.n()) for c in self._coordinates]
+        repstr = 'AffinePoint(['
+        if len(coordinates) > 6:
+            repstr += ', '.join(coordinates[:3] + ['...'] + coordinates[-3:]) + '])'
+        else:
+            repstr = 'AffinePoint({0})'.format(', '.join(coordinates))
         
         return repstr
     
@@ -327,8 +331,12 @@ class ProjectivePoint(Point):
         self._tol = tol
         
     def __repr__(self):
-        coordinates = list(self._coordinates)
-        repstr = 'ProjectivePoint({0})'.format(coordinates)
+        coordinates = [str(c.n()) for c in self._coordinates]
+        repstr = 'ProjectivePoint(['
+        if len(coordinates) > 6:
+            repstr += ', '.join(coordinates[:3] + ['...'] + coordinates[-3:]) + '])'
+        else:
+            repstr = 'ProjectivePoint({0})'.format(', '.join(coordinates))
         
         return repstr
     

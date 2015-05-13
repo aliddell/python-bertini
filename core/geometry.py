@@ -9,7 +9,7 @@ class IrreducibleComponent(NAGobject):
     """
     An irreducible component of an algebraic set
     """
-    def __init__(self, witness_set, codim, component_id, wdinfo=None):
+    def __init__(self, witness_set, codim, component_id):
         """
         Initialize the IrreducibleComponent object.
         
@@ -17,13 +17,11 @@ class IrreducibleComponent(NAGobject):
         witness_set  -- WitnessSet, the witness set describing this component
         codim        -- int, the codimension of the component
         component_id -- int, the component number for this dimension
-        wdinfo       -- list, the lines of the witness_data file
         """
         self._witness_set = witness_set
         self._codim = codim
         self._component_id = component_id
         self._degree = len(witness_set.witness_points)
-        self._wdinfo = wdinfo
 
     def __str__(self):
         """
@@ -43,21 +41,6 @@ class IrreducibleComponent(NAGobject):
         wst = self._witness_set
         repstr = 'IrreducibleComponent({0},{1},{2})'.format(repr(wst),codim,cid)
         return repstr
-    
-    #def __eq__(self, other):
-        #"""
-        #x.__eq__(y) <==> x == y
-        #"""
-        #if not isinstance(other, IrreducibleComponent):
-            #return False
-        
-        #ssys = self._system
-        #sdim = self._dim
-        #scid = self._component_id
-        #osys = other.system
-        #odim = other.dim
-        #ocid = other.component_id
-        #eq = (ssys == osys and sdim == odim and scid == ocid)
         
     def contains(self, other):
         """
@@ -136,14 +119,6 @@ class IrreducibleComponent(NAGobject):
         
         return points
     
-    def write_witness(self, dirname, wdf='witness_data'):
-        wdinfo = self._wdinfo
-        wdfile = dirname + '/' + wdf
-        fh = open(wdfile, 'w')
-        for line in wdinfo:
-            print(line, file=fh)
-        fh.close()
-    
     @property
     def codim(self):
         return self._codim
@@ -160,6 +135,9 @@ class IrreducibleComponent(NAGobject):
     @property
     def system(self):
         return self._witness_set.system
+    @property
+    def witness_data(self):
+        return self._witness_set._witness_data
     @property
     def witness_set(self):
         return self._witness_set
