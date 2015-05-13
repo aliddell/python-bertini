@@ -237,7 +237,8 @@ class BertiniRun(NAGobject):
                             'type':pt_type,
                             'multiplicity':multiplicity,
                             'component number':component_number,
-                            'deflations':deflations})
+                            'deflations':deflations,
+                            'precision':prec})
             codims[-1]['points'] = pts
 
         # -1 designates the end of witness points
