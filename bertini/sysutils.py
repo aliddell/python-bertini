@@ -218,7 +218,7 @@ class BertiniRun(NAGobject):
 
                 lines = lines[num_vars:]
                 condition_number = float(lines[0])
-                corank = float(lines[1]) # corank of Jacobian at this point
+                corank = int(lines[1]) # corank of Jacobian at this point
                 smallest_nonzero_singular = float(lines[2])
                 largest_zero_singular = float(lines[3])
                 pt_type = int(lines[4])
@@ -715,6 +715,7 @@ class BertiniRun(NAGobject):
         
         for i in range(nonempty_codims):
             wd_codim = codims[i]
+            print('wd_codim[{0}] = {1}'.format(i, wd_codim['codim']))
             fh.write('{0}\n'.format(wd_codim['codim']))
             codim_points = [p for p in wd_codim['points']]
             for p in codim_points:
