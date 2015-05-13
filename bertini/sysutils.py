@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-from os import chdir
-from os.path import dirname
 from subprocess import check_output, CalledProcessError
 
 from naglib.startup import TOL, TEMPDIR as basedir
@@ -122,10 +120,10 @@ class BertiniRun(NAGobject):
         msg = ''
         if not system.parameters and self._parameter_homotopy['arg'] > 0:
             msg = "you have attempted to define a parameter homotopy on a system with no parameters!"
-        elif system.parameters and self._parameter_homotopy['arg'] == 0:
+        elif system.parameters and self._parameter_homotopy['arg'] <= 0:
             msg = "a parameterized system requires ParameterHomotopy > 0"
         elif tracktype != self.TZERODIM and self._parameter_homotopy['arg'] > 0:
-            msg = "parameter homotopy only supported for zero-dimensional solves"
+            msg = "parameter homotopy only supported for zero-dimensional runs"
             
         if msg:
             raise KeyError(msg)
@@ -134,23 +132,28 @@ class BertiniRun(NAGobject):
             start = kwargs['start']
             if type(start) not in (tuple, list):
                 start = [start]
-            # this doesn't go in self._parameter_homotopy because other kinds of solves use start files
+            # this doesn't go in self._parameter_homotopy because other kinds of run use start files
             self._start = start
         if 'start_parameters' in kkeys:
             startp = kwargs['start_parameters']
             if type(startp) not in (tuple, list):
                 startp = [startp]
             self._parameter_homotopy['start parameters'] = startp
+        else:
+            startp = None
         if 'final_parameters' in kkeys:
             finalp = kwargs['final_parameters']
             if type(finalp) not in (tuple, list):
                 finalp = [finalp]
             self._parameter_homotopy['final parameters'] = finalp
+        else:
+            finalp = None
         
         # user did not specify start or final parameters
-        if 'parameterhomotopy' in ckeys and config[phtpy] > 1:
-            msg = "specify start and/or final parameters with the keyword arguments `start_parameters' and/or `final_parameters'"
-            raise KeyError(msg)
+        if 'parameterhomotopy' in ckeys and self._parameter_homotopy['arg'] > 1:
+            if not (startp or finalp):
+                msg = "specify start and/or final parameters with the keyword arguments `start_parameters' and/or `final_parameters'"
+                raise KeyError(msg)
             
         from tempfile import mkdtemp
         self._dirname = mkdtemp(prefix=basedir)
@@ -683,14 +686,14 @@ class BertiniRun(NAGobject):
     def _write_witness_data(self, witness_data, dirname, components=[], filename='witness_data'):
         """
         """
-        from sympy import Integer, Float, Rational
+        from sympy import Integer, Float
         fh = open(dirname + '/' + filename, 'w')
         
         if components:
             compids = [(c.codim, c.component_id) for c in components]
             codims = []
             for i in range(len(witness_data)):
-                wd = codims[i]
+                wd = witness_data[i]
                 codim  = wd['codim']
                 witness_points = []
                 for point in witness_data[i]['points']:
@@ -708,7 +711,6 @@ class BertiniRun(NAGobject):
         fh.write('{0}\n'.format(num_vars))
         fh.write('{0}\n'.format(nonempty_codims))
         
-        unique_codims = [c[0] for c in compids]
         for i in range(nonempty_codims):
             wd_codim = codims[i]
             fh.write('{0}\n'.format(wd_codim['codim']))
@@ -811,6 +813,8 @@ class BertiniRun(NAGobject):
             return self.run()
                 
     def run(self):
+        from os import chdir
+        
         cmd = self._bertini
         if not cmd:
             raise NoBertiniException()
