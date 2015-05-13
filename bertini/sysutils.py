@@ -715,7 +715,6 @@ class BertiniRun(NAGobject):
         
         for i in range(nonempty_codims):
             wd_codim = codims[i]
-            print('wd_codim[{0}] = {1}'.format(i, wd_codim['codim']))
             fh.write('{0}\n'.format(wd_codim['codim']))
             codim_points = [p for p in wd_codim['points']]
             fh.write('{0}\n'.format(len(codim_points)))
