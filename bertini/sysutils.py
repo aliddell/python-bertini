@@ -707,7 +707,7 @@ class BertiniRun(NAGobject):
             codims = witness_data
             
         nonempty_codims = len(codims)
-        num_vars = len(codims[0]['points']['coordinates'])
+        num_vars = len(codims[0]['points'][0]['coordinates'])
         fh.write('{0}\n'.format(num_vars))
         fh.write('{0}\n'.format(nonempty_codims))
         
