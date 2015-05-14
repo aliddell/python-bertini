@@ -88,7 +88,7 @@ class IrreducibleComponent(NAGobject):
         
         points = None
         if usebertini:
-            sample_run = BertiniRun(system, BertiniRun.TSAMPLE, sample=numpoints, components=[self])
+            sample_run = BertiniRun(system, BertiniRun.TSAMPLE, sample=numpoints, component=self)
             points = sample_run.run()
         else:
             msg = "nothing to use yet but Bertini"
