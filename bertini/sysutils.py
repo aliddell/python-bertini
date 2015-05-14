@@ -487,7 +487,6 @@ class BertiniRun(NAGobject):
             pass
         elif tracktype == self.TZERODIM:
             finites = dirname + '/finite_solutions'
-            reals = dirname + '/read_finite_solutions'
             startp = dirname + '/start_parameters'
             finite_solutions = read_points(finites, tol=tol, projective=projective)
             
@@ -510,20 +509,49 @@ class BertiniRun(NAGobject):
             
             return sampled
         elif tracktype == self.TMEMTEST:
+            from sympy import zeros
+            
             wdfile = dirname + '/witness_data'
             self._witness_data = self._parse_witness_data(wdfile)
             inmat = dirname + '/incidence_matrix'
             fh = open(inmat, 'r')
-            lines = [l.strip() for l in fh.readlines()]
+            lines = striplines(fh.readlines())
             fh.close()
             
+            testcodim = self._component.codim
+            testcid   = 0 # component_id should be 0 after write
+            
+            testp = self._start
+            if type(testp) not in (list, tuple):
+                testp = [testp]
+            numpoints = len(testp)
+            
             nonempty_codims = int(lines[0])
-            codims = {}
             lines = lines[1:]
-            for i in range(nonempty_codims):
-                codim, numcomponents = lines[0].split(' ')
-                codims[int(codim)] = int(numcomponents)
-                lines = lines[1:]
+            # gather nonempty codims with component count for each
+            ccounts = lines[:nonempty_codims]
+            lines = lines[nonempty_codims:]
+            
+            ccounts = [tuple(c.split(' ')) for c in ccounts]
+            # ordered list of codims with component ids, for matrix
+            cids = [(c[0], j) for c in ccounts for j in range(c[1])]
+            colcount = len(cids)
+            dex = cids.index((testcodim, testcid))
+            
+            inmat = zeros(numpoints, colcount)
+            for i in range(numpoints):
+                line = lines[i].split(' ')
+                row = [int(l) for l in line]
+                for j in range(colcount):
+                    inmat[i,j] = row[j]
+            
+            if numpoints == 1:
+                return inmat[0, dex] == 1
+            else:
+                ret = []
+                for i in range(numpoints):
+                    ret.append(inmat[i, dex] == 1)
+                return ret
                 
         elif tracktype == self.TPRINTP:
             pass
@@ -578,7 +606,10 @@ class BertiniRun(NAGobject):
         ### write out `start', `start_parameters', `final_parameters'
         if '_start' in dir(self):
             start = self._start
-            startfile = dirname + '/start'
+            if self._tracktype == self.TMEMTEST:
+                startfile = dirname + '/member_points'
+            else:
+                startfile = dirname + '/start'
             fprint(start, startfile)
         if self._parameter_homotopy:
             phtpy = self._parameter_homotopy
