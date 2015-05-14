@@ -714,8 +714,18 @@ class BertiniRun(NAGobject):
                     for p in points:
                         cn = p['component number']
                         if cn in cids:
-                            p['component number'] = cidmap[cn]
-                            cdict['points'].append(p)
+                            cdict['points'].append({
+                            'largest zero':p['largest zero'],
+                            'precision':p['precision'],
+                            'last approximation':p['last approximation'],
+                            'smallest nonzero':p['smallest nonzero'],
+                            'deflations':['deflations'],
+                            'component number':cidmap[cn],
+                            'multiplicity':p['multiplicity'],
+                            'corank':p['corank'],
+                            'coordinates':p['coordinates'],
+                            'condition number':p['condition number'],
+                            'type':p['type']})
                     
                     codims.append(cdict)
                     
