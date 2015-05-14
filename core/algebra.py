@@ -608,30 +608,29 @@ class PolynomialSystem(NAGobject):
         parameters  = self._parameters
         
         if usebertini:
-            from tempfile import mkdtemp
             from naglib.bertini.sysutils import BertiniRun
             
             if len(variables) > len(polynomials) or self.rank() < len(polynomials): # underdetermined
-                solve_run = BertiniRun(self, 1)
+                solve_run = BertiniRun(self, BertiniRun.TPOSDIM)
                 return solve_run.run()
             elif parameters:
                 if start_params and final_params:
-                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':2},start_parameters=start_params,final_parameters=final_params)
+                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':2},start_parameters=start_params,final_parameters=final_params)
                     return solve_run.run()
                 elif start_params:
-                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':2},start_parameters=start_params)
+                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':2},start_parameters=start_params)
                     return solve_run.run()
                 elif final_params:
-                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':1})
+                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':1})
                     solutions,start_params = solve_run.run()
-                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':2},start_parameters=start_params,final_parameters=final_params)
+                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':2},start_parameters=start_params,final_parameters=final_params)
                     solutions = solve_run.run()
                     return solutions,start_params
                 else:
-                    solve_run = BertiniRun(self,0,config={'ParameterHomotopy':1})
+                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':1})
                     return solve_run.run()
             else:
-                solve_run = BertiniRun(self,0)
+                solve_run = BertiniRun(self,BertiniRun.TZERODIM)
                 return solve_run.run()
         else:
             msg = "nothing to use yet but Bertini"

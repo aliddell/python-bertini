@@ -88,31 +88,8 @@ class IrreducibleComponent(NAGobject):
         
         points = None
         if usebertini:
-            from tempfile import mkdtemp
-            from naglib.bertini.fileutils import write_input, read_points
-            from naglib.bertini.sysutils import call_bertini as call
-            
-            dirname = mkdtemp(prefix=basedir)
-            inputfile = dirname + '/input'
-            instructions = dirname + '/instructions'
-            sampled = dirname + '/sampled'
-            
-            # write out witness_data file
-            self.write_witness(dirname)
-            
-            # instructions to Bertini (redirect stdin)
-            fh = open(instructions, 'w')
-            print('{0}'.format(dim), file=fh) # sample from dimension 'dim'
-            print('{0}'.format(comp_id), file=fh) # sample from component 'comp_id'
-            print('{0}'.format(numpoints), file=fh) # sample 'numpoints' points
-            print('0', file=fh) # write point to a file
-            print(sampled, file=fh) # write to file 'sampled'
-            fh.close()
-        
-            config = {'filename':inputfile, 'TrackType':2}
-            write_input(system=system, config=config)
-            call(input_file=inputfile, stdin=instructions)
-            points = read_points(sampled)
+            sample_run = BertiniRun(system, BertiniRun.TSAMPLE, sample=numpoints, components=[self])
+            points = sample_run.run()
         else:
             msg = "nothing to use yet but Bertini"
             raise NotImplementedError(msg)
