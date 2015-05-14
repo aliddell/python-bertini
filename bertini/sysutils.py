@@ -847,12 +847,13 @@ class BertiniRun(NAGobject):
         if not cmd:
             raise NoBertiniException()
         dirname = self._dirname
+        
+        input_file = self._write_files()
+        
         if exists(dirname + '/instructions'):
             stdin = dirname + '/instructions'
         else:
-            print("no stdin")
             stdin = None
-        input_file = self._write_files()
         
         arg = [cmd, input_file]
             
