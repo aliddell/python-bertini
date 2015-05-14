@@ -719,7 +719,7 @@ class BertiniRun(NAGobject):
                             'precision':p['precision'],
                             'last approximation':p['last approximation'],
                             'smallest nonzero':p['smallest nonzero'],
-                            'deflations':['deflations'],
+                            'deflations':p['deflations'],
                             'component number':cidmap[cn],
                             'multiplicity':p['multiplicity'],
                             'corank':p['corank'],
