@@ -714,6 +714,7 @@ class BertiniRun(NAGobject):
         fh.write('{0}\n'.format(nonempty_codims))
         
         for i in range(nonempty_codims):
+            ccounter = 0
             wd_codim = codims[i]
             fh.write('{0}\n'.format(wd_codim['codim']))
             codim_points = [p for p in wd_codim['points']]
@@ -738,9 +739,10 @@ class BertiniRun(NAGobject):
                 fh.write('{0}\n'.format(p['largest zero']))
                 fh.write('{0}\n'.format(p['type']))
                 fh.write('{0}\n'.format(p['multiplicity']))
-                fh.write('{0}\n'.format(p['component number']))
+                fh.write('{0}\n'.format(ccounter))
                 fh.write('{0}\n'.format(p['deflations']))
-            fh.write('-1\n\n') # -1 designates the end of witness points
+                ccounter += 1
+        fh.write('-1\n\n') # -1 designates the end of witness points
         
         h1 = codims[0]['H'][0]
         if type(h1) == Integer:
