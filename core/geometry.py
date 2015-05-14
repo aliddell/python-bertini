@@ -80,10 +80,8 @@ class IrreducibleComponent(NAGobject):
     
     def sample(self, numpoints=1, usebertini=True):
         """
-        Sample a point from self
+        Sample points from self
         """
-        dim     = self.dim
-        comp_id = self._component_id
         system  = self.witness_set.system
         
         points = None

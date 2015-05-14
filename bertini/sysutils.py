@@ -353,6 +353,8 @@ class BertiniRun(NAGobject):
             lines = lines[1:]
 
             p = lines[:p_size]
+            lines = lines[p_size:]
+            
             p = [q.split(' ') for q in p]
             if num_format == INT:
                 p = [Integer(q[0]) + I*Integer(q[1]) for q in p]
@@ -362,7 +364,7 @@ class BertiniRun(NAGobject):
                     p[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
             elif num_format == RATIONAL:
                 p = [Rational(q[0]) + I*Rational(q[1]) for q in p]
-
+            
             p = Matrix(p)
             codims[i]['A'] = A
             codims[i]['W'] = W
@@ -519,11 +521,10 @@ class BertiniRun(NAGobject):
             codims = {}
             lines = lines[1:]
             for i in range(nonempty_codims):
-                codim, cocount = lines[0].split(' ')
-                codims[int(codim)] = int(cocount)
+                codim, numcomponents = lines[0].split(' ')
+                codims[int(codim)] = int(numcomponents)
                 lines = lines[1:]
                 
-            
         elif tracktype == self.TPRINTP:
             pass
         elif tracktype == self.TPROJECT:
