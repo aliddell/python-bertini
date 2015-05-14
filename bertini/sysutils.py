@@ -560,6 +560,7 @@ class BertiniRun(NAGobject):
         
     def _write_files(self):
         from os.path import exists
+        from naglib.bertini.fileutils import fprint
         
         tracktype = self._tracktype
         dirname = self._dirname
@@ -579,7 +580,6 @@ class BertiniRun(NAGobject):
             startfile = dirname + '/start'
             fprint(start, startfile)
         if self._parameter_homotopy:
-            from naglib.bertini.fileutils import fprint
             phtpy = self._parameter_homotopy
             pkeys = phtpy.keys()
             if 'start parameters' in pkeys:
@@ -603,7 +603,7 @@ class BertiniRun(NAGobject):
                 self._write_instructions(instructions)
             elif tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTP, self.TPROJECT):
                 witness_data = component.witness_data
-                self._write_witness_data(witness_data, [component])
+                self._write_witness_data(witness_data, dirname, components=[component])
                 if tracktype == self.TSAMPLE:
                     sample = self._sample
                     instructions = [str(dim), str(cid), str(sample), '0', 'sampled']
@@ -709,6 +709,7 @@ class BertiniRun(NAGobject):
                              'points':[]}
                     
                     cids   = [c[1] for c in compids if c[0] == codim]
+                    # components may not have correct order
                     cidmap = dict([(cids[i], i) for i in range(len(cids))])
                     points = wd['points']
                     for p in points:
@@ -728,14 +729,6 @@ class BertiniRun(NAGobject):
                             'type':p['type']})
                     
                     codims.append(cdict)
-                    
-#                for point in witness_data[i]['points']:
-#                    component_id = point['component number']
-#                    if (codim, component_id) in compids:
-#                        witness_points.append(point)
-#                if witness_points:
-#                    wd['points'] = witness_points
-#                    codims.append(wd)
         else:
             codims = witness_data
             
@@ -745,7 +738,6 @@ class BertiniRun(NAGobject):
         fh.write('{0}\n'.format(nonempty_codims))
         
         for i in range(nonempty_codims):
-            ccounter = 0
             wd_codim = codims[i]
             fh.write('{0}\n'.format(wd_codim['codim']))
             codim_points = [p for p in wd_codim['points']]
@@ -772,7 +764,6 @@ class BertiniRun(NAGobject):
                 fh.write('{0}\n'.format(p['multiplicity']))
                 fh.write('{0}\n'.format(p['component number']))
                 fh.write('{0}\n'.format(p['deflations']))
-                ccounter += 1
         fh.write('-1\n\n') # -1 designates the end of witness points
         
         h1 = codims[0]['H'][0]
