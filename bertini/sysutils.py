@@ -606,13 +606,13 @@ class BertiniRun(NAGobject):
                 self._write_witness_data(witness_data, dirname, components=[component])
                 if tracktype == self.TSAMPLE:
                     sample = self._sample
-                    instructions = [str(dim), str(cid), str(sample), '0', 'sampled']
+                    instructions = [str(dim), '0', str(sample), '0', 'sampled']
                     self._write_instructions(instructions)
                 elif tracktype == self.TPRINTP:
-                    instructions = [str(dim), str(cid), 'points.out', 'sys.out']
+                    instructions = [str(dim), '0', 'points.out', 'sys.out']
                     self._write_instructions(instructions)
                 elif tracktype == self.TPROJECT:
-                    instructions = [str(dim), str(cid)]
+                    instructions = [str(dim), '0']
                     self._write_instructions(instructions)
         
                     ### write out projection information
@@ -840,16 +840,17 @@ class BertiniRun(NAGobject):
             return self.run()
                 
     def run(self):
-        from os import chdir
+        from os import chdir        
+        from os.path import exists
         
         cmd = self._bertini
         if not cmd:
             raise NoBertiniException()
-        from os.path import exists
         dirname = self._dirname
         if exists(dirname + '/instructions'):
             stdin = dirname + '/instructions'
         else:
+            print("no stdin")
             stdin = None
         input_file = self._write_files()
         
