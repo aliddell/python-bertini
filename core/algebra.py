@@ -608,11 +608,8 @@ class PolynomialSystem(NAGobject):
         if usebertini:
             from naglib.bertini.sysutils import BertiniRun
             
-            # numerical irreducible decomposition
-            if len(variables) > len(polynomials) or self.rank() < len(polynomials):
-                solve_run = BertiniRun(self, BertiniRun.TPOSDIM)
             # parameter homotopy
-            elif parameters:
+            if parameters:
                 if start_params and final_params:
                     solve_run = BertiniRun(self,
                                            tracktype=BertiniRun.TZERODIM,
@@ -626,6 +623,9 @@ class PolynomialSystem(NAGobject):
                     solve_run = BertiniRun(self,
                                            BertiniRun.TZERODIM,
                                            config={'ParameterHomotopy':1})
+            # numerical irreducible decomposition
+            elif len(variables) > len(polynomials) or self.rank() < len(polynomials):
+                solve_run = BertiniRun(self, BertiniRun.TPOSDIM)
             # isolated solutions
             else:
                 solve_run = BertiniRun(self, BertiniRun.TZERODIM)
