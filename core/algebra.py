@@ -597,12 +597,9 @@ class PolynomialSystem(NAGobject):
         """
         Solve the system. If non-square, return the NID
         
-        If the system has parameters and you don't supply
-        final parameters, solve the system with random
-        start parameters, return the solutions and the start parameters.
-        If you do supply final parameters, solve the system with 
-        random start parameters, then solve again and return the
-        start parameters
+        If the system has parameters and you do not supply any parameters,
+        perform ab initio run and return solutions along with start parameters.
+        Otherwise if you supply parameters, just return the solutions.
         """
         polynomials = self._polynomials
         variables   = self._variables
