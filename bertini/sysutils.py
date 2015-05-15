@@ -112,12 +112,12 @@ class BertiniRun(NAGobject):
         # parameter homotopy
         self._parameter_homotopy = {'key':'', 'arg':0}
         if 'parameterhomotopy' in ckeys:
+            print(config.keys())
             ckeys2 = config.keys()
             for k in ckeys2:
                 if k.lower() == 'parameterhomotopy':
                     self._parameter_homotopy['key'] = k
                     self._parameter_homotopy['arg'] = config[k] # in (0,1,2)
-                    print(self._parameter_homotopy)
                     break
                     
             del ckeys2
