@@ -80,7 +80,10 @@ class BertiniRun(NAGobject):
         if tracktype in (self.TEVALP, self.TEVALPJ, self.TNEWTP, self.TNEWTPJ, self.TMEMTEST, self.TISOSTAB) and 'start' not in kkeys:
             msg = "specify a point or points to evaluate with the keyword argument `start'"
         elif 'start' in kkeys:
-            self._start = kwargs['start']
+            start = kwargs['start']
+            if type(start) not in (list, tuple):
+                start = [start]
+            self._start = start
         ## component required
         if tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTP, self.TPROJECT, self.TREGENEXT) and 'component' not in kkeys:
             msg = "specify a component with the keyword argument `component'"

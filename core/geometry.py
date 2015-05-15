@@ -47,7 +47,7 @@ class IrreducibleComponent(NAGobject):
         """
         Return True if self contains other
         """
-        if not isinstance(other, Point):
+        if type(other) not in (list, tuple):
             msg = "cannot understand data type"
             raise TypeError(msg)
             
