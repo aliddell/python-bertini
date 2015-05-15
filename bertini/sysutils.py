@@ -825,8 +825,7 @@ class BertiniRun(NAGobject):
                         fh.write('{0} {1}\n'.format(real, imag))
                 for j in range(num_rows):
                     for k in range(num_cols):
-                        real, imag = W[j,k].as_real_imag()
-                        fh.write('{0} {1}\n'.format(real, imag))   
+                        fh.write('{0}\n'.format(W[j,k])) # W is an *integer* matrix
             else:
                 fh.write('1 0\n')
                 
