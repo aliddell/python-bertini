@@ -545,6 +545,8 @@ class BertiniRun(NAGobject):
                 row = [int(l) for l in line]
                 for j in range(colcount):
                     inmat[i,j] = row[j]
+                    
+            print(inmat)
             
             if numpoints == 1:
                 return inmat[0, dex] == 1
