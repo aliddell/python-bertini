@@ -43,6 +43,21 @@ class IrreducibleComponent(NAGobject):
         repstr = 'IrreducibleComponent({0},{1},{2})'.format(repr(wst),codim,cid)
         return repstr
         
+    def __eq__(self, other):
+        """
+        x.__eq__(y) <==> x == y
+        """
+        if type(other) != IrreducibleComponent:
+            return False
+        
+        sp = self.sample(2)
+        op = other.sample(2)
+        
+        sco = all(self.contains(op))
+        ocs = all(other.contains(sp))
+        
+        return sco and ocs
+        
     def contains(self, other):
         """
         Return True if self contains other
@@ -57,10 +72,6 @@ class IrreducibleComponent(NAGobject):
                               component=self,
                               start=other)
         return test_run.run()
-        
-        #return eq
-    def equals(self, other):
-        pass
     
     def sample(self, numpoints=1, usebertini=True):
         """
