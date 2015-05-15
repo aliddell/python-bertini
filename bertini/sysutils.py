@@ -500,7 +500,7 @@ class BertiniRun(NAGobject):
             startp = dirname + '/start_parameters'
             finite_solutions = read_points(finites, tol=tol, projective=projective)
             
-            ptype  = self._parameter_homotopy['ParameterHomotopy']
+            ptype  = self._parameter_homotopy['arg']
             if ptype == 1:
                 start_parameters = read_points(startp, tol=tol, projective=projective)
                 return finite_solutions, start_parameters
