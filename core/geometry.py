@@ -47,33 +47,16 @@ class IrreducibleComponent(NAGobject):
         """
         Return True if self contains other
         """
-        if type(other) not in (tuple, list, AffinePoint, ProjectivePoint):
+        if not isinstance(other, Point):
             msg = "cannot understand data type"
             raise TypeError(msg)
-        elif isinstance(other, Point):
-            other = [other]
-        
-        numpoints = len(other)
-        from tempfile import mkdtemp
-        from naglib.bertini.fileutils import striplines, write_input, fprint
-        from naglib.bertini.sysutils import call_bertini
+            
         system = self._witness_set.system
-        dirname = mkdtemp(prefix=basedir)
-        inputf = dirname + '/input'
-        fprint(other, dirname + '/member_points')
-        config = {'filename':inputf, 'TrackType':3}
-        write_input(system, config)
-        self.write_witness(dirname)
-        call_bertini(inputf)
-        fh = open(dirname + '/output_membership', 'r')
-        lines = striplines(fh.readlines())
-        indices = [lines.index('Testing {0}'.format(i)) for i in range(numpoints)] + [len(lines)]
-        truevals = [False for i in range(numpoints)]
-        for i in range(numpoints):
-            if indices[i+1] - indices[i] > 4:
-               truevals[i] = True
-        
-        return truevals
+        test_run = BertiniRun(system,
+                              tracktype=BertiniRun.TMEMTEST,
+                              component=self,
+                              start=other)
+        return test_run.run()
         
         #return eq
     def equals(self, other):
