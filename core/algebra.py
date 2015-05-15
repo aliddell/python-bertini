@@ -615,7 +615,11 @@ class PolynomialSystem(NAGobject):
                 return solve_run.run()
             elif parameters:
                 if start_params and final_params:
-                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':2},start_parameters=start_params,final_parameters=final_params)
+                    solve_run = BertiniRun(self,
+                                           tracktype=BertiniRun.TZERODIM,
+                                           config={'ParameterHomotopy':2},
+                                           start_parameters=start_params,
+                                           final_parameters=final_params)
                     return solve_run.run()
                 elif start_params:
                     solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':2},start_parameters=start_params)

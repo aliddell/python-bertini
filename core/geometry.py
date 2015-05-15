@@ -50,11 +50,11 @@ class IrreducibleComponent(NAGobject):
         if type(other) != IrreducibleComponent:
             return False
         
-        sp = self.sample(2)
-        op = other.sample(2)
+        sp = self.sample(1)
+        op = other.sample(1)
         
-        sco = all(self.contains(op))
-        ocs = all(other.contains(sp))
+        sco = self.contains(op)
+        ocs = other.contains(sp)
         
         return sco and ocs
         

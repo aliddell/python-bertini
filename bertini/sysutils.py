@@ -116,8 +116,10 @@ class BertiniRun(NAGobject):
             for k in ckeys2:
                 if k.lower() == 'parameterhomotopy':
                     self._parameter_homotopy['key'] = k
-                    self._parameter_homotopy['arg'] = config[k] # \in (0,1,2)
+                    self._parameter_homotopy['arg'] = config[k] # in (0,1,2)
+                    print(self._parameter_homotopy)
                     break
+                    
             del ckeys2
         
         # ensure the system jives with the call for parameter homotopy
@@ -125,7 +127,7 @@ class BertiniRun(NAGobject):
         if not system.parameters and self._parameter_homotopy['arg'] > 0:
             msg = "you have attempted to define a parameter homotopy on a system with no parameters!"
         elif system.parameters and self._parameter_homotopy['arg'] <= 0:
-            msg = "a parameterized system requires ParameterHomotopy > 0"
+            msg = "a parameterized system requires ParameterHomotopy either 1 or 2"
         elif tracktype != self.TZERODIM and self._parameter_homotopy['arg'] > 0:
             msg = "parameter homotopy only supported for zero-dimensional runs"
             
