@@ -62,6 +62,7 @@ class BertiniRun(NAGobject):
     TPROJECT = 5
     TISOSTAB = 6
     TREGENEXT = 7
+    
     def __init__(self, system, tracktype=TZERODIM, config={}, **kwargs):
         """
         """
@@ -532,7 +533,7 @@ class BertiniRun(NAGobject):
             ccounts = lines[:nonempty_codims]
             lines = lines[nonempty_codims:]
             
-            ccounts = [tuple(c.split(' ')) for c in ccounts]
+            ccounts = [tuple([int(d) for d in c.split(' ')]) for c in ccounts]
             # ordered list of codims with component ids, for matrix
             cids = [(c[0], j) for c in ccounts for j in range(c[1])]
             colcount = len(cids)

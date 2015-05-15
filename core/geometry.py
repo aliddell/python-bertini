@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from naglib.bertini.sysutils import BertiniRun
+from naglib.exceptions import BertiniError
 from naglib.startup import TEMPDIR as basedir
 from naglib.core.base import NAGobject, Point, AffinePoint, ProjectivePoint
 from naglib.core.witnessdata import WitnessPoint, WitnessSet
@@ -82,6 +83,9 @@ class IrreducibleComponent(NAGobject):
         """
         Sample points from self
         """
+        if numpoints < 1:
+            msg = "sample at least one point"
+            raise BertiniError(msg)
         system  = self.witness_set.system
         
         points = None
