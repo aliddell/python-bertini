@@ -13,6 +13,7 @@ class PolynomialSystem(NAGobject):
         Initialize the PolynomialSystem object
         """
         from re import sub as resub
+        from functools import reduce
         
         if type(polynomials) == str:
             polynomials = [polynomials]
@@ -186,6 +187,8 @@ class PolynomialSystem(NAGobject):
         """
         x.__add__(y) <==> x + y
         """
+        from functools import reduce
+        
         if not isinstance(other, PolynomialSystem):
             t = type(other)
             msg = "unsupported operand type(s) for +: 'PolynomialSystem' and '{0}'".format(t)
@@ -367,7 +370,6 @@ class PolynomialSystem(NAGobject):
         hompolys = spmatrix([p.expand() for p in hompolys])
         homvars = self._variables
         parameters = self._parameters
-        degree = self._degree
         
         if not self._homvar:
             return self
@@ -435,6 +437,8 @@ class PolynomialSystem(NAGobject):
     def evalf(self, varpt, parpt=[]):
         """
         """
+        from functools import reduce
+        
         variables = list(self._variables)
         parameters = list(self._parameters)
         polynomials = self._polynomials
@@ -460,7 +464,6 @@ class PolynomialSystem(NAGobject):
         polynomials = [p.as_poly(domain='CC') for p in self._polynomials]
         variables = list(self._variables)
         parameters = list(self._parameters)
-        degree = self.degree
         
         if self._homvar:
             return self
@@ -491,7 +494,6 @@ class PolynomialSystem(NAGobject):
         
         (overriding __rmul__ gives strange behavior with spmatrix)
         """
-        polys = self._polynomials
         res_polys = list(other * self._polynomials)
         res = PolynomialSystem(res_polys)
             
@@ -565,7 +567,6 @@ class PolynomialSystem(NAGobject):
         a 'generic' point.
         """
         from random import random as rand
-        polynomials = self._polynomials
         parameters = list(self._parameters)
         variables = list(self._variables)
         if parameters:
@@ -610,9 +611,10 @@ class PolynomialSystem(NAGobject):
         if usebertini:
             from naglib.bertini.sysutils import BertiniRun
             
-            if len(variables) > len(polynomials) or self.rank() < len(polynomials): # underdetermined
+            # numerical irreducible decomposition
+            if len(variables) > len(polynomials) or self.rank() < len(polynomials):
                 solve_run = BertiniRun(self, BertiniRun.TPOSDIM)
-                return solve_run.run()
+            # parameter homotopy
             elif parameters:
                 if start_params and final_params:
                     solve_run = BertiniRun(self,
@@ -620,22 +622,18 @@ class PolynomialSystem(NAGobject):
                                            config={'ParameterHomotopy':2},
                                            start_parameters=start_params,
                                            final_parameters=final_params)
-                    return solve_run.run()
-                elif start_params:
-                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':2},start_parameters=start_params)
-                    return solve_run.run()
-                elif final_params:
-                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':1})
-                    solutions,start_params = solve_run.run()
-                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':2},start_parameters=start_params,final_parameters=final_params)
-                    solutions = solve_run.run()
-                    return solutions,start_params
+                elif start_params or final_params:
+                    msg = "specify both start parameters and final parameters or neither"
+                    raise BertiniError(msg)
                 else:
-                    solve_run = BertiniRun(self,BertiniRun.TZERODIM,config={'ParameterHomotopy':1})
-                    return solve_run.run()
+                    solve_run = BertiniRun(self,
+                                           BertiniRun.TZERODIM,
+                                           config={'ParameterHomotopy':1})
+            # isolated solutions
             else:
-                solve_run = BertiniRun(self,BertiniRun.TZERODIM)
-                return solve_run.run()
+                solve_run = BertiniRun(self, BertiniRun.TZERODIM)
+            
+            return solve_run.run()
         else:
             msg = "nothing to use yet but Bertini"
             raise NotImplementedError(msg)
@@ -645,8 +643,8 @@ class PolynomialSystem(NAGobject):
         Return a new PolynomialSystem with subs applied to
         each entry of 'polynomials'
         
-        caution against using subs:
-            this will destroy any parameter/homvar information in the system
+        caution in using subs:
+        this will destroy any parameter/homvar information in the system
         """
         polynomials = self._polynomials
         psubs = polynomials.subs(*args, **kwargs)
@@ -730,9 +728,6 @@ class LinearSlice(NAGobject):
                 self._homvar = homvar
         else:
             self._homvar = spmatrix()
-        
-        # do nothing; raise ShapeError if applicable
-        mat = self._coeffs * self._variables
     
     def __repr__(self):
         """
@@ -751,7 +746,6 @@ class LinearSlice(NAGobject):
         """
         repstr = ''
         mat = self._coeffs * self._variables
-        m = mat.shape[0]
         strmat = [str(row) for row in mat]
         maxlen = max([len(row) for row in strmat])
         for row in strmat:

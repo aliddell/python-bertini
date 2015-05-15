@@ -6,7 +6,6 @@ from sys import stderr, stdout
 
 from sympy import I, Integer, Float, Rational, Matrix as spmatrix, sympify
 
-from naglib.exceptions import UnclassifiedException
 from naglib.startup import TOL
 from naglib.core import AffinePoint, ProjectivePoint, WitnessPoint
 from naglib.core.misc import striplines

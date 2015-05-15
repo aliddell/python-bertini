@@ -112,7 +112,6 @@ class BertiniRun(NAGobject):
         # parameter homotopy
         self._parameter_homotopy = {'key':'', 'arg':0}
         if 'parameterhomotopy' in ckeys:
-            print(config.keys())
             ckeys2 = config.keys()
             for k in ckeys2:
                 if k.lower() == 'parameterhomotopy':
@@ -154,7 +153,12 @@ class BertiniRun(NAGobject):
             self._parameter_homotopy['final parameters'] = finalp
         else:
             finalp = None
-        
+
+        # if a system specifies one of start parameters or final parameters it must specify the other            
+        if (startp and not finalp) or (finalp and not startp):
+            msg = "specify both start parameters and final parameters or neither"
+            raise BertiniError(msg)
+            
         # user did not specify start or final parameters
         if 'parameterhomotopy' in ckeys and self._parameter_homotopy['arg'] > 1:
             if not (startp or finalp):
@@ -497,8 +501,6 @@ class BertiniRun(NAGobject):
             finite_solutions = read_points(finites, tol=tol, projective=projective)
             
             pkeys = self._parameter_homotopy.keys()
-            if 'start parameters' in pkeys and 'start parameters' not in pkeys:
-                start_parameters = read_points()
             
             return finite_solutions
         elif tracktype == self.TPOSDIM:
