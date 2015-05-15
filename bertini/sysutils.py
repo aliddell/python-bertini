@@ -527,8 +527,7 @@ class BertiniRun(NAGobject):
                 testp = [testp]
             
             nonempty_codims = int(lines[0])
-            numpoints = int(lines[1])
-            lines = lines[2:]
+            lines = lines[1:]
             # gather nonempty codims with component count for each
             ccounts = lines[:nonempty_codims]
             lines = lines[nonempty_codims:]
@@ -538,6 +537,9 @@ class BertiniRun(NAGobject):
             cids = [(c[0], j) for c in ccounts for j in range(c[1])]
             colcount = len(cids)
             dex = cids.index((testcodim, testcid))
+            
+            numpoints = int(lines[0])
+            lines = lines[1:]
             
             inmat = zeros(numpoints, colcount)
             for i in range(numpoints):
