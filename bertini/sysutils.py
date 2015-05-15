@@ -525,10 +525,10 @@ class BertiniRun(NAGobject):
             testp = self._start
             if type(testp) not in (list, tuple):
                 testp = [testp]
-            numpoints = len(testp)
             
             nonempty_codims = int(lines[0])
-            lines = lines[1:]
+            numpoints = int(lines[1])
+            lines = lines[2:]
             # gather nonempty codims with component count for each
             ccounts = lines[:nonempty_codims]
             lines = lines[nonempty_codims:]
