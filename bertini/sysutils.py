@@ -115,7 +115,7 @@ class BertiniRun(NAGobject):
             ckeys2 = config.keys()
             for k in ckeys2:
                 if k.lower() == 'parameterhomotopy':
-                    self._parameter_homotopy['key'] = k
+                    self._parameter_homotopy['key'] = 'ParameterHomotopy'
                     self._parameter_homotopy['arg'] = config[k] # in (0,1,2)
                     break
                     
@@ -500,7 +500,10 @@ class BertiniRun(NAGobject):
             startp = dirname + '/start_parameters'
             finite_solutions = read_points(finites, tol=tol, projective=projective)
             
-            pkeys = self._parameter_homotopy.keys()
+            ptype  = self._parameter_homotopy['ParameterHomotopy']
+            if ptype == 1:
+                start_parameters = read_points(startp, tol=tol, projective=projective)
+                return finite_solutions, start_parameters
             
             return finite_solutions
         elif tracktype == self.TPOSDIM:
