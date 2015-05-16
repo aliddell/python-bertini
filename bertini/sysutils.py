@@ -576,6 +576,7 @@ class BertiniRun(NAGobject):
             
             return points
         elif tracktype == self.TPROJECT:
+            #TODO: implement
             pass
         elif tracktype == self.TISOSTAB:
             config = self._config
@@ -595,8 +596,11 @@ class BertiniRun(NAGobject):
             
             #TODO: read isosingular_summary and maybe output_isosingular
         elif tracktype == self.TREGENEXT:
-            pass
-        
+            wdfile = dirname + '/witness_data'
+            self._witness_data = self._parse_witness_data(wdfile)
+            components = self._recover_components(self._witness_data)
+                        
+            return components        
         
     def _recover_input(self):
         """
