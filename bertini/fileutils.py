@@ -1,23 +1,20 @@
 from __future__ import print_function
 
-from fractions import Fraction as fraction
 from os.path import isfile
-from sys import stderr, stdout
+from sys import stdout
 
-from sympy import I, Integer, Float, Rational, Matrix as spmatrix, sympify
+from sympy import I, Float, sympify
 
 from naglib.startup import TOL
-from naglib.core import AffinePoint, ProjectivePoint, WitnessPoint
+from naglib.core import AffinePoint, ProjectivePoint
 from naglib.core.misc import striplines
-
-# read utils
 
 def parselines(lines, tol=TOL, projective=False, as_set=False):
     """    
     Keyword arguments:
     lines -- iterable of strings, first entry the number of points;
-                the rest, "%s %s" % real, imag
-    tol   -- optional numeric, smallest allowable nonzero value
+             the rest, "%s %s" % real, imag
+    tol   -- optional float, smallest allowable nonzero value
     """
     from re import split as resplit
     from naglib.core.misc import dps
@@ -59,7 +56,7 @@ def parselines(lines, tol=TOL, projective=False, as_set=False):
 
 def read_points(filename, tol=TOL, projective=False, as_set=False):
     """
-    Reads in a file and return a set of mpc numbers
+    Reads in a file and return a set of Float numbers
     """
     if not isfile(filename):
         msg = "{0} does not exist".format(filename)

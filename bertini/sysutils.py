@@ -50,18 +50,18 @@ def __proc_err_output(output):
 BERTINI = __has_bertini()
 
 class BertiniRun(NAGobject):
-    TEVALP = -4
-    TEVALPJ = -3
-    TNEWTP = -2
-    TNEWTPJ = -1
-    TZERODIM = 0
-    TPOSDIM = 1
-    TSAMPLE = 2
-    TMEMTEST = 3
-    TPRINTP = 4
-    TPROJECT = 5
-    TISOSTAB = 6
-    TREGENEXT = 7
+    TEVALP    = -4
+    TEVALPJ   = -3
+    TNEWTP    = -2
+    TNEWTPJ   = -1
+    TZERODIM  =  0
+    TPOSDIM   =  1
+    TSAMPLE   =  2
+    TMEMTEST  =  3
+    TPRINTWS  =  4
+    TPROJECT  =  5
+    TISOSTAB  =  6
+    TREGENEXT =  7
     
     def __init__(self, system, tracktype=TZERODIM, config={}, **kwargs):
         """
@@ -85,7 +85,7 @@ class BertiniRun(NAGobject):
                 start = [start]
             self._start = start
         ## component required
-        if tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTP, self.TPROJECT, self.TREGENEXT) and 'component' not in kkeys:
+        if tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTWS, self.TPROJECT, self.TREGENEXT) and 'component' not in kkeys:
             msg = "specify a component with the keyword argument `component'"
         elif 'component' in kkeys:
             self._component = kwargs['component']
@@ -567,12 +567,33 @@ class BertiniRun(NAGobject):
                     ret.append(inmat[i, dex] == 1)
                 return ret
                 
-        elif tracktype == self.TPRINTP:
-            pass
+        elif tracktype == self.TPRINTWS:
+            pointsfile = dirname + '/points.out'
+            #sysfile    = dirname + '/sys.out'
+            
+            points = read_points(pointsfile, tol=tol, projective=projective)
+            #TODO: parse linear system file and return a LinearSystem
+            
+            return points
         elif tracktype == self.TPROJECT:
             pass
         elif tracktype == self.TISOSTAB:
-            pass
+            config = self._config
+            ckeys = config.keys()
+            lkeys = [k.lower() for k in ckeys]
+            cws = None
+            if 'constructwitnessset' in lkeys:
+                for k in ckeys:
+                    if k.lower() == 'constructwitnessset':
+                        cws = k
+                        break
+            if cws and config[cws] == 1:
+                wdfile = dirname + '/witness_data'
+                self._witness_data = self._parse_witness_data(wdfile)
+                components = self._recover_components(self._witness_data)
+                return components
+            
+            #TODO: read isosingular_summary and maybe output_isosingular
         elif tracktype == self.TREGENEXT:
             pass
         
@@ -647,14 +668,14 @@ class BertiniRun(NAGobject):
                 component.write_witness(dirname, 'witness_data_old')
                 instructions = ['1', 'input_old', 'witness_data_old', str(dim), str(cid)]
                 self._write_instructions(instructions)
-            elif tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTP, self.TPROJECT):
+            elif tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTWS, self.TPROJECT):
                 witness_data = component.witness_data
                 self._write_witness_data(witness_data, dirname, components=[component])
                 if tracktype == self.TSAMPLE:
                     sample = self._sample
                     instructions = [str(dim), '0', str(sample), '0', 'sampled']
                     self._write_instructions(instructions)
-                elif tracktype == self.TPRINTP:
+                elif tracktype == self.TPRINTWS:
                     instructions = [str(dim), '0', 'points.out', 'sys.out']
                     self._write_instructions(instructions)
                 elif tracktype == self.TPROJECT:
@@ -933,6 +954,9 @@ class BertiniRun(NAGobject):
     @property
     def dirname(self):
         return self._dirname
+    @dirname.setter
+    def dirname(self, name):
+        self._dirname = name
     @property
     def inputf(self):
         return self._inputf
