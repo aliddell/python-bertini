@@ -615,7 +615,8 @@ class PolynomialSystem(NAGobject):
                                            tracktype=BertiniRun.TZERODIM,
                                            config={'ParameterHomotopy':2},
                                            start_parameters=start_params,
-                                           final_parameters=final_params)
+                                           final_parameters=final_params,
+                                           start=start)
                 elif start_params or final_params:
                     msg = "specify both start parameters and final parameters or neither"
                     raise BertiniError(msg)
