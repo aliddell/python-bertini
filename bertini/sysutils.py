@@ -693,7 +693,7 @@ class BertiniRun(NAGobject):
                 instructions = ['1', 'input_old', 'witness_data_old', str(dim), str(cid)]
                 self._write_instructions(instructions)
             elif tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTWS, self.TPROJECT):
-                witness_data = component._construct_witness_data
+                witness_data = component._construct_witness_data()
                 self._write_witness_data(witness_data, dirname)
                 if tracktype == self.TSAMPLE:
                     sample = self._sample
