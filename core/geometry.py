@@ -116,7 +116,7 @@ class IrreducibleComponent(NAGobject):
             'largest zero':p.largest_zero,
             'type':p.point_type,
             'multiplicity':p.multiplicity,
-            'component_number':0,
+            'component number':0,
             'deflations':p.deflations
             })
             
