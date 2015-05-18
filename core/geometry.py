@@ -91,7 +91,7 @@ class IrreducibleComponent(NAGobject):
     def _construct_witness_data(self):
         codim = self._codim
         wpoints = self.witness_set.witness_points
-        lslice = self.witness_set.linear_slice
+        lslice = self.witness_set.linear_slice.coeffs
         homogenization_matrix = self._homogenization_matrix
         homogenization_variable = self._homogenization_variable
         homogenization_vector = self._homogenization_vector
