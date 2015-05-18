@@ -110,6 +110,14 @@ class WitnessPoint(Point):
             repstr = '[' + ', '.join([str(c) for c in coordinates]) + ']'
             
         return repstr
+        
+    def as_point(self):
+        coordinates = self._coordinates
+        is_projective = self._is_projective
+        if is_projective:
+            return ProjectivePoint(coordinates)
+        else:
+            return AffinePoint(coordinates)
     
     def dehomogenize(self):
         """
@@ -117,6 +125,7 @@ class WitnessPoint(Point):
         
         Returns a new WitnessPoint object
         """
+        cls = self.__class__
         component_id = self._component_id
         coordinates = self._coordinates
         is_projective = self._is_projective
@@ -126,23 +135,58 @@ class WitnessPoint(Point):
         else:
             point = AffinePoint(coordinates)
             
-        return WitnessPoint(point, component_id)
+        deh = cls(point, component_id)
+        deh._is_projective = self._is_projective
+        deh._condition_number = self._condition_number
+        deh._corank = self._corank
+        deh._deflations = self._deflations
+        deh._last_approximation = self._last_approximation
+        deh._largest_zero = self._largest_zero
+        deh._multiplicity = self._multiplicity
+        deh._point_type = self._point_type
+        deh._precision = self._precision
+        deh._smallest_nonzero = self._smallest_nonzero
+        
+        return deh
     
     def float(self, prec=None):
-        # TODO: allow argument to prec to mean something
-        coordinates = self._coordinates
+        cls = self.__class__
         component_id = self._component_id
+        coordinates = self._coordinates
         newcoords = []
         for c in coordinates:
             real,imag = c.as_real_imag()
-            real = Float(real)
-            imag = Float(imag)
+            if prec:
+                real = Float(real, prec)
+                imag = Float(imag, prec)
+            else:
+                real = Float(real)
+                imag = Float(imag)
             newcoords.append(real + I*imag)
-            
-        return WitnessPoint(newcoords, component_id, self._is_projective)
+        flo = cls(coordinates, component_id)
+        
+        flo._is_projective = self._is_projective
+        flo._condition_number = self._condition_number
+        flo._corank = self._corank
+        flo._deflations = self._deflations
+        flo._last_approximation = self._last_approximation
+        flo._largest_zero = self._largest_zero
+        flo._multiplicity = self._multiplicity
+        flo._point_type = self._point_type
+        if prec and prec <= self._precision:
+            flo._precision = prec
+        else:
+            flo._precision = self._precision
+        flo._smallest_nonzero = self._smallest_nonzero
+        
+        return flo
     
     def rational(self):
+        """
+        Returns a rational approximation of self
+        """
         cls = self.__class__
+        component_id = self._component_id
         coordinates = self._coordinates
         newcoords = []
         for c in coordinates:
@@ -150,7 +194,7 @@ class WitnessPoint(Point):
             real = Rational(real)
             imag = Rational(imag)
             newcoords.append(real + I*imag)
-        rat = cls(newcoords, self._component_id)
+        rat = cls(newcoords, component_id)
         
         rat._is_projective = self._is_projective
         rat._condition_number = self._condition_number
@@ -212,15 +256,6 @@ class WitnessPoint(Point):
         The multiplicity of this point with respect to the system
         """
         return self._multiplicity
-    
-    @property
-    def point(self):
-        coordinates = self._coordinates
-        is_projective = self._is_projective
-        if is_projective:
-            return ProjectivePoint(coordinates)
-        else:
-            return AffinePoint(coordinates)
     
     @property
     def point_type(self):

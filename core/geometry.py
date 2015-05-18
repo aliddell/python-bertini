@@ -89,7 +89,38 @@ class IrreducibleComponent(NAGobject):
         return sco and ocs
         
     def _construct_witness_data(self):
-        pass
+        codim = self._codim
+        wpoints = self.witness_set.witness_points
+        homogenization_matrix = self._homogenization_matrix
+        homogenization_variable = self._homogenization_variable
+        homogenization_vector = self._homogenization_vector
+        patch_coefficients = self._patch_coefficients
+        randomization_matrix = self._randomization_matrix
+        
+        wd = {'codim':codim,
+              'points':[],
+              'A':randomization_matrix,
+              'W':homogenization_matrix,
+              'homVarConst':homogenization_variable,
+              'H':homogenization_vector,
+              'p':patch_coefficients}
+
+        for p in wpoints:
+            wd['points'].append({
+            'precision':p.precision,
+            'coordinates':p.coordinates,
+            'last approximation':p.last_approximation,
+            'condition number':p.condition_number,
+            'corank':p.corank,
+            'smallest nonzero':p.smallest_nonzero,
+            'largest zero':p.largest_zero,
+            'type':p.point_type,
+            'multiplicity':p.multiplicity,
+            'component_number':p.component_id,
+            'deflations':p.deflations
+            })
+            
+        return wd
         
     def contains(self, other):
         """

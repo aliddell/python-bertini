@@ -193,14 +193,17 @@ class Point(NAGobject):
         return cls(scoords + ocoords)
         
     def float(self, prec=None):
-        # TODO: allow argument to prec to mean something
         cls = self.__class__
         coordinates = self._coordinates
         newcoords = []
         for c in coordinates:
             real,imag = c.as_real_imag()
-            real = Float(real)
-            imag = Float(imag)
+            if prec:
+                real = Float(real, prec)
+                imag = Float(imag, prec)
+            else:
+                real = Float(real)
+                imag = Float(imag)
             newcoords.append(real + I*imag)
             
         return cls(newcoords)
@@ -220,7 +223,7 @@ class Point(NAGobject):
     
     def normalized(self):
         """
-        Return the normalized version of ``self''
+        Returns the normalized version of ``self''
         """
         coordinates = self._coordinates
         return self.__class__(coordinates.normalized())
@@ -233,6 +236,9 @@ class Point(NAGobject):
         return popped
 
     def rational(self):
+        """
+        Returns a rational approximation of self
+        """
         cls = self.__class__
         coordinates = self._coordinates
         newcoords = []
