@@ -1,7 +1,6 @@
 from sympy import I, Float, Rational, Matrix
 
-from naglib.startup import TOL, DPS
-from naglib.exceptions import ExitSpaceError, WitnessDataException
+from naglib.exceptions import WitnessDataException
 from naglib.core.base import NAGobject, Point, AffinePoint, ProjectivePoint
 
 class WitnessPoint(Point):
@@ -143,8 +142,16 @@ class WitnessPoint(Point):
         return WitnessPoint(newcoords, component_id, self._is_projective)
     
     def rational(self):
-        rat = super(WitnessPoint, self).rational()
-        rat._component_id = self._component_id
+        cls = self.__class__
+        coordinates = self._coordinates
+        newcoords = []
+        for c in coordinates:
+            real,imag = c.as_real_imag()
+            real = Rational(real)
+            imag = Rational(imag)
+            newcoords.append(real + I*imag)
+        rat = cls(newcoords, self._component_id)
+        
         rat._is_projective = self._is_projective
         rat._condition_number = self._condition_number
         rat._corank = self._corank
