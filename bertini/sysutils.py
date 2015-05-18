@@ -438,13 +438,13 @@ class BertiniRun(NAGobject):
             comp_isprojective = homVarConst == 0
             if coeffs:
                 if comp_isprojective:
-                    slice = LinearSlice(coeffs, homvars, homvar)
+                    lslice = LinearSlice(coeffs, homvars, homvar)
                     if not system.homvar:
-                        slice = slice.dehomogenize()
+                        lslice = lslice.dehomogenize()
                 else:
-                    slice = LinearSlice(coeffs, variables)
+                    lslice = LinearSlice(coeffs, variables)
             else:
-                slice = None
+                lslice = None
                 
             dim_list = {}
             
@@ -474,7 +474,7 @@ class BertiniRun(NAGobject):
                 dim_list[comp_id].append(wpoint)
             
             for comp_id in dim_list.keys():
-                ws = WitnessSet(system.copy(), slice, dim_list[comp_id], witness_data)
+                ws = WitnessSet(system.copy(), lslice, dim_list[comp_id], witness_data)
                 component = IrreducibleComponent(ws, codim, comp_id,
                                                  randomization_matrix=rand_mat,
                                                  homogenization_matrix=homog_mat,

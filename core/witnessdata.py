@@ -279,7 +279,7 @@ class WitnessSet(NAGobject):
     """
     A witness set for a component
     """
-    def __init__(self, system, slice, witness_points, witness_data):
+    def __init__(self, system, lslice, witness_points, witness_data):
         """Initialize the WitnessSet
         
         Keyword arguments:
@@ -288,7 +288,7 @@ class WitnessSet(NAGobject):
         witness_points -- iterable of WitnessPoint objects,  witness point set, V(f) \cap V(L)
         """
         self._system = system
-        self._slice = slice
+        self._slice = lslice
         self._witness_data = witness_data
         try:
             self._witness_points = list(witness_points)
@@ -327,7 +327,7 @@ class WitnessSet(NAGobject):
     def system(self):
         return self._system
     @property
-    def slice(self):
+    def linear_slice(self):
         return self._slice
     @property
     def witness_data(self):

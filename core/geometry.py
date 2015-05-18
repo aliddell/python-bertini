@@ -91,19 +91,23 @@ class IrreducibleComponent(NAGobject):
     def _construct_witness_data(self):
         codim = self._codim
         wpoints = self.witness_set.witness_points
+        lslice = self.witness_set.linear_slice
         homogenization_matrix = self._homogenization_matrix
         homogenization_variable = self._homogenization_variable
         homogenization_vector = self._homogenization_vector
         patch_coefficients = self._patch_coefficients
         randomization_matrix = self._randomization_matrix
         
-        wd = {'codim':codim,
-              'points':[],
-              'A':randomization_matrix,
-              'W':homogenization_matrix,
-              'homVarConst':homogenization_variable,
-              'H':homogenization_vector,
-              'p':patch_coefficients}
+        wd = {
+            'codim':codim,
+            'points':[],
+            'A':randomization_matrix,
+            'W':homogenization_matrix,
+            'homVarConst':homogenization_variable,
+            'H':homogenization_vector,
+            'p':patch_coefficients,
+            'slice':lslice
+            }
 
         for p in wpoints:
             wd['points'].append({
