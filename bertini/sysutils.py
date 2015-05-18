@@ -687,12 +687,13 @@ class BertiniRun(NAGobject):
         ### write out component information
         if '_component' in dir(self):
             component = self._component
-            cid = component.component_id
+            #cid = component.component_id
             dim = component.dim
             if tracktype == self.TREGENEXT:
                 self._write_system(component.system, 'input_old', {'TrackType':1})
-                component.write_witness(dirname, 'witness_data_old')
-                instructions = ['1', 'input_old', 'witness_data_old', str(dim), str(cid)]
+                wd = component._construct_witness_data()
+                self._write_witness_data(wd, dirname, filename='witness_data_old')
+                instructions = ['1', 'input_old', 'witness_data_old', str(dim), '0']
                 self._write_instructions(instructions)
             elif tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTWS, self.TPROJECT):
                 witness_data = component._construct_witness_data()
