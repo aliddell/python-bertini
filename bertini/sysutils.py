@@ -410,11 +410,11 @@ class BertiniRun(NAGobject):
         from naglib.core.witnessdata import WitnessPoint, WitnessSet
         system = self._system
         variables = system.variables
-        if system.homvar:
-            proj_dim = len(variables)
+#        if system.homvar:
+#            proj_dim = len(variables)
             #homsys = system
-        else:
-            proj_dim = len(system.variables) + 1
+#        else:
+#            proj_dim = len(system.variables) + 1
             #homsys = system.homogenize()
         homvar = sympify('_homvar')
         while homvar in system.variables:
@@ -429,6 +429,11 @@ class BertiniRun(NAGobject):
             homVarConst = c['homVarConst']
             points      = c['points']
             coeffs      = c['slice']
+            rand_mat    = c['A']
+            homog_mat   = c['W']
+            homog_vec   = c['H']
+            hvc         = c['homVarConst']
+            patch_coeff = c['p']
             
             comp_isprojective = homVarConst == 0
             if coeffs:
@@ -452,7 +457,16 @@ class BertiniRun(NAGobject):
                 else:
                     coord = AffinePoint(point['coordinates'])
                     
-                wpoint = WitnessPoint(coord, comp_id)
+                wpoint = WitnessPoint(coord, comp_id,
+                                      corank=point['corank'],
+                                      condition_number=point['condition number'],
+                                      smallest_nonzero=point['smallest nonzero'],
+                                      largest_zero=point['largest zero'],
+                                      point_type=point['type'],
+                                      multiplicity=point['multiplicity'],
+                                      deflations=point['deflations'],
+                                      precision=point['precision'],
+                                      last_approximation=point['last approximation'])
                 
                 if not dim_list.has_key(comp_id):
                     dim_list[comp_id] = []
@@ -461,7 +475,13 @@ class BertiniRun(NAGobject):
             
             for comp_id in dim_list.keys():
                 ws = WitnessSet(system.copy(), slice, dim_list[comp_id], witness_data)
-                component = IrreducibleComponent(ws, codim, comp_id)
+                component = IrreducibleComponent(ws, codim, comp_id,
+                                                 randomization_matrix=rand_mat,
+                                                 homogenization_matrix=homog_mat,
+                                                 homogenization_vector=homog_vec,
+                                                 homogenization_variable=hvc,
+                                                 patch_coefficients=patch_coeff)
+
                 components.append(component)
                 
         return components
@@ -756,52 +776,52 @@ class BertiniRun(NAGobject):
         
         return filename
     
-    def _write_witness_data(self, witness_data, dirname, components=[], filename='witness_data'):
+    def _write_witness_data(self, witness_data, dirname, filename='witness_data'):
         """
         """
         from sympy import Integer, Float
         fh = open(dirname + '/' + filename, 'w')
         
-        if components:
-            codims = [] # modified witness_data
-            compids = [(c.codim, c.component_id) for c in components]
-            unique_codims = sorted(list(set([c[0] for c in compids])))
-            for i in range(len(witness_data)):
-                wd = witness_data[i]
-                codim  = wd['codim']
-                if codim in unique_codims:
-                    cdict = {'codim':codim,
-                             'A':wd['A'],
-                             'homVarConst':wd['homVarConst'],
-                             'p':wd['p'],
-                             'slice':wd['slice'],
-                             'W':wd['W'],
-                             'H':wd['H'],
-                             'points':[]}
-                    
-                    cids   = [c[1] for c in compids if c[0] == codim]
-                    # components may not have correct order
-                    cidmap = dict([(cids[i], i) for i in range(len(cids))])
-                    points = wd['points']
-                    for p in points:
-                        cn = p['component number']
-                        if cn in cids:
-                            cdict['points'].append({
-                            'largest zero':p['largest zero'],
-                            'precision':p['precision'],
-                            'last approximation':p['last approximation'],
-                            'smallest nonzero':p['smallest nonzero'],
-                            'deflations':p['deflations'],
-                            'component number':cidmap[cn],
-                            'multiplicity':p['multiplicity'],
-                            'corank':p['corank'],
-                            'coordinates':p['coordinates'],
-                            'condition number':p['condition number'],
-                            'type':p['type']})
-                    
-                    codims.append(cdict)
-        else:
-            codims = witness_data
+#        if components:
+#            codims = [] # modified witness_data
+#            compids = [(c.codim, c.component_id) for c in components]
+#            unique_codims = sorted(list(set([c[0] for c in compids])))
+#            for i in range(len(witness_data)):
+#                wd = witness_data[i]
+#                codim  = wd['codim']
+#                if codim in unique_codims:
+#                    cdict = {'codim':codim,
+#                             'A':wd['A'],
+#                             'homVarConst':wd['homVarConst'],
+#                             'p':wd['p'],
+#                             'slice':wd['slice'],
+#                             'W':wd['W'],
+#                             'H':wd['H'],
+#                             'points':[]}
+#                    
+#                    cids   = [c[1] for c in compids if c[0] == codim]
+#                    # components may not have correct order
+#                    cidmap = dict([(cids[i], i) for i in range(len(cids))])
+#                    points = wd['points']
+#                    for p in points:
+#                        cn = p['component number']
+#                        if cn in cids:
+#                            cdict['points'].append({
+#                            'largest zero':p['largest zero'],
+#                            'precision':p['precision'],
+#                            'last approximation':p['last approximation'],
+#                            'smallest nonzero':p['smallest nonzero'],
+#                            'deflations':p['deflations'],
+#                            'component number':cidmap[cn],
+#                            'multiplicity':p['multiplicity'],
+#                            'corank':p['corank'],
+#                            'coordinates':p['coordinates'],
+#                            'condition number':p['condition number'],
+#                            'type':p['type']})
+#                    
+#                    codims.append(cdict)
+#        else:
+        codims = witness_data
             
         nonempty_codims = len(codims)
         num_vars = len(codims[0]['points'][0]['coordinates'])

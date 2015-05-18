@@ -1,16 +1,16 @@
 from __future__ import print_function
 
+from sympy import Matrix
+
 from naglib.bertini.sysutils import BertiniRun
 from naglib.exceptions import BertiniError
-from naglib.startup import TEMPDIR as basedir
-from naglib.core.base import NAGobject, Point, AffinePoint, ProjectivePoint
-from naglib.core.witnessdata import WitnessPoint, WitnessSet
+from naglib.core.base import NAGobject
 
 class IrreducibleComponent(NAGobject):
     """
     An irreducible component of an algebraic set
     """
-    def __init__(self, witness_set, codim, component_id):
+    def __init__(self, witness_set, codim, component_id, **kwargs):
         """
         Initialize the IrreducibleComponent object.
         
@@ -18,11 +18,41 @@ class IrreducibleComponent(NAGobject):
         witness_set  -- WitnessSet, the witness set describing this component
         codim        -- int, the codimension of the component
         component_id -- int, the component number for this dimension
+        
+        Optional keyword arguments:
         """
         self._witness_set = witness_set
         self._codim = codim
         self._component_id = component_id
         self._degree = len(witness_set.witness_points)
+        
+        # optional keyword arguments
+        kkeys = kwargs.keys()
+        
+        if 'randomization_matrix' in kkeys:
+            self._randomization_matrix = kwargs['randomization_matrix']
+        else:
+            self._randomization_matrix = Matrix([])
+            
+        if 'homogenization_matrix' in kkeys:
+            self._homogenization_matrix = kwargs['homogenization_matrix']
+        else:
+            self._homogenization_matrix = Matrix([])
+            
+        if 'homogenization_vector' in kkeys:
+            self._homogenization_vector = kwargs['homogenization_vector']
+        else:
+            self._homogenization_vector = Matrix([])
+            
+        if 'homogenization_variable' in kkeys:
+            self._homogenization_variable = kwargs['homogenization_variable']
+        else:
+            self._homogenization_variable = None
+            
+        if 'patch_coefficients' in kkeys:
+            self._patch_coefficients = kwargs['patch_coefficients']
+        else:
+            self._patch_coefficients = Matrix([])
 
     def __str__(self):
         """
@@ -57,6 +87,9 @@ class IrreducibleComponent(NAGobject):
         ocs = other.contains(sp)
         
         return sco and ocs
+        
+    def _construct_witness_data(self):
+        pass
         
     def contains(self, other):
         """
@@ -105,6 +138,24 @@ class IrreducibleComponent(NAGobject):
     def dim(self):
         variables = self.system.variables
         return len(variables) - self._codim
+    @property
+    def homogenization_matrix(self):
+        return self._homogenization_matrix
+    @property
+    def homogenization_variable(self):
+        return self._homogenization_variable
+    @property
+    def homogenization_vector(self):
+        return self._homogenization_vector
+    @property
+    def is_projective(self):
+        return not not self._homogenization_variable
+    @property
+    def patch_coefficients(self):
+        return self._patch_coefficients
+    @property
+    def randomization_matrix(self):
+        return self._randomization_matrix
     @property
     def system(self):
         return self._witness_set.system

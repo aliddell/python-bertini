@@ -1,4 +1,4 @@
-from sympy import I, Float, Rational, ShapeError, sympify, Matrix as spmatrix
+from sympy import I, Float, Rational, ShapeError, sympify, Matrix
 
 from naglib.exceptions import ExitSpaceError, AffineInfinityException
 from naglib.startup import TOL
@@ -36,7 +36,7 @@ class Point(NAGobject):
             coordinates = [coordinates]
         
         coordinates = [sympify(c) for c in coordinates]
-        self._coordinates = spmatrix(coordinates)
+        self._coordinates = Matrix(coordinates)
         
     def __add__(self, other):
         """
@@ -176,7 +176,7 @@ class Point(NAGobject):
                 
         cocopy = coordinates[:]
         cocopy[i:j] = sequence
-        self._coordinates = spmatrix(cocopy)
+        self._coordinates = Matrix(cocopy)
         
     def cat(self, other):
         """
@@ -211,7 +211,7 @@ class Point(NAGobject):
             raise TypeError(msg)
         coordinates = list(self._coordinates)
         coordinates.insert(index, item)
-        self._coordinates = spmatrix(coordinates)
+        self._coordinates = Matrix(coordinates)
     
     def is_zero(self, tol=TOL*10):
         coordinates = self._coordinates
@@ -228,7 +228,7 @@ class Point(NAGobject):
     def pop(self, index=-1):
         coordinates = list(self._coordinates)
         popped = coordinates.pop(index)
-        self._coordinates = spmatrix(coordinates)
+        self._coordinates = Matrix(coordinates)
         
         return popped
 
@@ -252,7 +252,7 @@ class Point(NAGobject):
         
     @property
     def coordinates(self):
-        return list(self._coordinates)
+        return self._coordinates
     
     @property
     def is_real(self):

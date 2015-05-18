@@ -1,4 +1,4 @@
-from sympy import I, Float, Rational
+from sympy import I, Float, Rational, Matrix
 
 from naglib.startup import TOL, DPS
 from naglib.exceptions import ExitSpaceError, WitnessDataException
@@ -8,7 +8,7 @@ class WitnessPoint(Point):
     """
     A single witness point for an algebraic set
     """
-    def __init__(self, coordinates, component_id, is_projective=False):
+    def __init__(self, coordinates, component_id, is_projective=False, **kwargs):
         """
         Initialize the WitnessPoint object.
 
@@ -24,6 +24,53 @@ class WitnessPoint(Point):
         elif isinstance(coordinates, ProjectivePoint):
             self._is_projective = True
             
+        kkeys = kwargs.keys()
+        
+        if 'corank' in kkeys:
+            self._corank = kwargs['corank']
+        else:
+            self._corank = -1
+        
+        if 'condition_number' in kkeys:
+            self._condition_number = kwargs['condition_number']
+        else:
+            self._condition_number = 0
+        
+        if 'smallest_nonzero' in kkeys:
+            self._smallest_nonzero = kwargs['smallest_nonzero']
+        else:
+            self._smallest_nonzero = 0
+            
+        if 'largest_zero' in kkeys:
+            self._largest_zero = kwargs['largest_zero']
+        else:
+            self._largest_zero = 0
+            
+        if 'point_type' in kkeys:
+            self._point_type = kwargs['point_type']
+        else:
+            self._point_type = 0
+            
+        if 'multiplicity' in kkeys:
+            self._multiplicity = kwargs['multiplicity']
+        else:
+            self._multiplicity = 1
+            
+        if 'deflations' in kkeys:
+            self._deflations = kwargs['deflations']
+        else:
+            self._deflations = 0
+            
+        if 'precision' in kkeys:
+            self._precision = kwargs['precision']
+        else:
+            self._precision = 0
+            
+        if 'last_approximation' in kkeys:
+            self._last_approximation = kwargs['last_approximation']
+        else:
+            self._last_approximation = Matrix([])
+        
         # TODO: sanity check projective point
 
     def __repr__(self):
@@ -106,10 +153,54 @@ class WitnessPoint(Point):
             newcoords.append(real + I*imag)
             
         return WitnessPoint(newcoords, component_id, self._is_projective)
-    
+
+    @property
+    def condition_number(self):
+        """
+        The condition number of the Jacobian at this point
+        """
+        return self._condition_number
+        
+    @property
+    def corank(self):
+        """
+        The corank of the Jacobian at this point
+        """
+        return self._corank
+        
     @property
     def component_id(self):
         return self._component_id
+        
+    @property
+    def deflations(self):
+        """
+        The number of deflations this point required
+        """
+        return self._deflations
+        
+    @property
+    def last_approximation(self):
+        coordinates = self._last_approximation
+        is_projective = self._is_projective
+        if is_projective:
+            return ProjectivePoint(coordinates)
+        else:
+            return AffinePoint(coordinates)
+        
+    @property
+    def largest_zero(self):
+        """
+        The largest `zero' singular value of the Jacobian at this point
+        """
+        return self._largest_zero
+        
+    @property
+    def multiplicity(self):
+        """
+        The multiplicity of this point with respect to the system
+        """
+        return self._multiplicity
     
     @property
     def point(self):
@@ -119,6 +210,24 @@ class WitnessPoint(Point):
             return ProjectivePoint(coordinates)
         else:
             return AffinePoint(coordinates)
+    
+    @property
+    def point_type(self):
+        return self._point_type
+        
+    @property
+    def precision(self):
+        """
+        The numerical precision required by this point
+        """
+        return self._precision
+    
+    @property
+    def smallest_nonzero(self):
+        """
+        The smallest nonzero singular value of the Jacobian at this point
+        """
+        return self._smallest_nonzero
 
 class WitnessSet(NAGobject):
     """
@@ -167,6 +276,7 @@ class WitnessSet(NAGobject):
         
         return repstr
         
+
     @property
     def system(self):
         return self._system
