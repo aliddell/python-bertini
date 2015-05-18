@@ -243,12 +243,6 @@ class Point(NAGobject):
             newcoords.append(real + I*imag)
             
         return cls(newcoords)
-    
-    def vector(self):
-        """
-        Return a SymPy matrix of coordinates (lose a lot of info this way)
-        """
-        return self._coordinates
         
     @property
     def coordinates(self):

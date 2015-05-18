@@ -143,16 +143,20 @@ class WitnessPoint(Point):
         return WitnessPoint(newcoords, component_id, self._is_projective)
     
     def rational(self):
-        coordinates = self._coordinates
-        component_id = self._component_id
-        newcoords = []
-        for c in coordinates:
-            real,imag = c.as_real_imag()
-            real = Rational(real)
-            imag = Rational(imag)
-            newcoords.append(real + I*imag)
+        rat = super(WitnessPoint, self).rational()
+        rat._component_id = self._component_id
+        rat._is_projective = self._is_projective
+        rat._condition_number = self._condition_number
+        rat._corank = self._corank
+        rat._deflations = self._deflations
+        rat._last_approximation = self._last_approximation
+        rat._largest_zero = self._largest_zero
+        rat._multiplicity = self._multiplicity
+        rat._point_type = self._point_type
+        rat._precision = self._precision
+        rat._smallest_nonzero = self._smallest_nonzero
             
-        return WitnessPoint(newcoords, component_id, self._is_projective)
+        return rat
 
     @property
     def condition_number(self):
