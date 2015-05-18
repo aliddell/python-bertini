@@ -110,10 +110,14 @@ class IrreducibleComponent(NAGobject):
             }
 
         for p in wpoints:
+            if p.homogeneous_coordinates:
+                coordinates = p.homogeneous_coordinates
+            else:
+                coordinates = p.coordinates
             wd['points'].append({
             'precision':p.precision,
-            'coordinates':p.coordinates,
-            'last approximation':p.last_approximation,
+            'coordinates':coordinates,
+            'last approximation':p.last_approximation.coordinates,
             'condition number':p.condition_number,
             'corank':p.corank,
             'smallest nonzero':p.smallest_nonzero,

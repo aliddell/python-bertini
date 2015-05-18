@@ -69,6 +69,11 @@ class WitnessPoint(Point):
             self._last_approximation = kwargs['last_approximation']
         else:
             self._last_approximation = Matrix([])
+            
+        if 'homogeneous_coordinates' in kkeys:
+            self._homogeneous_coordinates = kwargs['homogeneous_coordinates']
+        else:
+            self._homogeneous_coordinates = Matrix([])
         
         # TODO: sanity check projective point
 
@@ -169,7 +174,7 @@ class WitnessPoint(Point):
         flo._condition_number = self._condition_number
         flo._corank = self._corank
         flo._deflations = self._deflations
-        flo._last_approximation = self._last_approximation
+        flo._last_approximation = self._last_approximation.float()
         flo._largest_zero = self._largest_zero
         flo._multiplicity = self._multiplicity
         flo._point_type = self._point_type
@@ -233,6 +238,13 @@ class WitnessPoint(Point):
         The number of deflations this point required
         """
         return self._deflations
+        
+    @property
+    def homogeneous_coordinates(self):
+        """
+        The homogeneous coordinates of the witness point
+        """
+        return self._homogeneous_coordinates
         
     @property
     def last_approximation(self):

@@ -448,12 +448,13 @@ class BertiniRun(NAGobject):
                 
             dim_list = {}
             
+            hcoord = None
             for point in points:
                 comp_id = point['component number']
                 if comp_isprojective:
-                    coord = ProjectivePoint(point['coordinates'])
+                    hcoord = ProjectivePoint(point['coordinates'])
                     if not system.homvar:
-                        coord = coord.dehomogenize()
+                        coord = hcoord.dehomogenize()
                 else:
                     coord = AffinePoint(point['coordinates'])
                     
@@ -466,7 +467,8 @@ class BertiniRun(NAGobject):
                                       multiplicity=point['multiplicity'],
                                       deflations=point['deflations'],
                                       precision=point['precision'],
-                                      last_approximation=point['last approximation'])
+                                      last_approximation=point['last approximation'],
+                                      homogeneous_coordinates=hcoord)
                 
                 if not dim_list.has_key(comp_id):
                     dim_list[comp_id] = []
