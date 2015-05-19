@@ -1,7 +1,8 @@
-from naglib.startup import DPS
+#from naglib.startup import DPS
 
 def dps(s):
-    return max(DPS, len(s))
+    #return max(DPS, len(s))
+    return len(s)
 
 def striplines(lines, nonempty=True):
     if nonempty:

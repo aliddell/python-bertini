@@ -452,7 +452,7 @@ class BertiniRun(NAGobject):
             for point in points:
                 comp_id = point['component number']
                 if comp_isprojective:
-                    hcoord = ProjectivePoint(point['coordinates'])
+                    hcoord = point['coordinates']
                     if not system.homvar:
                         coord = hcoord.dehomogenize()
                 else:
