@@ -454,7 +454,7 @@ class BertiniRun(NAGobject):
                 if comp_isprojective:
                     hcoord = point['coordinates']
                     if not system.homvar:
-                        coord = hcoord.dehomogenize()
+                        coord = ProjectivePoint(hcoord).dehomogenize()
                 else:
                     coord = AffinePoint(point['coordinates'])
                     
