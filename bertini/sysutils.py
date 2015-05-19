@@ -482,7 +482,7 @@ class BertiniRun(NAGobject):
                                 lslice,
                                 dim_list[comp_id],
                                 witness_data,
-                                homogenous_slice=hslice)
+                                homogeneous_slice=hslice)
                 component = IrreducibleComponent(ws, codim, comp_id,
                                                  randomization_matrix=rand_mat,
                                                  homogenization_matrix=homog_mat,
