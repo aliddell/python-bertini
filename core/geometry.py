@@ -128,7 +128,7 @@ class IrreducibleComponent(NAGobject):
             'deflations':p.deflations
             })
             
-        return wd
+        return [wd]
         
     def contains(self, other):
         """
