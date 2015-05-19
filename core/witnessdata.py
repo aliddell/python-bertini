@@ -291,7 +291,7 @@ class WitnessSet(NAGobject):
     """
     A witness set for a component
     """
-    def __init__(self, system, lslice, witness_points, witness_data):
+    def __init__(self, system, lslice, witness_points, witness_data, **kwargs):
         """Initialize the WitnessSet
         
         Keyword arguments:
@@ -313,6 +313,13 @@ class WitnessSet(NAGobject):
             if w._component_id != self._component_id:
                 msg = 'WitnessPoint {0} and WitnessPoint {1} do not lie on the same component'.format(wp, w)
                 raise WitnessDataException(msg)
+        
+        kkeys = kwargs.keys()
+        
+        if 'homogeneous_slice' in kkeys:
+            self._homogeneous_slice = kwargs['homogeneous_slice']
+        else:
+            self._homogeneous_slice = None
     
     def __repr__(self):
         """
