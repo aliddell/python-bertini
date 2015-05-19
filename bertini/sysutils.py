@@ -976,7 +976,7 @@ class BertiniRun(NAGobject):
                 self._inputf = self._recover_input()
                 data = self._recover_data()
             except:
-                self.rerun()
+                data = self.rerun()
         else:
             self._inputf = self._recover_input()
             data = self._recover_data()
