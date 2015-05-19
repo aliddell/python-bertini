@@ -929,13 +929,7 @@ class BertiniRun(NAGobject):
         if not self._complete:
             return self.run()
         else:
-            inputf = self._inputf
-            for k in config.keys():
-                inputf.insert(1, '{0}:{1};\n'.format(k, config[k]))
-            fh = open(self._dirname + '/input', 'w')
-            for line in inputf:
-                fh.write(line)
-            fh.close()
+            self._config.update(config)
             return self.run()
                 
     def run(self, rerun_on_fail=False):
