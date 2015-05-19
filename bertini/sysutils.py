@@ -938,7 +938,7 @@ class BertiniRun(NAGobject):
             fh.close()
             return self.run()
                 
-    def run(self):
+    def run(self, rerun_on_fail=False):
         from os import chdir        
         from os.path import exists
         
@@ -969,9 +969,17 @@ class BertiniRun(NAGobject):
             stdin.close()
             
         self._complete = True
-        self._inputf = self._recover_input()
         self._output = output
-        data = self._recover_data()
+        
+        if rerun_on_fail:
+            try:
+                self._inputf = self._recover_input()
+                data = self._recover_data()
+            except:
+                self.rerun()
+        else:
+            self._inputf = self._recover_input()
+            data = self._recover_data()
         
         return data
         
