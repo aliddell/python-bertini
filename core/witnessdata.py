@@ -343,14 +343,21 @@ class WitnessSet(NAGobject):
         
 
     @property
-    def system(self):
-        return self._system
+    def homogeneous_slice(self):
+        return self._homogeneous_slice
+        
     @property
     def linear_slice(self):
         return self._slice
+        
+    @property
+    def system(self):
+        return self._system
+        
     @property
     def witness_data(self):
         return self._witness_data
+        
     @property
     def witness_points(self):
         return self._witness_points
