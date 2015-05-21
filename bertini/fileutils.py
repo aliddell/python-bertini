@@ -35,6 +35,9 @@ def parselines(lines, tol=TOL, projective=False, as_set=False):
         newpoint = []
         for p in point:
             real,imag = p
+            if imag[-1] == ';':
+                imag = imag[:-1]
+                
             real = Float(real, dps(real))
             imag = Float(imag, dps(imag))
 
