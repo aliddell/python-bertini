@@ -67,6 +67,8 @@ def __proc_err_output(output):
         return '\n'.join(lines[dex:-1])
 
 BERTINI = __has_bertini()
+MPIRUN  = __has_mpi()
+PCOUNT  = __proc_count()
 
 class BertiniRun(NAGobject):
     TEVALP    = -4
@@ -961,17 +963,18 @@ class BertiniRun(NAGobject):
     def run(self, rerun_on_fail=False):
         from os import chdir        
         from os.path import exists
-        from naglib import BERTINI # in case the user has changed it
+        # in case the user has changed any of these
+        from naglib import BERTINI
+        from naglib import MPIRUN as mpirun
+        from naglib import PCOUNT as nump
         
         if not BERTINI:
             raise NoBertiniException()
         
         self._bertini = BERTINI
-        mpirun = __has_mpi()
         
         if self._parallel and mpirun:
             cmd = mpirun
-            nump = __proc_count()
             arg = [cmd, '-np', nump, self._bertini]
         else:
             arg = [self._bertini]
