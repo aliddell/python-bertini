@@ -31,6 +31,25 @@ def __has_bertini():
         bertinipath = ''
 
     return bertinipath.strip()
+    
+def __has_mpi():
+    platform = __os()
+    if platform == 'WINDOWS':
+        cmd = 'where.exe'
+    else:
+        cmd = 'which'
+
+    try:
+        mpipath = check_output([cmd, 'mpirun'])
+    except CalledProcessError:
+        mpipath = ''
+
+    return mpipath.strip()
+    
+def __proc_count():
+    from multiprocessing import cpu_count
+    
+    return cpu_count()
 
 def __proc_err_output(output):
     lines = output.split('\n')
@@ -54,18 +73,20 @@ class BertiniRun(NAGobject):
     TEVALPJ   = -3
     TNEWTP    = -2
     TNEWTPJ   = -1
-    TZERODIM  =  0
-    TPOSDIM   =  1
+    TZERODIM  =  0 # parallel
+    TPOSDIM   =  1 # parallel
     TSAMPLE   =  2
     TMEMTEST  =  3
     TPRINTWS  =  4
     TPROJECT  =  5
     TISOSTAB  =  6
-    TREGENEXT =  7
+    TREGENEXT =  7 # parallel
     
     def __init__(self, system, tracktype=TZERODIM, config={}, **kwargs):
         """
         """
+        from naglib import BERTINI
+        
         kkeys = kwargs.keys()
         ckeys = [k.lower() for k in config.keys()]
         if tracktype not in range(-4,8):
@@ -73,6 +94,11 @@ class BertiniRun(NAGobject):
             raise ValueError(msg)
         else:
             self._tracktype = tracktype
+            
+        if tracktype in (self.TZERODIM, self.TPOSDIM, self.TREGENEXT):
+            self._parallel = True
+        else:
+            self._parallel = False
             
         # check to see if tracktype jives with kwargs
         msg = ''
@@ -935,10 +961,21 @@ class BertiniRun(NAGobject):
     def run(self, rerun_on_fail=False):
         from os import chdir        
         from os.path import exists
+        from naglib import BERTINI # in case the user has changed it
         
-        cmd = self._bertini
-        if not cmd:
+        if not BERTINI:
             raise NoBertiniException()
+        
+        self._bertini = BERTINI
+        mpirun = __has_mpi()
+        
+        if self._parallel and mpirun:
+            cmd = mpirun
+            nump = __proc_count()
+            arg = [cmd, '-np', nump, self._bertini]
+        else:
+            arg = [self._bertini]
+            
         dirname = self._dirname
         
         input_file = self._write_files()
@@ -948,7 +985,7 @@ class BertiniRun(NAGobject):
         else:
             stdin = None
         
-        arg = [cmd, input_file]
+        arg += [input_file]
             
         chdir(dirname)
         if stdin:
