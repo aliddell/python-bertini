@@ -818,55 +818,14 @@ class BertiniRun(NAGobject):
         """
         from sympy import Integer, Float
         fh = open(dirname + '/' + filename, 'w')
-        
-#        if components:
-#            codims = [] # modified witness_data
-#            compids = [(c.codim, c.component_id) for c in components]
-#            unique_codims = sorted(list(set([c[0] for c in compids])))
-#            for i in range(len(witness_data)):
-#                wd = witness_data[i]
-#                codim  = wd['codim']
-#                if codim in unique_codims:
-#                    cdict = {'codim':codim,
-#                             'A':wd['A'],
-#                             'homVarConst':wd['homVarConst'],
-#                             'p':wd['p'],
-#                             'slice':wd['slice'],
-#                             'W':wd['W'],
-#                             'H':wd['H'],
-#                             'points':[]}
-#                    
-#                    cids   = [c[1] for c in compids if c[0] == codim]
-#                    # components may not have correct order
-#                    cidmap = dict([(cids[i], i) for i in range(len(cids))])
-#                    points = wd['points']
-#                    for p in points:
-#                        cn = p['component number']
-#                        if cn in cids:
-#                            cdict['points'].append({
-#                            'largest zero':p['largest zero'],
-#                            'precision':p['precision'],
-#                            'last approximation':p['last approximation'],
-#                            'smallest nonzero':p['smallest nonzero'],
-#                            'deflations':p['deflations'],
-#                            'component number':cidmap[cn],
-#                            'multiplicity':p['multiplicity'],
-#                            'corank':p['corank'],
-#                            'coordinates':p['coordinates'],
-#                            'condition number':p['condition number'],
-#                            'type':p['type']})
-#                    
-#                    codims.append(cdict)
-#        else:
-        codims = witness_data
             
-        nonempty_codims = len(codims)
-        num_vars = len(codims[0]['points'][0]['coordinates'])
+        nonempty_codims = len(witness_data)
+        num_vars = len(witness_data[0]['points'][0]['coordinates'])
         fh.write('{0}\n'.format(num_vars))
         fh.write('{0}\n'.format(nonempty_codims))
         
         for i in range(nonempty_codims):
-            wd_codim = codims[i]
+            wd_codim = witness_data[i]
             fh.write('{0}\n'.format(wd_codim['codim']))
             codim_points = [p for p in wd_codim['points']]
             fh.write('{0}\n'.format(len(codim_points)))
@@ -894,7 +853,7 @@ class BertiniRun(NAGobject):
                 fh.write('{0}\n'.format(p['deflations']))
         fh.write('-1\n\n') # -1 designates the end of witness points
         
-        h1 = codims[0]['H'][0]
+        h1 = witness_data[0]['H'][0]
         if type(h1) == Integer:
             numtype = 0
         elif type(h1) == Float:
@@ -904,7 +863,7 @@ class BertiniRun(NAGobject):
         fh.write('{0}\n'.format(numtype))
         
         for i in range(nonempty_codims):
-            wd_codim = codims[i]
+            wd_codim = witness_data[i]
             A   = wd_codim['A']
             W   = wd_codim['W']
             H   = wd_codim['H']
@@ -975,7 +934,7 @@ class BertiniRun(NAGobject):
         
         if self._parallel and mpirun:
             cmd = mpirun
-            arg = [cmd, '-np', nump, self._bertini]
+            arg = [cmd, '-np', str(nump), self._bertini]
         else:
             arg = [self._bertini]
             
