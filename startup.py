@@ -14,11 +14,13 @@ del sys
 
 # create a temporary directory in which to work
 def settempdir(dirname=TEMPDIR):
+    import naglib as nl
     import os
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     TEMPDIR = dirname
     global TEMPDIR
+    nl.TEMPDIR = dirname
 
 from sympy import __version__ as spver
 spver = [int(n) for n in spver.split('.')[:3]]
