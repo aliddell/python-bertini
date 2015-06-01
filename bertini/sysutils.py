@@ -665,9 +665,13 @@ class BertiniRun(NAGobject):
         """
         filename = self._dirname + "/main_data"
         key = "*************** input file needed to reproduce this run ***************\n"
-        with open(filename, 'r') as fh:
+        try:
+            fh = open(filename, 'r')
             lines = fh.readlines()
-        fh.close()
+            fh.close()
+        except IOError:
+            lines = []
+            
         try:
             dex = lines.index(key)
         except ValueError:

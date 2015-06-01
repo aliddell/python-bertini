@@ -1,6 +1,7 @@
 """Define constants and register exit functions"""
 TOL = 1e-15
 DPS = 50
+TEMPDIR = '/tmp/naglib/'
 
 import sys
 if sys.version_info[0] == 2 and sys.version_info[1] < 6:
@@ -12,11 +13,12 @@ else:  # Python 3
 del sys
 
 # create a temporary directory in which to work
-import os
-TEMPDIR = '/tmp/naglib/'
-if not os.path.exists(TEMPDIR):
-    os.makedirs(TEMPDIR)
-del os
+def settempdir(dirname=TEMPDIR):
+    import os
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    TEMPDIR = dirname
+    global TEMPDIR
 
 from sympy import __version__ as spver
 spver = [int(n) for n in spver.split('.')[:3]]
