@@ -279,19 +279,61 @@ class PolynomialSystem(NAGobject):
         """
         x.__mul__(y) <==> x*y
         """
-        if not scalar_num(other):
+        from sympy import Add
+        cls = self.__class__
+        
+        if isinstance(other, cls):
+            sm = self.shape[0]
+            om = other.shape[0]
+            if sm > 1 and om > 1:
+                from sympy import ShapeError
+                msg = "shape mismatch"
+                raise ShapeError(msg)
+            elif sm == 1:
+                spol = self.polynomials[0]
+                opols = other.polynomials
+                pols = spol*opols
+            elif om == 1:
+                opol = other.polynomials[0]
+                spols = self.polynomials
+                pols = opol*spols
+                
+            svars = set(self.variables)
+            ovars = set(other.variables)
+            spars = set(self.parameters)
+            opars = set(other.parameters)
+            
+            if svars.intersection(opars) or ovars.intersection(spars):
+                msg = "nontrivial intersection between variables and parameters"
+                raise ValueError(msg)
+            elif self._homvar != other.homvar:
+                msg = "multihomogeneous polynomial systems not implemented yet"
+                raise NotImplementedError(msg)
+            
+            variables = svars.union(ovars)
+            parameters = spars.union(opars)
+            
+            return cls(pols, variables, parameters, self._homvar)
+        elif isinstance(other, Add):
+            parameters = self.parameters
+            polynomials = self._polynomials * other
+            homvar = self._homvar
+            
+            return cls(polynomials, parameters=parameters, homvar=homvar)
+            
+        elif scalar_num(other):
+            polynomials = other*self._polynomials
+            variables = self._variables
+            parameters = self._parameters
+            homvar = self._homvar
+            if other == 0:
+                return PolynomialSystem(polynomials)
+            else:
+                return PolynomialSystem(polynomials, variables, parameters, homvar)
+        else:
             t = type(other)
             msg = "unsupported operand type(s) for *: 'PolynomialSystem' and '{0}'".format(t)
             raise TypeError(msg)
-        
-        polynomials = other*self._polynomials
-        variables = self._variables
-        parameters = self._parameters
-        homvar = self._homvar
-        if other == 0:
-            return PolynomialSystem(polynomials)
-        else:
-            return PolynomialSystem(polynomials, variables, parameters, homvar)
         
     def __div__(self, other):
         """

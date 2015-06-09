@@ -7,10 +7,11 @@ def scalar_num(x):
     """
     Determine if x is a scalar type for purposes of multiplication
     """
-    #from numbers import Number as pynum
-    #from sympy import Number as spnum
+    from sympy import Number
+    x = sympify(str(x))
+    re, im = x.as_real_imag()
     
-    return True
+    return isinstance(re, Number) and isinstance(im, Number)
 
 class NAGobject(object):
     """
