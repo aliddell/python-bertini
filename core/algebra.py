@@ -334,7 +334,13 @@ class PolynomialSystem(NAGobject):
             t = type(other)
             msg = "unsupported operand type(s) for *: 'PolynomialSystem' and '{0}'".format(t)
             raise TypeError(msg)
-        
+            
+    def __rmul__(self, other):
+        """
+        x.__rmul__(y) <==> y*x
+        """
+        return self.__mul__(other)
+            
     def __div__(self, other):
         """
         x.__div__(y) <==> x/y
