@@ -26,12 +26,12 @@ def __has_bertini():
         cmd = 'which'
 
     try:
-        bertinipath = check_output([cmd, 'bertini'])
+        bertinipath = check_output([cmd, 'bertini'], universal_newlines=True)
     except CalledProcessError:
         bertinipath = ''
 
     return bertinipath.strip()
-    
+
 def __has_mpi():
     platform = __os()
     if platform == 'WINDOWS':
@@ -40,15 +40,15 @@ def __has_mpi():
         cmd = 'which'
 
     try:
-        mpipath = check_output([cmd, 'mpirun'])
+        mpipath = check_output([cmd, 'mpirun'], universal_newlines=True)
     except CalledProcessError:
         mpipath = ''
 
     return mpipath.strip()
-    
+
 def __proc_count():
     from multiprocessing import cpu_count
-    
+
     return cpu_count()
 
 def __proc_err_output(output):
@@ -83,12 +83,12 @@ class BertiniRun(NAGobject):
     TPROJECT  =  5
     TISOSTAB  =  6
     TREGENEXT =  7 # parallel
-    
+
     def __init__(self, system, tracktype=TZERODIM, config={}, **kwargs):
         """
         """
         from naglib import BERTINI
-        
+
         kkeys = kwargs.keys()
         ckeys = [k.lower() for k in config.keys()]
         if tracktype not in range(-4,8):
@@ -96,12 +96,12 @@ class BertiniRun(NAGobject):
             raise ValueError(msg)
         else:
             self._tracktype = tracktype
-            
+
         if tracktype in (self.TZERODIM, self.TPOSDIM, self.TREGENEXT):
             self._parallel = True
         else:
             self._parallel = False
-            
+
         # check to see if tracktype jives with kwargs
         msg = ''
         ## start point(s) required
@@ -129,14 +129,14 @@ class BertiniRun(NAGobject):
             self._projection = kwargs['projection']
         if msg:
             raise KeyError(msg)
-        
+
         # tolerance
         # TODO:make this mean something
         if 'tol' in kkeys:
             self._tol = kwargs['tol']
         else:
             self._tol = TOL
-        
+
         # parameter homotopy
         self._parameter_homotopy = {'key':'', 'arg':0}
         if 'parameterhomotopy' in ckeys:
@@ -146,9 +146,9 @@ class BertiniRun(NAGobject):
                     self._parameter_homotopy['key'] = 'ParameterHomotopy'
                     self._parameter_homotopy['arg'] = config[k] # in (0,1,2)
                     break
-                    
+
             del ckeys2
-        
+
         # ensure the system jives with the call for parameter homotopy
         msg = ''
         if not system.parameters and self._parameter_homotopy['arg'] > 0:
@@ -157,10 +157,10 @@ class BertiniRun(NAGobject):
             msg = "a parameterized system requires ParameterHomotopy either 1 or 2"
         elif tracktype != self.TZERODIM and self._parameter_homotopy['arg'] > 0:
             msg = "parameter homotopy only supported for zero-dimensional runs"
-            
+
         if msg:
             raise KeyError(msg)
-        
+
         if 'start' in kkeys:
             start = kwargs['start']
             if type(start) not in (tuple, list):
@@ -182,17 +182,17 @@ class BertiniRun(NAGobject):
         else:
             finalp = None
 
-        # if a system specifies one of start parameters or final parameters it must specify the other            
+        # if a system specifies one of start parameters or final parameters it must specify the other
         if (startp and not finalp) or (finalp and not startp):
             msg = "specify both start parameters and final parameters or neither"
             raise BertiniError(msg)
-            
+
         # user did not specify start or final parameters
         if 'parameterhomotopy' in ckeys and self._parameter_homotopy['arg'] > 1:
             if not (startp or finalp):
                 msg = "specify start and/or final parameters with the keyword arguments `start_parameters' and/or `final_parameters'"
                 raise KeyError(msg)
-            
+
         from tempfile import mkdtemp
         self._dirname = mkdtemp(prefix=basedir)
         self._bertini = BERTINI
@@ -200,11 +200,11 @@ class BertiniRun(NAGobject):
         self._config = config
         self._complete = False
         self._inputf = []
-        
+
     def _parse_witness_data(self, filename):
         """
         Parse witness_data file into usable data
-        
+
         Keyword arguments:
         filename -- string, path to witness_data file
         """
@@ -212,11 +212,11 @@ class BertiniRun(NAGobject):
         from sympy import I, Integer, Float, Rational, Matrix
         from naglib.core.misc import dps, striplines
         from naglib.exceptions import UnclassifiedException
-        
+
         if not isfile(filename):
             msg = "{0} does not exist".format(filename)
             raise IOError(msg)
-        
+
         fh = open(filename, 'r')
         lines = striplines(fh.readlines())
         fh.close()
@@ -392,7 +392,7 @@ class BertiniRun(NAGobject):
 
             p = lines[:p_size]
             lines = lines[p_size:]
-            
+
             p = [q.split(' ') for q in p]
             if num_format == INT:
                 p = [Integer(q[0]) + I*Integer(q[1]) for q in p]
@@ -402,7 +402,7 @@ class BertiniRun(NAGobject):
                     p[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
             elif num_format == RATIONAL:
                 p = [Rational(q[0]) + I*Rational(q[1]) for q in p]
-            
+
             p = Matrix(p)
             codims[i]['A'] = A
             codims[i]['W'] = W
@@ -412,7 +412,7 @@ class BertiniRun(NAGobject):
             codims[i]['p'] = p
 
         return codims
-        
+
     def _proc_err_output(self, output):
         lines = output.split('\n')
         dex = -1
@@ -427,7 +427,7 @@ class BertiniRun(NAGobject):
             lines[dex] = l[l.index(' ')+1:]
             # strip 'Bertini will now exit due to this error'
             return '\n'.join(lines[dex:-1])
-        
+
     def _recover_components(self, witness_data):
         """
         """
@@ -449,9 +449,9 @@ class BertiniRun(NAGobject):
             homvar = sympify('_' + str(homvar))
         homsys  = system.homogenize(homvar)
         homvars = homsys.variables
-        
+
         components = []
-        
+
         for c in witness_data:
             codim       = c['codim']
             homVarConst = c['homVarConst']
@@ -462,9 +462,9 @@ class BertiniRun(NAGobject):
             homog_vec   = c['H']
             hvc         = c['homVarConst']
             patch_coeff = c['p']
-            
+
             comp_isprojective = homVarConst == 0
-            
+
             hslice = None
             if coeffs:
                 if comp_isprojective:
@@ -475,9 +475,9 @@ class BertiniRun(NAGobject):
                     lslice = LinearSlice(coeffs, variables)
             else:
                 lslice = None
-                
+
             dim_list = {}
-            
+
             hcoord = None
             for point in points:
                 comp_id = point['component number']
@@ -487,7 +487,7 @@ class BertiniRun(NAGobject):
                         coord = ProjectivePoint(hcoord).dehomogenize()
                 else:
                     coord = AffinePoint(point['coordinates'])
-                    
+
                 wpoint = WitnessPoint(coord, comp_id,
                                       corank=point['corank'],
                                       condition_number=point['condition number'],
@@ -499,12 +499,12 @@ class BertiniRun(NAGobject):
                                       precision=point['precision'],
                                       last_approximation=point['last approximation'],
                                       homogeneous_coordinates=hcoord)
-                
+
                 if not dim_list.has_key(comp_id):
                     dim_list[comp_id] = []
-                    
+
                 dim_list[comp_id].append(wpoint)
-            
+
             for comp_id in dim_list.keys():
                 ws = WitnessSet(system.copy(),
                                 lslice,
@@ -519,17 +519,17 @@ class BertiniRun(NAGobject):
                                                  patch_coefficients=patch_coeff)
 
                 components.append(component)
-                
+
         return components
-        
+
     def _recover_data(self):
         """
         recover the information pertinent to a run
         """
-        
+
         if not self._complete:
             return
-        
+
         from naglib.bertini.fileutils import read_points
         from naglib.core.misc import striplines
         dirname = self._dirname
@@ -540,9 +540,9 @@ class BertiniRun(NAGobject):
         fh = open(main_data, 'r')
         self._main_data = striplines(fh.readlines())
         fh.close()
-        
+
         projective = not not system.homvar
-        
+
         if tracktype == self.TEVALP:
             pass
         elif tracktype == self.TEVALPJ:
@@ -555,58 +555,58 @@ class BertiniRun(NAGobject):
             finites = dirname + '/finite_solutions'
             startp = dirname + '/start_parameters'
             finite_solutions = read_points(finites, tol=tol, projective=projective)
-            
+
             ptype  = self._parameter_homotopy['arg']
             if ptype == 1:
                 start_parameters = read_points(startp, tol=tol, projective=projective)
                 return finite_solutions, start_parameters
-            
+
             return finite_solutions
         elif tracktype == self.TPOSDIM:
             wdfile = dirname + '/witness_data'
             self._witness_data = self._parse_witness_data(wdfile)
             components = self._recover_components(self._witness_data)
-                        
+
             return components
         elif tracktype == self.TSAMPLE:
             wdfile = dirname + '/witness_data'
             self._witness_data = self._parse_witness_data(wdfile)
             samplef = dirname + '/sampled'
             sampled = read_points(samplef, tol=tol, projective=projective)
-            
+
             return sampled
         elif tracktype == self.TMEMTEST:
             from sympy import zeros
-            
+
             wdfile = dirname + '/witness_data'
             self._witness_data = self._parse_witness_data(wdfile)
             inmat = dirname + '/incidence_matrix'
             fh = open(inmat, 'r')
             lines = striplines(fh.readlines())
             fh.close()
-            
+
             testcodim = self._component.codim
             testcid   = 0 # component_id should be 0 after write
-            
+
             testp = self._start
             if type(testp) not in (list, tuple):
                 testp = [testp]
-            
+
             nonempty_codims = int(lines[0])
             lines = lines[1:]
             # gather nonempty codims with component count for each
             ccounts = lines[:nonempty_codims]
             lines = lines[nonempty_codims:]
-            
+
             ccounts = [tuple([int(d) for d in c.split(' ')]) for c in ccounts]
             # ordered list of codims with component ids, for matrix
             cids = [(c[0], j) for c in ccounts for j in range(c[1])]
             colcount = len(cids)
             dex = cids.index((testcodim, testcid))
-            
+
             numpoints = int(lines[0])
             lines = lines[1:]
-            
+
             inmat = zeros(numpoints, colcount)
             # populate incidence matrix
             for i in range(numpoints):
@@ -614,7 +614,7 @@ class BertiniRun(NAGobject):
                 row = [int(l) for l in line]
                 for j in range(colcount):
                     inmat[i,j] = row[j]
-            
+
             if numpoints == 1:
                 return inmat[0, dex] == 1
             else:
@@ -622,14 +622,14 @@ class BertiniRun(NAGobject):
                 for i in range(numpoints):
                     ret.append(inmat[i, dex] == 1)
                 return ret
-                
+
         elif tracktype == self.TPRINTWS:
             pointsfile = dirname + '/points.out'
             #sysfile    = dirname + '/sys.out'
-            
+
             points = read_points(pointsfile, tol=tol, projective=projective)
             #TODO: parse linear system file and return a LinearSystem
-            
+
             return points
         elif tracktype == self.TPROJECT:
             #TODO: implement
@@ -649,15 +649,15 @@ class BertiniRun(NAGobject):
                 self._witness_data = self._parse_witness_data(wdfile)
                 components = self._recover_components(self._witness_data)
                 return components
-            
+
             #TODO: read isosingular_summary and maybe output_isosingular
         elif tracktype == self.TREGENEXT:
             wdfile = dirname + '/witness_data'
             self._witness_data = self._parse_witness_data(wdfile)
             components = self._recover_components(self._witness_data)
-                        
-            return components        
-        
+
+            return components
+
     def _recover_input(self):
         """
         Reads main_data and recovers the input file
@@ -671,7 +671,7 @@ class BertiniRun(NAGobject):
             fh.close()
         except IOError:
             lines = []
-            
+
         try:
             dex = lines.index(key)
         except ValueError:
@@ -680,28 +680,28 @@ class BertiniRun(NAGobject):
         inlines = lines[dex+1:]
         while inlines[0] == '\n':
             inlines = inlines[1:]
-            
+
         dex = inlines.index('END;\n')
         inlines = inlines[:dex+1]
-        
+
         return inlines
-        
+
     def _write_files(self):
         from os.path import exists
         from naglib.bertini.fileutils import fprint
-        
+
         tracktype = self._tracktype
         dirname = self._dirname
         system = self._system
         if not exists(dirname):
             from os import mkdir
             mkdir(dirname)
-        
+
         ### write the system
         sysconfig = self._config.copy()
         sysconfig.update({'TrackType':tracktype})
         inputf = self._write_system(system, config=sysconfig)
-        
+
         ### write out `start', `start_parameters', `final_parameters'
         if '_start' in dir(self):
             start = self._start
@@ -721,7 +721,7 @@ class BertiniRun(NAGobject):
                 finalp = phtpy['final parameters']
                 finalpfile = dirname + '/final_parameters'
                 fprint(finalp, finalpfile)
-        
+
         ### write out component information
         if '_component' in dir(self):
             component = self._component
@@ -746,57 +746,57 @@ class BertiniRun(NAGobject):
                 elif tracktype == self.TPROJECT:
                     instructions = [str(dim), '0']
                     self._write_instructions(instructions)
-        
+
                     ### write out projection information
                     projection = self._projection
                     projnum = ['1' if x in projection else '0' for x in system.variables]
                     projnum = [' '.join(projnum)]
                     self._write_instructions(projnum, 'projection')
-                    
+
         return inputf
-    
+
     def _write_instructions(self, lines, filename='instructions'):
         filename = self._dirname + '/' + filename
         fh = open(filename, 'w')
         for line in lines:
             fh.write(line + '\n')
         fh.close()
-        
+
     def _write_system(self, system, inputf='input', config=None):
         from re import sub as resub
         if not config:
             config = self._config
         dirname = self._dirname
         filename = dirname + '/' + inputf
-    
+
         polynomials  = [p.factor() for p in system.polynomials]
         variables    = system.variables
         parameters   = system.parameters
         homvar       = system.homvar
         num_polys    = system.shape[0]
-        
+
         options = config.keys()
-        
+
         str_poly = [str(p) for p in polynomials]
         str_poly = [resub(string=p, pattern=r'\*\*', repl='^') for p in str_poly]
         str_vars = [str(v) for v in variables]
         str_pars = [str(p) for p in parameters]
-        
+
         poly_names = ['f{0}'.format(i+1) for i in range(num_polys)]
         polys_named = zip(poly_names, str_poly)
-        
+
         poly_list = ','.join([f for f in poly_names])
         vars_list = ','.join([v for v in str_vars])
         pars_list = ','.join([p for p in str_pars])
 
         fh = open(filename, 'w')
-        
+
         # write the CONFIG section
         print('CONFIG', file=fh)
         for option in options:
             print('{0}:{1};'.format(option, config[option]), file=fh)
         print('END', file=fh)
-        
+
         # write the INPUT section
         print('INPUT', file=fh)
         if parameters:
@@ -806,28 +806,28 @@ class BertiniRun(NAGobject):
         else:
             print('variable_group {0};'.format(vars_list), file=fh)
         print('function {0};'.format(poly_list), file=fh)
-        
+
         for p in polys_named:
             # p is a key-value pair, e.g., ('f1', 'x^2 - 1')
             print('{0} = {1};'.format(p[0], p[1]), file=fh)
         print('END', file=fh)
-        
+
         # finish up
         fh.close()
-        
+
         return filename
-    
+
     def _write_witness_data(self, witness_data, dirname, filename='witness_data'):
         """
         """
         from sympy import Integer, Float
         fh = open(dirname + '/' + filename, 'w')
-            
+
         nonempty_codims = len(witness_data)
         num_vars = len(witness_data[0]['points'][0]['coordinates'])
         fh.write('{0}\n'.format(num_vars))
         fh.write('{0}\n'.format(nonempty_codims))
-        
+
         for i in range(nonempty_codims):
             wd_codim = witness_data[i]
             fh.write('{0}\n'.format(wd_codim['codim']))
@@ -836,12 +836,12 @@ class BertiniRun(NAGobject):
             for p in codim_points:
                 prec = p['precision']
                 fh.write('{0}\n'.format(prec))
-                
+
                 coordinates = p['coordinates']
                 for c in coordinates:
                     real,imag = c.as_real_imag()
                     fh.write('{0} {1}\n'.format(real, imag))
-                
+
                 fh.write('{0}\n'.format(prec))
                 approx = p['last approximation']
                 for a in approx:
@@ -856,7 +856,7 @@ class BertiniRun(NAGobject):
                 fh.write('{0}\n'.format(p['component number']))
                 fh.write('{0}\n'.format(p['deflations']))
         fh.write('-1\n\n') # -1 designates the end of witness points
-        
+
         h1 = witness_data[0]['H'][0]
         if type(h1) == Integer:
             numtype = 0
@@ -865,7 +865,7 @@ class BertiniRun(NAGobject):
         else:
             numtype = 2
         fh.write('{0}\n'.format(numtype))
-        
+
         for i in range(nonempty_codims):
             wd_codim = witness_data[i]
             A   = wd_codim['A']
@@ -874,7 +874,7 @@ class BertiniRun(NAGobject):
             hvc = wd_codim['homVarConst']
             B   = wd_codim['slice']
             P   = wd_codim['p']
-        
+
             if A: # also W
                 num_rows, num_cols = A.shape
                 fh.write('{0} {1}\n'.format(num_rows, num_cols))
@@ -887,14 +887,14 @@ class BertiniRun(NAGobject):
                         fh.write('{0}\n'.format(W[j,k])) # W is an *integer* matrix
             else:
                 fh.write('1 0\n')
-                
+
             fh.write('\n')
             h = len(H)
             fh.write('{0}\n'.format(h))
             for j in range(h):
                 real, imag = H[j].as_real_imag()
                 fh.write('{0} {1}\n'.format(real, imag))
-            
+
             fh.write('\n')
             real,imag = hvc.as_real_imag()
             fh.write('{0} {1}\n'.format(real, imag))
@@ -907,67 +907,67 @@ class BertiniRun(NAGobject):
                         fh.write('{0} {1}\n'.format(real, imag))
             else:
                 fh.write('1 0\n')
-            
+
             p = len(P)
             fh.write('{0}\n'.format(p))
             for j in range(p):
                 real, imag = P[j].as_real_imag()
                 fh.write('{0} {1}\n'.format(real, imag))
-                
+
         fh.close()
-    
+
     def rerun(self, config={}):
         if not self._complete:
             return self.run()
         else:
             self._config.update(config)
             return self.run()
-                
+
     def run(self, rerun_on_fail=False):
-        from os import chdir        
+        from os import chdir
         from os.path import exists
         # in case the user has changed any of these
         from naglib import BERTINI
         from naglib import MPIRUN as mpirun
         from naglib import PCOUNT as nump
-        
+
         if not BERTINI:
             raise NoBertiniException()
-        
+
         self._bertini = BERTINI
-        
+
         if self._parallel and mpirun:
             cmd = mpirun
             arg = [cmd, '-np', str(nump), self._bertini]
         else:
             arg = [self._bertini]
-            
+
         dirname = self._dirname
-        
+
         input_file = self._write_files()
-        
+
         if exists(dirname + '/instructions'):
             stdin = dirname + '/instructions'
         else:
             stdin = None
-        
+
         arg += [input_file]
-            
+
         chdir(dirname)
         if stdin:
             stdin = open(stdin, 'r')
         try:
-            output = check_output(arg, stdin=stdin)
+            output = check_output(arg, stdin=stdin, universal_newlines=True)
         except CalledProcessError as e:
             msg = self._proc_err_output(e.output)
             raise BertiniError(msg)
 
         if stdin:
             stdin.close()
-            
+
         self._complete = True
         self._output = output
-        
+
         if rerun_on_fail:
             try:
                 self._inputf = self._recover_input()
@@ -977,9 +977,9 @@ class BertiniRun(NAGobject):
         else:
             self._inputf = self._recover_input()
             data = self._recover_data()
-        
+
         return data
-        
+
     @property
     def bertini(self):
         return self._bertini
