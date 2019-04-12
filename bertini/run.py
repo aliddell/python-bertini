@@ -1,76 +1,13 @@
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+import subprocess
+import tempfile # for mkdtemp
 
-from subprocess import check_output, CalledProcessError
-
-from naglib.startup import TOL, TEMPDIR as basedir
-from naglib.core.base import NAGobject
+from naglib.constants import TOL
+from naglib.system import BERTINI, MPIRUN, PCOUNT
+from naglib.core.base import NAGObject
 from naglib.exceptions import BertiniError, NoBertiniException
 
-def __os():
-    from sys import platform
-
-    if platform.startswith('win'):
-        return 'WINDOWS'
-    elif platform.startswith('cygwin'):
-        return 'CYGWIN'
-    elif platform.startswith('linux'):
-        return 'LINUX'
-    elif platform.startswith('darwin'):
-        return 'OSX'
-
-def __has_bertini():
-    platform = __os()
-    if platform == 'WINDOWS':
-        cmd = 'where.exe'
-    else:
-        cmd = 'which'
-
-    try:
-        bertinipath = check_output([cmd, 'bertini'], universal_newlines=True)
-    except CalledProcessError:
-        bertinipath = ''
-
-    return bertinipath.strip()
-
-def __has_mpi():
-    platform = __os()
-    if platform == 'WINDOWS':
-        cmd = 'where.exe'
-    else:
-        cmd = 'which'
-
-    try:
-        mpipath = check_output([cmd, 'mpirun'], universal_newlines=True)
-    except CalledProcessError:
-        mpipath = ''
-
-    return mpipath.strip()
-
-def __proc_count():
-    from multiprocessing import cpu_count
-
-    return cpu_count()
-
-def __proc_err_output(output):
-    lines = output.split('\n')
-    dex = -1
-    for l in lines:
-        if l.startswith('ERROR'):
-            dex = lines.index(l)
-    if dex == -1:
-        return output
-    else:
-        l = lines[dex]
-        # strip 'ERROR: '
-        lines[dex] = l[l.index(' ')+1:]
-        # strip 'Bertini will now exit due to this error'
-        return '\n'.join(lines[dex:-1])
-
-BERTINI = __has_bertini()
-MPIRUN  = __has_mpi()
-PCOUNT  = __proc_count()
-
-class BertiniRun(NAGobject):
+class BertiniRun(NAGObject):
     TEVALP    = -4
     TEVALPJ   = -3
     TNEWTP    = -2
@@ -87,12 +24,10 @@ class BertiniRun(NAGobject):
     def __init__(self, system, tracktype=TZERODIM, config={}, **kwargs):
         """
         """
-        from naglib import BERTINI
-
         kkeys = kwargs.keys()
         ckeys = [k.lower() for k in config.keys()]
         if tracktype not in range(-4,8):
-            msg = 'specify an integer TrackType between -4 and 7 (inclusive)'
+            msg = "specify an integer TrackType between -4 and 7 (inclusive)"
             raise ValueError(msg)
         else:
             self._tracktype = tracktype
@@ -193,8 +128,7 @@ class BertiniRun(NAGobject):
                 msg = "specify start and/or final parameters with the keyword arguments `start_parameters' and/or `final_parameters'"
                 raise KeyError(msg)
 
-        from tempfile import mkdtemp
-        self._dirname = mkdtemp(prefix=basedir)
+        self._dirname = tempfile.mkdtemp()
         self._bertini = BERTINI
         self._system = system
         self._config = config
@@ -413,21 +347,6 @@ class BertiniRun(NAGobject):
 
         return codims
 
-    def _proc_err_output(self, output):
-        lines = output.split('\n')
-        dex = -1
-        for l in lines:
-            if l.startswith('ERROR'):
-                dex = lines.index(l)
-        if dex == -1:
-            return output
-        else:
-            l = lines[dex]
-            # strip 'ERROR: '
-            lines[dex] = l[l.index(' ')+1:]
-            # strip 'Bertini will now exit due to this error'
-            return '\n'.join(lines[dex:-1])
-
     def _recover_components(self, witness_data):
         """
         """
@@ -500,7 +419,7 @@ class BertiniRun(NAGobject):
                                       last_approximation=point['last approximation'],
                                       homogeneous_coordinates=hcoord)
 
-                if not dim_list.has_key(comp_id):
+                if comp_id not in dim_list:
                     dim_list[comp_id] = []
 
                 dim_list[comp_id].append(wpoint)
@@ -927,18 +846,15 @@ class BertiniRun(NAGobject):
         from os import chdir
         from os.path import exists
         # in case the user has changed any of these
-        from naglib import BERTINI
-        from naglib import MPIRUN as mpirun
-        from naglib import PCOUNT as nump
 
         if not BERTINI:
             raise NoBertiniException()
 
         self._bertini = BERTINI
 
-        if self._parallel and mpirun:
-            cmd = mpirun
-            arg = [cmd, '-np', str(nump), self._bertini]
+        if self._parallel and MPIRUN:
+            cmd = MPIRUN
+            arg = [cmd, '-np', str(PCOUNT), self._bertini]
         else:
             arg = [self._bertini]
 
@@ -957,9 +873,9 @@ class BertiniRun(NAGobject):
         if stdin:
             stdin = open(stdin, 'r')
         try:
-            output = check_output(arg, stdin=stdin, universal_newlines=True)
-        except CalledProcessError as e:
-            msg = self._proc_err_output(e.output)
+            output = subprocess.check_output(arg, stdin=stdin, universal_newlines=True)
+        except subprocess.CalledProcessError as e:
+            msg = naglib.bertini.system.proc_err_output(e.output)
             raise BertiniError(msg)
 
         if stdin:

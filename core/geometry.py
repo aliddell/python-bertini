@@ -4,9 +4,9 @@ from sympy import Matrix
 
 from naglib.bertini.sysutils import BertiniRun
 from naglib.exceptions import BertiniError
-from naglib.core.base import NAGobject
+from naglib.core.base import NAGObject
 
-class IrreducibleComponent(NAGobject):
+class IrreducibleComponent(NAGObject):
     """
     An irreducible component of an algebraic set
     """

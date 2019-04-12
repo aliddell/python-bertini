@@ -1,7 +1,7 @@
 from sympy import I, Float, Rational, Matrix
 
 from naglib.exceptions import WitnessDataException
-from naglib.core.base import NAGobject, Point, AffinePoint, ProjectivePoint
+from naglib.core.base import NAGObject, Point, AffinePoint, ProjectivePoint
 
 class WitnessPoint(Point):
     """
@@ -287,7 +287,7 @@ class WitnessPoint(Point):
         """
         return self._smallest_nonzero
 
-class WitnessSet(NAGobject):
+class WitnessSet(NAGObject):
     """
     A witness set for a component
     """

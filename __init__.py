@@ -1,10 +1,7 @@
 """NAGlib is a Python library for numerical algebraic geometry. NAGlib aims to
-be an interface to Bertini 2 and any other software packages using techniques
-from NAG. It depends on NumPy, SciPy, SymPy, and MPMath."""
+be an interface to Bertini and any other software packages using techniques
+from numerical algebraic geometry. It depends on NumPy, SciPy, and SymPy."""
 
-from __future__ import absolute_import, print_function
-
-from .startup import *
 from .exceptions import *
 from .release import __version__, __authors__ # this is actually everything
 

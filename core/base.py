@@ -1,25 +1,25 @@
-from sympy import I, Float, Rational, ShapeError, sympify, Matrix
+import sympy
+from sympy import Rational, ShapeError, sympify, Matrix
 
 from naglib.exceptions import ExitSpaceError, AffineInfinityException
-from naglib.startup import TOL
+from naglib.constants import TOL
 
 def scalar_num(x):
     """
     Determine if x is a scalar type for purposes of multiplication
     """
-    from sympy import Number
     x = sympify(str(x))
     re, im = x.as_real_imag()
 
-    return isinstance(re, Number) and isinstance(im, Number)
+    return isinstance(re, sympy.Number) and isinstance(im, sympy.Number)
 
-class NAGobject(object):
+class NAGObject(object):
     """
     A meta class. Nothing here (yet)
     """
     pass
 
-class Point(NAGobject):
+class Point(NAGObject):
     """
     A point in affine or projective space
     """
@@ -197,12 +197,12 @@ class Point(NAGobject):
         for c in coordinates:
             real,imag = c.as_real_imag()
             if prec:
-                real = Float(real, prec)
-                imag = Float(imag, prec)
+                real = sympy.Float(real, prec)
+                imag = sympy.Float(imag, prec)
             else:
-                real = Float(real)
-                imag = Float(imag)
-            newcoords.append(real + I*imag)
+                real = sympy.Float(real)
+                imag = sympy.Float(imag)
+            newcoords.append(real + sympy.I*imag)
 
         return cls(newcoords)
 
@@ -244,7 +244,7 @@ class Point(NAGobject):
             real,imag = c.as_real_imag()
             real = Rational(real)
             imag = Rational(imag)
-            newcoords.append(real + I*imag)
+            newcoords.append(real + sympy.I*imag)
 
         return cls(newcoords)
 

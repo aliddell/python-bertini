@@ -1,13 +1,15 @@
 from __future__ import print_function
 
-from os.path import isfile
+import re
+import os.path as op
 from sys import stdout
 
 from sympy import I, Float, sympify
 
-from naglib.startup import TOL
+from naglib.constants import TOL
 from naglib.core import AffinePoint, ProjectivePoint
 from naglib.core.misc import striplines
+from naglib.core.misc import dps
 
 def parselines(lines, tol=TOL, projective=False, as_set=False):
     """    
@@ -16,8 +18,6 @@ def parselines(lines, tol=TOL, projective=False, as_set=False):
              the rest, "%s %s" % real, imag
     tol   -- optional float, smallest allowable nonzero value
     """
-    from re import split as resplit
-    from naglib.core.misc import dps
     
     lines = striplines(lines)
     points = []
@@ -31,7 +31,7 @@ def parselines(lines, tol=TOL, projective=False, as_set=False):
 
     for i in range(0, length, numvar):
         point = lines[i:i+numvar]
-        point = [resplit(r'\s+', p) for p in point]
+        point = [re.split(r'\s+', p) for p in point]
         newpoint = []
         for p in point:
             real,imag = p
@@ -61,7 +61,7 @@ def read_points(filename, tol=TOL, projective=False, as_set=False):
     """
     Reads in a file and return a set of Float numbers
     """
-    if not isfile(filename):
+    if not op.isfile(filename):
         msg = "{0} does not exist".format(filename)
         raise IOError(msg)
 

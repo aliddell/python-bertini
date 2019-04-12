@@ -1,10 +1,11 @@
 from sympy import I, Matrix as spmatrix, sympify, zeros
 
-from naglib.startup import TOL
+import naglib.bertini
+from naglib.constants import TOL
 from naglib.exceptions import BertiniError, NonPolynomialException, NonHomogeneousException
-from naglib.core.base import NAGobject, scalar_num, Point, AffinePoint
+from naglib.core.base import NAGObject, scalar_num, Point, AffinePoint
         
-class PolynomialSystem(NAGobject):
+class PolynomialSystem(NAGObject):
     """
     A polynomial system
     """
@@ -653,31 +654,29 @@ class PolynomialSystem(NAGobject):
         variables   = self._variables
         parameters  = self._parameters
         
-        if usebertini:
-            from naglib.bertini.sysutils import BertiniRun
-            
+        if usebertini:            
             # parameter homotopy
             if parameters:
                 if start_params and final_params:
-                    solve_run = BertiniRun(self,
-                                           tracktype=BertiniRun.TZERODIM,
-                                           config={'ParameterHomotopy':2},
-                                           start_parameters=start_params,
-                                           final_parameters=final_params,
-                                           start=start)
+                    solve_run = naglib.bertini.BertiniRun(self,
+                                                          tracktype=naglib.bertini.BertiniRun.TZERODIM,
+                                                          config={'ParameterHomotopy':2},
+                                                          start_parameters=start_params,
+                                                          final_parameters=final_params,
+                                                          start=start)
                 elif start_params or final_params:
                     msg = "specify both start parameters and final parameters or neither"
                     raise BertiniError(msg)
                 else:
-                    solve_run = BertiniRun(self,
-                                           BertiniRun.TZERODIM,
-                                           config={'ParameterHomotopy':1})
+                    solve_run = naglib.bertini.BertiniRun(self,
+                                                          naglib.bertini.BertiniRun.TZERODIM,
+                                                          config={'ParameterHomotopy':1})
             # numerical irreducible decomposition
             elif len(variables) > len(polynomials) or self.rank() < len(polynomials):
-                solve_run = BertiniRun(self, BertiniRun.TPOSDIM)
+                solve_run = naglib.bertini.BertiniRun(self, naglib.bertini.BertiniRun.TPOSDIM)
             # isolated solutions
             else:
-                solve_run = BertiniRun(self, BertiniRun.TZERODIM)
+                solve_run = naglib.bertini.BertiniRun(self, naglib.bertini.BertiniRun.TZERODIM)
             
             return solve_run.run()
         else:
@@ -756,7 +755,7 @@ class PolynomialSystem(NAGobject):
         n = len(self._variables)
         return (m,n)
     
-class LinearSlice(NAGobject):
+class LinearSlice(NAGObject):
     """
     A linear system
     
