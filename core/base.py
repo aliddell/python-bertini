@@ -1,23 +1,23 @@
-import sympy
-from sympy import Rational, ShapeError, sympify, Matrix
+import numbers
 
 from naglib.exceptions import ExitSpaceError, AffineInfinityException
 from naglib.constants import TOL
 
-def scalar_num(x):
-    """
-    Determine if x is a scalar type for purposes of multiplication
-    """
-    x = sympify(str(x))
-    re, im = x.as_real_imag()
 
-    return isinstance(re, sympy.Number) and isinstance(im, sympy.Number)
+def is_scalar(z):
+    """
+    Determine if z is a scalar type for purposes of multiplication
+    """
+
+    return isinstance(z, numbers.Number)
+
 
 class NAGObject(object):
     """
     A meta class. Nothing here (yet)
     """
     pass
+
 
 class Point(NAGObject):
     """
@@ -28,12 +28,6 @@ class Point(NAGObject):
         """
         Initialize the Point object
         """
-        try:
-            coordinates = list(coordinates)
-        except TypeError:
-            coordinates = [coordinates]
-
-        coordinates = [sympify(c) for c in coordinates]
         self._coordinates = Matrix(coordinates)
 
     def __add__(self, other):
@@ -80,7 +74,7 @@ class Point(NAGObject):
         x.__mul__(y) <==> x*y
         """
         cls = self.__class__
-        if not scalar_num(other):
+        if not is_scalar(other):
             t = type(other)
             msg = "unsupported operand type(s) for *: '{0}' and '{1}'".format(cls, t)
             raise TypeError(msg)
@@ -93,7 +87,7 @@ class Point(NAGObject):
         x.__rmul__(y) <==> y*x
         """
         cls = self.__class__
-        if not scalar_num(other):
+        if not is_scalar(other):
             t = type(other)
             msg = "unsupported operand type(s) for *: '{0}' and '{1}'".format(t, cls)
             raise TypeError(msg)
@@ -111,7 +105,7 @@ class Point(NAGObject):
         x.__truediv__(y) <==> x/y
         """
         cls = self.__class__
-        if not scalar_num(other):
+        if not is_scalar(other):
             t = type(other)
             msg = "unsupported operand type(s) for /: '{0}' and '{1}'".format(cls, t)
             raise TypeError(msg)
@@ -153,7 +147,7 @@ class Point(NAGObject):
         """
         x.__setitem__(y, z) <==> x[y] = z
         """
-        if not scalar_num(value):
+        if not is_scalar(value):
             msg = "must assign a number"
             raise TypeError(msg)
 
@@ -168,7 +162,7 @@ class Point(NAGObject):
 
         sequence = sympify(list(sequence))
         for s in sequence:
-            if not scalar_num(s):
+            if not is_scalar(s):
                 msg = "must assign a number"
                 raise TypeError(msg)
 
@@ -207,7 +201,7 @@ class Point(NAGObject):
         return cls(newcoords)
 
     def insert(self, index, item):
-        if not scalar_num(item):
+        if not is_scalar(item):
             msg = "only takes scalar number types"
             raise TypeError(msg)
         coordinates = list(self._coordinates)
@@ -221,7 +215,7 @@ class Point(NAGObject):
 
     def normalized(self):
         """
-        Returns the normalized version of ``self''
+        Returns the normalized version of self
         """
         coordinates = self._coordinates
         return self.__class__(coordinates.normalized())
@@ -255,6 +249,7 @@ class Point(NAGObject):
     @property
     def coordinates(self):
         return self._coordinates
+
 
 class AffinePoint(Point):
     """

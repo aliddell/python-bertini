@@ -7,6 +7,7 @@ from naglib.system import BERTINI, MPIRUN, PCOUNT
 from naglib.core.base import NAGObject
 from naglib.exceptions import BertiniError, NoBertiniException
 
+
 class BertiniRun(NAGObject):
     TEVALP    = -4
     TEVALPJ   = -3
@@ -144,7 +145,7 @@ class BertiniRun(NAGObject):
         """
         from os.path import isfile
         from sympy import I, Integer, Float, Rational, Matrix
-        from naglib.core.misc import dps, striplines
+        from naglib.misc import dps, striplines
         from naglib.exceptions import UnclassifiedException
 
         if not isfile(filename):
@@ -607,7 +608,7 @@ class BertiniRun(NAGObject):
 
     def _write_files(self):
         from os.path import exists
-        from naglib.bertini.fileutils import fprint
+        from naglib.bertini.fileutils import write_points
 
         tracktype = self._tracktype
         dirname = self._dirname
@@ -628,18 +629,20 @@ class BertiniRun(NAGObject):
                 startfile = dirname + '/member_points'
             else:
                 startfile = dirname + '/start'
-            fprint(start, startfile)
+            write_points(start, startfile)
         if self._parameter_homotopy:
             phtpy = self._parameter_homotopy
             pkeys = phtpy.keys()
+
             if 'start parameters' in pkeys:
                 startp = phtpy['start parameters']
                 startpfile = dirname + '/start_parameters'
-                fprint(startp, startpfile)
+                write_points(startp, startpfile)
+
             if 'final parameters' in pkeys:
                 finalp = phtpy['final parameters']
                 finalpfile = dirname + '/final_parameters'
-                fprint(finalp, finalpfile)
+                write_points(finalp, finalpfile)
 
         ### write out component information
         if '_component' in dir(self):

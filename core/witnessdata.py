@@ -3,6 +3,7 @@ from sympy import I, Float, Rational, Matrix
 from naglib.exceptions import WitnessDataException
 from naglib.core.base import NAGObject, Point, AffinePoint, ProjectivePoint
 
+
 class WitnessPoint(Point):
     """
     A single witness point for an algebraic set
@@ -22,59 +23,59 @@ class WitnessPoint(Point):
             self._is_projective = False
         elif isinstance(coordinates, ProjectivePoint):
             self._is_projective = True
-            
+
         kkeys = kwargs.keys()
-        
+
         if 'corank' in kkeys:
             self._corank = kwargs['corank']
         else:
             self._corank = -1
-        
+
         if 'condition_number' in kkeys:
             self._condition_number = kwargs['condition_number']
         else:
             self._condition_number = 0
-        
+
         if 'smallest_nonzero' in kkeys:
             self._smallest_nonzero = kwargs['smallest_nonzero']
         else:
             self._smallest_nonzero = 0
-            
+
         if 'largest_zero' in kkeys:
             self._largest_zero = kwargs['largest_zero']
         else:
             self._largest_zero = 0
-            
+
         if 'point_type' in kkeys:
             self._point_type = kwargs['point_type']
         else:
             self._point_type = 0
-            
+
         if 'multiplicity' in kkeys:
             self._multiplicity = kwargs['multiplicity']
         else:
             self._multiplicity = 1
-            
+
         if 'deflations' in kkeys:
             self._deflations = kwargs['deflations']
         else:
             self._deflations = 0
-            
+
         if 'precision' in kkeys:
             self._precision = kwargs['precision']
         else:
             self._precision = 0
-            
+
         if 'last_approximation' in kkeys:
             self._last_approximation = kwargs['last_approximation']
         else:
             self._last_approximation = Matrix([])
-            
+
         if 'homogeneous_coordinates' in kkeys:
             self._homogeneous_coordinates = kwargs['homogeneous_coordinates']
         else:
             self._homogeneous_coordinates = Matrix([])
-        
+
         # TODO: sanity check projective point
 
     def __repr__(self):
@@ -84,7 +85,7 @@ class WitnessPoint(Point):
         coordinates = [str(c.n()) for c in self._coordinates]
         component_id = self._component_id
         is_projective = self._is_projective
-        
+
         if is_projective:
             repstr = 'ProjectivePoint(['
             if len(coordinates) > 6:
@@ -97,25 +98,25 @@ class WitnessPoint(Point):
                 repstr += ', '.join(coordinates[:3] + ['...'] + coordinates[-3:]) + '])'
             else:
                 repstr = 'AffinePoint({0})'.format(', '.join(coordinates))
-        
+
         repstr = 'WitnessPoint({0},{1})'.format(repstr, component_id)
-        
+
         return repstr
-    
+
     def __str__(self):
         """
         x.__str__() <==> str(x)
         """
         coordinates = self._coordinates
         is_projective = self._is_projective
-        
+
         if is_projective:
             repstr = '[' + ' : '.join([str(c) for c in coordinates]) + ']'
         else:
             repstr = '[' + ', '.join([str(c) for c in coordinates]) + ']'
-            
+
         return repstr
-        
+
     def as_point(self):
         coordinates = self._coordinates
         is_projective = self._is_projective
@@ -123,23 +124,23 @@ class WitnessPoint(Point):
             return ProjectivePoint(coordinates)
         else:
             return AffinePoint(coordinates)
-    
+
     def dehomogenize(self):
         """
         Dehomogenize the witness point
-        
+
         Returns a new WitnessPoint object
         """
         cls = self.__class__
         component_id = self._component_id
         coordinates = self._coordinates
         is_projective = self._is_projective
-        
+
         if is_projective:
             point = ProjectivePoint(coordinates)
         else:
             point = AffinePoint(coordinates)
-            
+
         deh = cls(point, component_id)
         deh._is_projective = self._is_projective
         deh._condition_number = self._condition_number
@@ -151,9 +152,9 @@ class WitnessPoint(Point):
         deh._point_type = self._point_type
         deh._precision = self._precision
         deh._smallest_nonzero = self._smallest_nonzero
-        
+
         return deh
-    
+
     def float(self, prec=None):
         cls = self.__class__
         component_id = self._component_id
@@ -169,7 +170,7 @@ class WitnessPoint(Point):
                 imag = Float(imag)
             newcoords.append(real + I*imag)
         flo = cls(coordinates, component_id)
-        
+
         flo._is_projective = self._is_projective
         flo._condition_number = self._condition_number
         flo._corank = self._corank
@@ -183,9 +184,9 @@ class WitnessPoint(Point):
         else:
             flo._precision = self._precision
         flo._smallest_nonzero = self._smallest_nonzero
-        
+
         return flo
-    
+
     def rational(self):
         """
         Returns a rational approximation of self
@@ -200,7 +201,7 @@ class WitnessPoint(Point):
             imag = Rational(imag)
             newcoords.append(real + I*imag)
         rat = cls(newcoords, component_id)
-        
+
         rat._is_projective = self._is_projective
         rat._condition_number = self._condition_number
         rat._corank = self._corank
@@ -211,7 +212,7 @@ class WitnessPoint(Point):
         rat._point_type = self._point_type
         rat._precision = self._precision
         rat._smallest_nonzero = self._smallest_nonzero
-            
+
         return rat
 
     @property
@@ -220,32 +221,32 @@ class WitnessPoint(Point):
         The condition number of the Jacobian at this point
         """
         return self._condition_number
-        
+
     @property
     def corank(self):
         """
         The corank of the Jacobian at this point
         """
         return self._corank
-        
+
     @property
     def component_id(self):
         return self._component_id
-        
+
     @property
     def deflations(self):
         """
         The number of deflations this point required
         """
         return self._deflations
-        
+
     @property
     def homogeneous_coordinates(self):
         """
         The homogeneous coordinates of the witness point
         """
         return self._homogeneous_coordinates
-        
+
     @property
     def last_approximation(self):
         coordinates = self._last_approximation
@@ -254,32 +255,32 @@ class WitnessPoint(Point):
             return ProjectivePoint(coordinates)
         else:
             return AffinePoint(coordinates)
-        
+
     @property
     def largest_zero(self):
         """
         The largest `zero' singular value of the Jacobian at this point
         """
         return self._largest_zero
-        
+
     @property
     def multiplicity(self):
         """
         The multiplicity of this point with respect to the system
         """
         return self._multiplicity
-    
+
     @property
     def point_type(self):
         return self._point_type
-        
+
     @property
     def precision(self):
         """
         The numerical precision required by this point
         """
         return self._precision
-    
+
     @property
     def smallest_nonzero(self):
         """
@@ -293,7 +294,7 @@ class WitnessSet(NAGObject):
     """
     def __init__(self, system, lslice, witness_points, witness_data, **kwargs):
         """Initialize the WitnessSet
-        
+
         Keyword arguments:
         system -- PolynomialSystem, system on which all the points vanish
         slice -- LinearSystem, system defining a generic linear space
@@ -306,21 +307,21 @@ class WitnessSet(NAGObject):
             self._witness_points = list(witness_points)
         except TypeError:
             self._witness_points = [witness_points]
-            
+
         wp = self._witness_points[0]
         self._component_id = wp._component_id
         for w in self._witness_points:
             if w._component_id != self._component_id:
                 msg = 'WitnessPoint {0} and WitnessPoint {1} do not lie on the same component'.format(wp, w)
                 raise WitnessDataException(msg)
-        
+
         kkeys = kwargs.keys()
-        
+
         if 'homogeneous_slice' in kkeys:
             self._homogeneous_slice = kwargs['homogeneous_slice']
         else:
             self._homogeneous_slice = None
-    
+
     def __repr__(self):
         """
         x.__repr__() <==> repr(x)
@@ -329,35 +330,35 @@ class WitnessSet(NAGObject):
         sl = self._slice
         wp = self._witness_points
         repstr = 'WitnessSet({0},{1},{2})'.format(repr(sy), repr(sl), repr(wp))
-        
+
         return repstr
-    
+
     def __str__(self):
         """
         x.__str__() <==> str(x)
         """
         wp = self._witness_points
         repstr = '{' + ', '.join([str(p) for p in wp]) + '}'
-        
+
         return repstr
-        
+
 
     @property
     def homogeneous_slice(self):
         return self._homogeneous_slice
-        
+
     @property
     def linear_slice(self):
         return self._slice
-        
+
     @property
     def system(self):
         return self._system
-        
+
     @property
     def witness_data(self):
         return self._witness_data
-        
+
     @property
     def witness_points(self):
         return self._witness_points
