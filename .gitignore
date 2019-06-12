@@ -1,1 +1,12 @@
 .spyproject/
+
+__pycache__
+
+# test output
+test/*/*/fail
+test/*/*/*_data
+test/*/*/output*
+test/*/*/rawout*
+test/*/*/regenSummary
+test/*/*/startRPD*
+test/*/*/witness_superset*

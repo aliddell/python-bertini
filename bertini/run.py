@@ -450,7 +450,7 @@ class BertiniRun(NAGObject):
         if not self._complete:
             return
 
-        from naglib.bertini.fileutils import read_points
+        from naglib.bertini.io import read_points
         from naglib.core.misc import striplines
         dirname = self._dirname
         system = self._system
@@ -608,7 +608,7 @@ class BertiniRun(NAGObject):
 
     def _write_files(self):
         from os.path import exists
-        from naglib.bertini.fileutils import write_points
+        from naglib.bertini.io import write_points
 
         tracktype = self._tracktype
         dirname = self._dirname
