@@ -1,0 +1,14 @@
+
+CONFIG
+
+END;
+
+INPUT
+
+variable_group x, y;
+function f, g;
+
+f = x^2 - 1;
+g = x*y - 1;
+
+END;

@@ -1,0 +1,17 @@
+CONFIG
+
+TRACKTYPE: 1;
+
+END;
+
+INPUT
+
+variable_group x, y, z;
+function f1, f2, f3;
+
+f1 = (x^2 + y^2 + z^2 - 1)*(x-1/2);
+f2 = (x^2 + y^2 + z^2 - 1)*(y-1/2);
+f3 = (x^2 + y^2 + z^2 - 1)*(z-1/2);
+
+END;
+

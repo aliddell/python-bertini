@@ -1,0 +1,19 @@
+CONFIG
+
+TRACKTYPE: 2;
+
+END;
+
+
+INPUT
+
+variable_group x, y, z;
+function f1, f2, f3;
+
+f1 = (y-x^2)*(x^2+y^2+z^2-1)*(x-0.5);
+f2 = (z-x^3)*(x^2+y^2+z^2-1)*(y-0.5);
+f3 = (y-x^2)*(z-x^3)*(x^2+y^2+z^2-1)*(z-0.5);
+
+
+END
+

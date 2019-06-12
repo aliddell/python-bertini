@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
+from collections import deque
+import os
+import os.path as op
 import subprocess
-import tempfile # for mkdtemp
+import tempfile
 
+import numpy as np
+
+from naglib.bertini.io import read_input_file, read_witness_data_file
 from naglib.constants import TOL
 from naglib.system import BERTINI, MPIRUN, PCOUNT
 from naglib.core.base import NAGObject
 from naglib.exceptions import BertiniError, NoBertiniException
-
 
 class BertiniRun(NAGObject):
     TEVALP    = -4
@@ -22,35 +27,92 @@ class BertiniRun(NAGObject):
     TISOSTAB  =  6
     TREGENEXT =  7 # parallel
 
-    def __init__(self, system, tracktype=TZERODIM, config={}, **kwargs):
-        """
-        """
-        kkeys = kwargs.keys()
-        ckeys = [k.lower() for k in config.keys()]
-        if tracktype not in range(-4,8):
-            msg = "specify an integer TrackType between -4 and 7 (inclusive)"
-            raise ValueError(msg)
-        else:
-            self._tracktype = tracktype
+    def __init__(self, config={}, variable_group=deque(), variable=deque(), hom_variable_group=deque(),
+                 pathvariable=deque(), random=deque(), constant={}, function={}, parameter={}):
+        """Construct a BertiniRun.
 
-        if tracktype in (self.TZERODIM, self.TPOSDIM, self.TREGENEXT):
-            self._parallel = True
-        else:
-            self._parallel = False
+        Parameters
+        ----------
+        config: dict
+            Key-value pairs of configurations
+        variable_group: list or deque
+            Variable group(s)
+        variable: list or deque
+            Collection(s) of variables
+        hom_variable_group: list or deque
+            Collection(s) of homogeneous variables
+        pathvariable: list or deque
+            Collection(s) of path variables
+        random: list or deque
+            Collection(s) of complex-valued random variables
+        constant: dict
+            Key-value pairs of constant symbols and their values
+        function: dict
+            Key-value pairs of function symbols and their values
+        parameter: dict
+            Key-value pairs of parameter symbols and their values
+        """
+        if not isinstance(config, dict):
+            raise TypeError(f"config type '{type(config)}' not understood")
+
+        if isinstance(variable_group, list):
+            variable_group = deque(variable_group)
+        if not isinstance(variable_group, deque):
+            raise TypeError(f"variable_group type '{type(variable_group)}' not understood")
+
+        if isinstance(variable, list):
+            variable = deque(variable)
+        if not isinstance(variable, deque):
+            raise TypeError(f"variable type '{type(variable)}' not understood")
+
+        if isinstance(hom_variable_group, list):
+            hom_variable_group = deque(hom_variable_group)
+        if not isinstance(hom_variable_group, deque):
+            raise TypeError(f"hom_variable_group type '{type(hom_variable_group)}' not understood")
+
+        if isinstance(pathvariable, list):
+            pathvariable = deque(pathvariable)
+        if not isinstance(pathvariable, deque):
+            raise TypeError(f"pathvariable type '{type(pathvariable)}' not understood")
+
+        if isinstance(random, list):
+            random = deque(random)
+        if not isinstance(random, deque):
+            raise TypeError(f"random type '{type(random)}' not understood")
+
+        if not isinstance(constant, dict):
+            raise TypeError(f"constant type '{type(constant)}' not understood")
+
+        if not isinstance(function, dict):
+            raise TypeError(f"function type '{type(function)}' not understood")
+
+        if not isinstance(parameter, dict):
+            raise TypeError(f"parameter type '{type(parameter)}' not understood")
+
+        self._config = dict([(k.lower(), config[k]) for k in config])
+
+        # check tracktype, set values accordingly
+        if "tracktype" not in config:
+            config["tracktype"] = 0
+
+        if config["tracktype"] not in range(-4, 8):
+            raise ValueError("TrackType must be an integer between -4 and 7 (inclusive)")
+
+        self._parallel = self.tracktype in (self.TZERODIM, self.TPOSDIM, self.TREGENEXT)
 
         # check to see if tracktype jives with kwargs
-        msg = ''
+        msg = ""
         ## start point(s) required
-        if tracktype in (self.TEVALP, self.TEVALPJ, self.TNEWTP, self.TNEWTPJ, self.TMEMTEST, self.TISOSTAB) and 'start' not in kkeys:
-            msg = "specify a point or points to evaluate with the keyword argument `start'"
-        elif 'start' in kkeys:
-            start = kwargs['start']
+        if self.tracktype in (self.TEVALP, self.TEVALPJ, self.TNEWTP, self.TNEWTPJ, self.TMEMTEST, self.TISOSTAB) and "start" not in kkeys:
+            msg = "specify a point or points to evaluate with the keyword argument 'start'"
+        elif "start" in kkeys:
+            start = kwargs["start"]
             if type(start) not in (list, tuple):
                 start = [start]
             self._start = start
         ## component required
         if tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTWS, self.TPROJECT, self.TREGENEXT) and 'component' not in kkeys:
-            msg = "specify a component with the keyword argument `component'"
+            msg = "specify a component with the keyword argument 'component'"
         elif 'component' in kkeys:
             self._component = kwargs['component']
         ## sample count required
@@ -135,218 +197,6 @@ class BertiniRun(NAGObject):
         self._config = config
         self._complete = False
         self._inputf = []
-
-    def _parse_witness_data(self, filename):
-        """
-        Parse witness_data file into usable data
-
-        Keyword arguments:
-        filename -- string, path to witness_data file
-        """
-        from os.path import isfile
-        from sympy import I, Integer, Float, Rational, Matrix
-        from naglib.misc import dps, striplines
-        from naglib.exceptions import UnclassifiedException
-
-        if not isfile(filename):
-            msg = "{0} does not exist".format(filename)
-            raise IOError(msg)
-
-        fh = open(filename, 'r')
-        lines = striplines(fh.readlines())
-        fh.close()
-
-        num_vars, nonempty_codims = int(lines[0]), int(lines[1])
-        # previous line includes additional homogenizing variable(s),
-        # as appropriate
-        lines = lines[2:]
-
-        # following block represents a single codim; repeated for each
-        codims = []
-        for i in range(nonempty_codims):
-            codim = int(lines[0])
-            codims.append({'codim':codim})
-            num_points = int(lines[1])
-            lines = lines[2:]
-            # following block represents a single point; repeated for each
-            pts = []
-            for j in range(num_points):
-                prec = int(lines[0])
-
-                lines = lines[1:]
-                pt = []
-                for k in range(num_vars):
-                    real,imag = lines[k].split(' ')
-                    pt.append(Float(real, dps(real)) + I*Float(imag, dps(imag)))
-                pt = Matrix(pt)
-                lines = lines[num_vars:]
-                # the next point is the last approximation of the point
-                # on the path before convergence
-                prec = int(lines[0])
-                lines = lines[1:]
-                approx_pt = []
-                for k in range(num_vars):
-                    real,imag = lines[k].split(' ')
-                    approx_pt.append(Float(real, dps(real)) + I*Float(imag, dps(imag)))
-
-                lines = lines[num_vars:]
-                condition_number = float(lines[0])
-                corank = int(lines[1]) # corank of Jacobian at this point
-                smallest_nonzero_singular = float(lines[2])
-                largest_zero_singular = float(lines[3])
-                pt_type = int(lines[4])
-                multiplicity = int(lines[5])
-                component_number = int(lines[6])
-                if component_number == -1:
-                    msg = "components in {0} have unclassified points".format(filename)
-                    raise UnclassifiedException(msg)
-                deflations = int(lines[7])
-                lines = lines[8:]
-                pts.append({'coordinates':pt,
-                            'corank':corank,
-                            'condition number':condition_number,
-                            'smallest nonzero':smallest_nonzero_singular,
-                            'largest zero':largest_zero_singular,
-                            'type':pt_type,
-                            'multiplicity':multiplicity,
-                            'component number':component_number,
-                            'deflations':deflations,
-                            'precision':prec,
-                            'last approximation':approx_pt})
-            codims[-1]['points'] = pts
-
-        # -1 designates the end of witness points
-        lines = lines[1:]
-
-        INT = 0
-        DOUBLE = 1
-        RATIONAL = 2
-
-        # remaining data is related to slices, randomization,
-        # homogenization, and patches
-        num_format = int(lines[0])
-        # previous line describes format for remainder of data
-        lines = lines[1:]
-
-        # the following block is repeated for each nonempty codim.
-        # first, matrix A used for randomization
-        # second, matrix W
-        for i in range(nonempty_codims):
-            num_rows, num_cols = lines[0].split(' ')
-            num_rows = int(num_rows)
-            num_cols = int(num_cols)
-            AW_size = num_rows*num_cols
-
-            lines = lines[1:]
-
-            if AW_size == 0:
-                A = None
-                W = None
-            else:
-                A = lines[:AW_size]
-                lines = lines[AW_size:]
-                W = lines[:AW_size]
-                lines = lines[AW_size:]
-
-                A = [a.split(' ') for a in A] # A is complex-valued
-                if num_format == INT:
-                    A = [Integer(a[0]) + I*Integer(a[1]) for a in A]
-                elif num_format == DOUBLE:
-                    for j in range(len(A)):
-                        a = A[j]
-                        real,imag = a.split(' ')
-                        A[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
-                elif num_format == RATIONAL:
-                    A = [Rational(a[0]) + I*Rational(a[1]) for a in A]
-                A = [A[j:j+num_cols] for j in range(0,AW_size,num_cols)]
-                A = Matrix(A)
-
-                W = [int(w) for w in W] # W is integer-valued
-                W = [W[j:j+num_cols] for j in range(0,AW_size,num_cols)]
-                W = Matrix(W)
-
-            # third, a vector H used for homogenization
-            # random if projective input
-            H_size = int(lines[0])
-            lines = lines[1:]
-            H = lines[:H_size]
-            H = [h.split(' ') for h in H] # H is complex-valued
-            if num_format == INT:
-                H = [Integer(h[0]) + I*Integer(h[1]) for h in H]
-            elif num_format == DOUBLE:
-                for j in range(len(H)):
-                    h = H[j]
-                    real,imag = h.split(' ')
-                    H[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
-            elif num_format == RATIONAL:
-                H = [Rational(h[0]) + I*Rational(h[1]) for h in H]
-
-            H = Matrix(H)
-            lines = lines[H_size:]
-
-            # fourth, a number homVarConst
-            # 0 for affine, random for projective
-            hvc = lines[0].split(' ')
-            if num_format == INT:
-                hvc = Integer(hvc[0]) + I*Integer(hvc[1])
-            elif num_format == DOUBLE:
-                real,imag = hvc
-                hvc = Float(real, dps(real)) + I*Float(imag, dps(imag))
-            elif num_format == RATIONAL:
-                hvc = Rational(hvc[0]) + I*Rational(hvc[1])
-
-            lines = lines[1:]
-
-            # fifth, matrix B for linear slice coefficients
-            num_rows, num_cols = lines[0].split(' ')
-            num_rows, num_cols = int(num_rows), int(num_cols)
-            B_size = num_rows*num_cols
-            lines = lines[1:]
-
-            if B_size == 0:
-                B = None
-            else:
-                B = lines[:B_size]
-                lines = lines[B_size:]
-
-                B = [b.split(' ') for b in B] # B is complex-valued
-                if num_format == INT:
-                    B = [Integer(b[0]) + I*Integer(b[1]) for b in B]
-                elif num_format == DOUBLE:
-                    for j in range(len(B)):
-                        real,imag = B[j]
-                        B[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
-                elif num_format == RATIONAL:
-                    B = [Rational(b[0]) + I*Rational(b[1]) for b in B]
-                B = [B[j:j+num_cols] for j in range(0,B_size,num_cols)]
-                B = Matrix(B)
-
-            # sixth and finally, vector p for patch coefficients
-            p_size = int(lines[0])
-            lines = lines[1:]
-
-            p = lines[:p_size]
-            lines = lines[p_size:]
-
-            p = [q.split(' ') for q in p]
-            if num_format == INT:
-                p = [Integer(q[0]) + I*Integer(q[1]) for q in p]
-            elif num_format == DOUBLE:
-                for j in range(len(p)):
-                    real,imag = p[j]
-                    p[j] = Float(real, dps(real)) + I*Float(imag, dps(imag))
-            elif num_format == RATIONAL:
-                p = [Rational(q[0]) + I*Rational(q[1]) for q in p]
-
-            p = Matrix(p)
-            codims[i]['A'] = A
-            codims[i]['W'] = W
-            codims[i]['H'] = H
-            codims[i]['homVarConst'] = hvc
-            codims[i]['slice'] = B
-            codims[i]['p'] = p
-
-        return codims
 
     def _recover_components(self, witness_data):
         """
@@ -450,8 +300,8 @@ class BertiniRun(NAGObject):
         if not self._complete:
             return
 
-        from naglib.bertini.io import read_points
-        from naglib.core.misc import striplines
+        from naglib.bertini.fileutils import read_points
+        from naglib.utils import striplines
         dirname = self._dirname
         system = self._system
         tol = self._tol
@@ -484,13 +334,13 @@ class BertiniRun(NAGObject):
             return finite_solutions
         elif tracktype == self.TPOSDIM:
             wdfile = dirname + '/witness_data'
-            self._witness_data = self._parse_witness_data(wdfile)
+            self._witness_data = self.read_witness_data_file(wdfile)
             components = self._recover_components(self._witness_data)
 
             return components
         elif tracktype == self.TSAMPLE:
             wdfile = dirname + '/witness_data'
-            self._witness_data = self._parse_witness_data(wdfile)
+            self._witness_data = self.read_witness_data_file(wdfile)
             samplef = dirname + '/sampled'
             sampled = read_points(samplef, tol=tol, projective=projective)
 
@@ -499,7 +349,7 @@ class BertiniRun(NAGObject):
             from sympy import zeros
 
             wdfile = dirname + '/witness_data'
-            self._witness_data = self._parse_witness_data(wdfile)
+            self._witness_data = self.read_witness_data_file(wdfile)
             inmat = dirname + '/incidence_matrix'
             fh = open(inmat, 'r')
             lines = striplines(fh.readlines())
@@ -566,14 +416,14 @@ class BertiniRun(NAGObject):
                         break
             if cws and config[cws] == 1:
                 wdfile = dirname + '/witness_data'
-                self._witness_data = self._parse_witness_data(wdfile)
+                self._witness_data = self.read_witness_data_file(wdfile)
                 components = self._recover_components(self._witness_data)
                 return components
 
             #TODO: read isosingular_summary and maybe output_isosingular
         elif tracktype == self.TREGENEXT:
             wdfile = dirname + '/witness_data'
-            self._witness_data = self._parse_witness_data(wdfile)
+            self._witness_data = self.read_witness_data_file(wdfile)
             components = self._recover_components(self._witness_data)
 
             return components
@@ -608,14 +458,13 @@ class BertiniRun(NAGObject):
 
     def _write_files(self):
         from os.path import exists
-        from naglib.bertini.io import write_points
+        from naglib.bertini.fileutils import fprint
 
         tracktype = self._tracktype
         dirname = self._dirname
         system = self._system
-        if not exists(dirname):
-            from os import mkdir
-            mkdir(dirname)
+        if not op.exists(dirname):
+            os.mkdir(dirname)
 
         ### write the system
         sysconfig = self._config.copy()
@@ -629,20 +478,18 @@ class BertiniRun(NAGObject):
                 startfile = dirname + '/member_points'
             else:
                 startfile = dirname + '/start'
-            write_points(start, startfile)
+            fprint(start, startfile)
         if self._parameter_homotopy:
             phtpy = self._parameter_homotopy
             pkeys = phtpy.keys()
-
             if 'start parameters' in pkeys:
                 startp = phtpy['start parameters']
                 startpfile = dirname + '/start_parameters'
-                write_points(startp, startpfile)
-
+                fprint(startp, startpfile)
             if 'final parameters' in pkeys:
                 finalp = phtpy['final parameters']
                 finalpfile = dirname + '/final_parameters'
-                write_points(finalp, finalpfile)
+                fprint(finalp, finalpfile)
 
         ### write out component information
         if '_component' in dir(self):
@@ -846,10 +693,7 @@ class BertiniRun(NAGObject):
             return self.run()
 
     def run(self, rerun_on_fail=False):
-        from os import chdir
-        from os.path import exists
         # in case the user has changed any of these
-
         if not BERTINI:
             raise NoBertiniException()
 
@@ -865,14 +709,14 @@ class BertiniRun(NAGObject):
 
         input_file = self._write_files()
 
-        if exists(dirname + '/instructions'):
+        if op.exists(dirname + '/instructions'):
             stdin = dirname + '/instructions'
         else:
             stdin = None
 
         arg += [input_file]
 
-        chdir(dirname)
+        os.chdir(dirname)
         if stdin:
             stdin = open(stdin, 'r')
         try:
@@ -905,18 +749,32 @@ class BertiniRun(NAGObject):
     @bertini.setter
     def bertini(self, bert):
         self._bertini = bert
+
     @property
     def complete(self):
         return self._complete
+
     @property
     def dirname(self):
         return self._dirname
     @dirname.setter
     def dirname(self, name):
         self._dirname = name
+
     @property
     def inputf(self):
         return self._inputf
+
     @property
     def output(self):
         return self._output
+
+    @property
+    def tracktype(self):
+        return self._config["tracktype"]
+    @tracktype.setter
+    def tracktype(self, val):
+        if  val not in range(-4, 8):
+            raise ValueError("tracktype must be an integer between -4 and 7 (inclusive)")
+
+        self._config["tracktype"] = int(val)

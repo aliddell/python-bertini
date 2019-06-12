@@ -1,0 +1,23 @@
+
+CONFIG
+
+USERHOMOTOPY: 1;
+
+END;
+
+INPUT
+
+variable x, y;
+function f, g;
+pathvariable t;
+parameter s;
+constant gamma;
+
+gamma = 0.8 + 1.1*I;
+
+s=t;
+
+f = (x^2 - 1)*(1-s) + s*gamma*(x^2-4);
+g = (x*y - 1)*(1-s) + s*gamma*(y^2-4);
+
+END;
