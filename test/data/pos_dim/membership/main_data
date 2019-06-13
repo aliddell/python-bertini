@@ -1,0 +1,128 @@
+Number of variables: 3
+Variables:  x y z
+Rank: 3
+
+----------DIMENSION 2----------
+
+NONSINGULAR SOLUTIONS
+---------------
+Path number: 0
+Component number: 0
+Estimated condition number: 1.000000e+00
+9.961622763290540e-01 -2.189931061729379e-01
+7.168141536878714e-02 6.348799750745140e-02
+-4.925335003342619e-01 -4.336796613435986e-01
+Multiplicity: 1
+Deflations needed: 0
+---------------
+Path number: 1
+Component number: 0
+Estimated condition number: 1.000000e+00
+-3.434121186562525e-01 -6.671733603422956e-01
+2.143175776830002e-01 -2.514485236232610e-01
+1.169164027295541e+00 -1.498725367873138e-01
+Multiplicity: 1
+Deflations needed: 0
+
+----------DIMENSION 1----------
+
+NONSINGULAR SOLUTIONS
+---------------
+Path number: 0
+Component number: 0
+Estimated condition number: 2.920433e+03
+7.071067811865475e-01 -5.551115123125783e-17
+5.000000000000000e-01 1.942890293094024e-16
+-9.629747866339782e-01 -1.243178111090652e+00
+Multiplicity: 1
+Deflations needed: 0
+---------------
+Path number: 2
+Component number: 1
+Estimated condition number: 3.925810e+00
+-7.071067811865477e-01 2.289834988289385e-16
+4.999999999999999e-01 -1.491862189340054e-16
+1.110241935575618e+00 -2.034784277719558e+00
+Multiplicity: 1
+Deflations needed: 0
+---------------
+Path number: 4
+Component number: 2
+Estimated condition number: 1.070043e+01
+5.000000000000001e-01 0.000000000000000e+00
+-2.117300931226440e-01 -3.885896530497911e-01
+1.250000000000000e-01 -8.326672684688674e-17
+Multiplicity: 1
+Deflations needed: 0
+---------------
+Path number: 1
+Component number: 3
+Estimated condition number: 9.656287e+00
+4.418099451974997e-01 -2.915378037228188e-01
+1.102017366758927e-01 -2.576086021715561e-01
+-2.641442285575548e-02 -1.459420146847498e-01
+Multiplicity: 1
+Deflations needed: 0
+---------------
+Path number: 3
+Component number: 3
+Estimated condition number: 2.323856e+04
+-0.161968394110484978116e1 -0.175795253827707255803e1
+-0.467021057761863760843e0 0.569465499094376633804e1
+0.107673597033564848614e2 -0.840254038504289038451e1
+Multiplicity: 1
+Deflations needed: 0
+---------------
+Path number: 5
+Component number: 3
+Estimated condition number: 1.044758e+02
+-4.742701994810282e-01 1.041945463071828e+00
+-8.607181259001897e-01 -9.883273652388562e-01
+1.437996171507978e+00 -4.280871296009954e-01
+Multiplicity: 1
+Deflations needed: 0
+
+----------DIMENSION 0----------
+
+NONSINGULAR SOLUTIONS
+---------------
+Path number: 0
+Component number: 0
+Estimated condition number: 1.310666e+01
+4.999999999999999e-01 0.000000000000000e+00
+5.000000000000001e-01 1.526556658859590e-16
+4.999999999999999e-01 0.000000000000000e+00
+Multiplicity: 1
+Deflations needed: 0
+
+
+*************** input file needed to reproduce this run ***************
+
+CONFIG
+
+TrackType: 1;
+CoeffBound: 1.978324000000e+00;
+DegreeBound: 8.000000000000e+00;
+RandomSeed: 1560351868;
+
+END;
+
+INPUT
+
+variable_group x,y,z;
+function f1,f2,f3;
+f1=(y-x^2)*(x^2+y^2+z^2-1)*(x-0.5);
+f2=(z-x^3)*(x^2+y^2+z^2-1)*(y-0.5);
+f3=(y-x^2)*(z-x^3)*(x^2+y^2+z^2-1)*(z-0.5);
+
+END;
+
+
+*************** version information ***************
+Bertini(TM) v1.6
+GMP v6.0.0, MPFR v3.1.2
+
+Authors:
+D.J. Bates, J.D. Hauenstein,
+A.J. Sommese, C.W. Wampler
+

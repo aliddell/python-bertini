@@ -1,0 +1,7 @@
+certifi==2019.3.9
+fastcache==1.1.0
+mkl-fft==1.0.12
+mkl-random==1.0.2
+mpmath==1.1.0
+numpy==1.16.4
+wincertstore==0.2

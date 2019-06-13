@@ -10,10 +10,10 @@ import numpy as np
 from naglib.bertini.io import read_input_file, read_witness_data_file
 from naglib.constants import TOL
 from naglib.system import BERTINI, MPIRUN, PCOUNT
-from naglib.core.base import NAGObject
 from naglib.exceptions import BertiniError, NoBertiniException
 
-class BertiniRun(NAGObject):
+
+class BertiniRun(object):
     TEVALP    = -4
     TEVALPJ   = -3
     TNEWTP    = -2
@@ -27,65 +27,86 @@ class BertiniRun(NAGObject):
     TISOSTAB  =  6
     TREGENEXT =  7 # parallel
 
-    def __init__(self, config={}, variable_group=deque(), variable=deque(), hom_variable_group=deque(),
-                 pathvariable=deque(), random=deque(), constant={}, function={}, parameter={}):
+    def __init__(self, **kwargs):
         """Construct a BertiniRun.
 
         Parameters
         ----------
-        config: dict
-            Key-value pairs of configurations
-        variable_group: list or deque
-            Variable group(s)
-        variable: list or deque
-            Collection(s) of variables
-        hom_variable_group: list or deque
-            Collection(s) of homogeneous variables
-        pathvariable: list or deque
-            Collection(s) of path variables
-        random: list or deque
-            Collection(s) of complex-valued random variables
-        constant: dict
-            Key-value pairs of constant symbols and their values
-        function: dict
-            Key-value pairs of function symbols and their values
-        parameter: dict
-            Key-value pairs of parameter symbols and their values
+        **kwargs
+            Keyword arguments.
+
+            config : dict
+                Key-value pairs of configurations
+            variable_group : list or deque
+                Variable group(s)
+            variable : list or deque
+                Variables
+            hom_variable_group : list or deque
+                Homogeneous variables
+            pathvariable : list or deque
+                Path variables
+            constant : dict
+                Key-value pairs of constant symbols and their values
+            random : list or deque
+                Collection of complex-valued random variables
+            random_real : list or deque
+                Collection of complex-valued random variables
+            function : dict
+                Key-value pairs of function symbols and their values
+            parameter : dict
+                Key-value pairs of parameter symbols and their values
         """
+
+        config = kwargs["config"] if "config" in kwargs else {}
         if not isinstance(config, dict):
             raise TypeError(f"config type '{type(config)}' not understood")
 
+        variable_group = kwargs["variable_group"] if "variable_group" in kwargs else deque()
         if isinstance(variable_group, list):
             variable_group = deque(variable_group)
-        if not isinstance(variable_group, deque):
+        elif not isinstance(variable_group, deque):
             raise TypeError(f"variable_group type '{type(variable_group)}' not understood")
 
+        variable = kwargs["variable"] if "variable" in kwargs else deque()
         if isinstance(variable, list):
             variable = deque(variable)
         if not isinstance(variable, deque):
             raise TypeError(f"variable type '{type(variable)}' not understood")
 
+        hom_variable_group = kwargs["hom_variable_group"] if "hom_variable_group" in kwargs else deque()
         if isinstance(hom_variable_group, list):
             hom_variable_group = deque(hom_variable_group)
         if not isinstance(hom_variable_group, deque):
             raise TypeError(f"hom_variable_group type '{type(hom_variable_group)}' not understood")
 
+        pathvariable = kwargs["pathvariable"] if "pathvariable" in kwargs else deque()
         if isinstance(pathvariable, list):
             pathvariable = deque(pathvariable)
         if not isinstance(pathvariable, deque):
             raise TypeError(f"pathvariable type '{type(pathvariable)}' not understood")
 
+        random = kwargs["random"] if "random" in kwargs else deque()
         if isinstance(random, list):
             random = deque(random)
         if not isinstance(random, deque):
             raise TypeError(f"random type '{type(random)}' not understood")
 
+        random_real = kwargs["random_real"] if "random_real" in kwargs else deque()
+        if isinstance(random_real, list):
+            random_real = deque(random_real)
+        if not isinstance(random_real, deque):
+            raise TypeError(f"random_real type '{type(random_real)}' not understood")
+
+
+        constant = kwargs["constant"] if "constant" in kwargs else {}
         if not isinstance(constant, dict):
             raise TypeError(f"constant type '{type(constant)}' not understood")
 
+        function = kwargs["function"] if "function" in kwargs else {}
         if not isinstance(function, dict):
             raise TypeError(f"function type '{type(function)}' not understood")
 
+        parameter = kwargs["parameter"] if "parameter" in kwargs else {}
         if not isinstance(parameter, dict):
             raise TypeError(f"parameter type '{type(parameter)}' not understood")
 
@@ -300,7 +321,7 @@ class BertiniRun(NAGObject):
         if not self._complete:
             return
 
-        from naglib.bertini.fileutils import read_points
+        from naglib.bertini.fileutils import read_points_file
         from naglib.utils import striplines
         dirname = self._dirname
         system = self._system
@@ -324,11 +345,11 @@ class BertiniRun(NAGObject):
         elif tracktype == self.TZERODIM:
             finites = dirname + '/finite_solutions'
             startp = dirname + '/start_parameters'
-            finite_solutions = read_points(finites, tol=tol, projective=projective)
+            finite_solutions = read_points_file(finites, tol=tol, projective=projective)
 
             ptype  = self._parameter_homotopy['arg']
             if ptype == 1:
-                start_parameters = read_points(startp, tol=tol, projective=projective)
+                start_parameters = read_points_file(startp, tol=tol, projective=projective)
                 return finite_solutions, start_parameters
 
             return finite_solutions
@@ -342,7 +363,7 @@ class BertiniRun(NAGObject):
             wdfile = dirname + '/witness_data'
             self._witness_data = self.read_witness_data_file(wdfile)
             samplef = dirname + '/sampled'
-            sampled = read_points(samplef, tol=tol, projective=projective)
+            sampled = read_points_file(samplef, tol=tol, projective=projective)
 
             return sampled
         elif tracktype == self.TMEMTEST:
@@ -397,7 +418,7 @@ class BertiniRun(NAGObject):
             pointsfile = dirname + '/points.out'
             #sysfile    = dirname + '/sys.out'
 
-            points = read_points(pointsfile, tol=tol, projective=projective)
+            points = read_points_file(pointsfile, tol=tol, projective=projective)
             #TODO: parse linear system file and return a LinearSystem
 
             return points
@@ -531,160 +552,6 @@ class BertiniRun(NAGObject):
             fh.write(line + '\n')
         fh.close()
 
-    def _write_system(self, system, inputf='input', config=None):
-        from re import sub as resub
-        if not config:
-            config = self._config
-        dirname = self._dirname
-        filename = dirname + '/' + inputf
-
-        polynomials  = [p.factor() for p in system.polynomials]
-        variables    = system.variables
-        parameters   = system.parameters
-        homvar       = system.homvar
-        num_polys    = system.shape[0]
-
-        options = config.keys()
-
-        str_poly = [str(p) for p in polynomials]
-        str_poly = [resub(string=p, pattern=r'\*\*', repl='^') for p in str_poly]
-        str_vars = [str(v) for v in variables]
-        str_pars = [str(p) for p in parameters]
-
-        poly_names = ['f{0}'.format(i+1) for i in range(num_polys)]
-        polys_named = zip(poly_names, str_poly)
-
-        poly_list = ','.join([f for f in poly_names])
-        vars_list = ','.join([v for v in str_vars])
-        pars_list = ','.join([p for p in str_pars])
-
-        fh = open(filename, 'w')
-
-        # write the CONFIG section
-        print('CONFIG', file=fh)
-        for option in options:
-            print('{0}:{1};'.format(option, config[option]), file=fh)
-        print('END', file=fh)
-
-        # write the INPUT section
-        print('INPUT', file=fh)
-        if parameters:
-            print('parameter {0};'.format(pars_list), file=fh)
-        if homvar:
-            print('hom_variable_group {0};'.format(vars_list), file=fh)
-        else:
-            print('variable_group {0};'.format(vars_list), file=fh)
-        print('function {0};'.format(poly_list), file=fh)
-
-        for p in polys_named:
-            # p is a key-value pair, e.g., ('f1', 'x^2 - 1')
-            print('{0} = {1};'.format(p[0], p[1]), file=fh)
-        print('END', file=fh)
-
-        # finish up
-        fh.close()
-
-        return filename
-
-    def _write_witness_data(self, witness_data, dirname, filename='witness_data'):
-        """
-        """
-        from sympy import Integer, Float
-        fh = open(dirname + '/' + filename, 'w')
-
-        nonempty_codims = len(witness_data)
-        num_vars = len(witness_data[0]['points'][0]['coordinates'])
-        fh.write('{0}\n'.format(num_vars))
-        fh.write('{0}\n'.format(nonempty_codims))
-
-        for i in range(nonempty_codims):
-            wd_codim = witness_data[i]
-            fh.write('{0}\n'.format(wd_codim['codim']))
-            codim_points = [p for p in wd_codim['points']]
-            fh.write('{0}\n'.format(len(codim_points)))
-            for p in codim_points:
-                prec = p['precision']
-                fh.write('{0}\n'.format(prec))
-
-                coordinates = p['coordinates']
-                for c in coordinates:
-                    real,imag = c.as_real_imag()
-                    fh.write('{0} {1}\n'.format(real, imag))
-
-                fh.write('{0}\n'.format(prec))
-                approx = p['last approximation']
-                for a in approx:
-                    real,imag = a.as_real_imag()
-                    fh.write('{0} {1}\n'.format(real, imag))
-                fh.write('{0}\n'.format(p['condition number']))
-                fh.write('{0}\n'.format(p['corank']))
-                fh.write('{0}\n'.format(p['smallest nonzero']))
-                fh.write('{0}\n'.format(p['largest zero']))
-                fh.write('{0}\n'.format(p['type']))
-                fh.write('{0}\n'.format(p['multiplicity']))
-                fh.write('{0}\n'.format(p['component number']))
-                fh.write('{0}\n'.format(p['deflations']))
-        fh.write('-1\n\n') # -1 designates the end of witness points
-
-        h1 = witness_data[0]['H'][0]
-        if type(h1) == Integer:
-            numtype = 0
-        elif type(h1) == Float:
-            numtype = 1
-        else:
-            numtype = 2
-        fh.write('{0}\n'.format(numtype))
-
-        for i in range(nonempty_codims):
-            wd_codim = witness_data[i]
-            A   = wd_codim['A']
-            W   = wd_codim['W']
-            H   = wd_codim['H']
-            hvc = wd_codim['homVarConst']
-            B   = wd_codim['slice']
-            P   = wd_codim['p']
-
-            if A: # also W
-                num_rows, num_cols = A.shape
-                fh.write('{0} {1}\n'.format(num_rows, num_cols))
-                for j in range(num_rows):
-                    for k in range(num_cols):
-                        real, imag = A[j,k].as_real_imag()
-                        fh.write('{0} {1}\n'.format(real, imag))
-                for j in range(num_rows):
-                    for k in range(num_cols):
-                        fh.write('{0}\n'.format(W[j,k])) # W is an *integer* matrix
-            else:
-                fh.write('1 0\n')
-
-            fh.write('\n')
-            h = len(H)
-            fh.write('{0}\n'.format(h))
-            for j in range(h):
-                real, imag = H[j].as_real_imag()
-                fh.write('{0} {1}\n'.format(real, imag))
-
-            fh.write('\n')
-            real,imag = hvc.as_real_imag()
-            fh.write('{0} {1}\n'.format(real, imag))
-            if B:
-                num_rows, num_cols = B.shape
-                fh.write('{0} {1}\n'.format(num_rows, num_cols))
-                for j in range(num_rows):
-                    for k in range(num_cols):
-                        real, imag = B[j,k].as_real_imag()
-                        fh.write('{0} {1}\n'.format(real, imag))
-            else:
-                fh.write('1 0\n')
-
-            p = len(P)
-            fh.write('{0}\n'.format(p))
-            for j in range(p):
-                real, imag = P[j].as_real_imag()
-                fh.write('{0} {1}\n'.format(real, imag))
-
-        fh.close()
-
     def rerun(self, config={}):
         if not self._complete:
             return self.run()
@@ -778,3 +645,7 @@ class BertiniRun(NAGObject):
             raise ValueError("tracktype must be an integer between -4 and 7 (inclusive)")
 
         self._config["tracktype"] = int(val)
+
+
+def parameter_homotopy(system: list):
+    pass

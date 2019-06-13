@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque, OrderedDict
 from fractions import Fraction
 import os.path as op
 import sys
@@ -6,18 +6,20 @@ import re
 
 from typing import List, Tuple
 
+import mpmath as mp
 import numpy as np
 
-#from naglib.exceptions import UnclassifiedException
+from naglib.exceptions import UnclassifiedException
 
 
-def _line_to_complex(line: str) -> np.complex:
+def _line_to_complex(line: str, multi: bool=False) -> complex:
     real, imag = line.split(" ")
-    return np.complex(float(real), float(imag))
+    return mp.mpc(real, imag) if multi else np.complex(float(real), float(imag))
 
 
-def _line_to_complex_rat(line: str) -> np.complex:
+def _line_to_complex_rat(line: str) -> complex:
     real, imag = line.split(" ")
+    # TODO: a Gaussian rational type that plays well with arr.real, arr.imag
     return np.complex(Fraction(real), Fraction(imag))
 
 
@@ -28,31 +30,32 @@ def read_input_file(input_file: str) -> Tuple:
     ----------
     input_file : str
         Path to input file.
-        
+
     Returns
     -------
-    configs : dict
+    config : dict
         Key-value pairs of parameters set in the CONFIG section.
     inputs : dict
         Values set in the INPUT section.
-    misclines : list
-        This will go away.
     """
+
     if not op.isfile(op.abspath(input_file)):
-        raise IOError(f"Input file '{input_file}' does not exist")
+        raise IOError(f"Input file '{input_file}' not found")
 
     with open(input_file, "r") as fh:
         lines = deque([l.strip() for l in fh.readlines() if l != "\n"])
 
-    configs = {}
-    inputs = {"variable_group": deque(),
-              "variable": deque(),
-              "hom_variable_group": deque(),
-              "pathvariable": deque(),
-              "random": deque(),
-              "constant": {},
-              "function": {},
-              "parameter": {}}
+    config = {}
+    inputs = dict(variable_group=deque(),
+                  variable=deque(),
+                  hom_variable_group=deque(),
+                  pathvariable=deque(),
+                  random=deque(),
+                  random_real=deque(),
+                  constant=OrderedDict(),
+                  function=OrderedDict(),
+                  parameter=OrderedDict(),
+                  subfunction=OrderedDict())
     misclines = []
 
     in_config = in_input = False
@@ -79,7 +82,7 @@ def read_input_file(input_file: str) -> Tuple:
             continue
         elif line.startswith("%"):
             continue
-        
+
         if in_config:
             key, val = map(lambda x: x.strip(), line.split(":"))
             val = val.split("%")[0].strip(" ;") # remove comment, semicolon, trailing whitespace
@@ -95,7 +98,7 @@ def read_input_file(input_file: str) -> Tuple:
                                  "witnesssupersetonly"]:
                 val = int(val)
 
-            configs[key] = val
+            config[key] = val
 
         elif in_input:
             if vargroup_re.match(line):
@@ -146,17 +149,17 @@ def read_input_file(input_file: str) -> Tuple:
                         elif term in inputs["parameter"]:
                             inputs["parameter"][term] = val
                         else:
-                            misclines.append(term + "=" + val)
-    
-    return configs, inputs, misclines
+                            inputs["subfunction"][term] = val
+
+    return config, inputs, misclines
 
 
-def read_points(filename: str, tol: float=None) -> np.ndarray:
+def read_points_file(points_file: str, tol: float=None) -> np.ndarray:
     """Read points from an output file.
 
     Parameters
     ----------
-    filename : str
+    points_file : str
         Path to file to read.
     tol : float, optional
         If given, numbers smaller than this in absolute value will be set to 0.
@@ -169,10 +172,10 @@ def read_points(filename: str, tol: float=None) -> np.ndarray:
         number of points.
     """
 
-    if not op.isfile(filename):
-        raise IOError(f"Can't find {filename}")
+    if not op.isfile(points_file):
+        raise IOError(f"Points file '{points_file}' not found")
 
-    with open(filename, "r") as fh:
+    with open(points_file, "r") as fh:
         lines = [l.strip() for l in fh.readlines() if l != "\n"]
 
     n_points = int(lines[0])
@@ -183,8 +186,6 @@ def read_points(filename: str, tol: float=None) -> np.ndarray:
     n_lines = len(lines)
     n_dims = n_lines // n_points
 
-    # TODO: peek ahead at the first point to get an idea of the data type
-    # for now just assume float64
     points = np.zeros((n_dims, n_points), dtype=np.complex)
 
     for i in range(0, n_lines, n_dims):
@@ -197,19 +198,19 @@ def read_points(filename: str, tol: float=None) -> np.ndarray:
     return points
 
 
-def read_witness_data(filename: str):
+def read_witness_data_file(witness_data_file: str) -> list:
     """Read a witness_data file.
 
     Parameters
     ----------
-    filename : str
+    witness_data_file : str
         Path to file to read.
     """
 
-    if not op.isfile(filename):
-        raise IOError(f"Can't find {filename}")
+    if not op.isfile(witness_data_file):
+        raise IOError(f"Witness data file '{witness_data_file}' not found")
 
-    with open(filename, "r") as fh:
+    with open(witness_data_file, "r") as fh:
         lines = deque([l.strip() for l in fh.readlines() if l != "\n"])
 
     n_dims, nonempty_codims = int(lines.popleft()), int(lines.popleft())
@@ -228,16 +229,12 @@ def read_witness_data(filename: str):
 
         for j in range(n_points):
             prec = int(lines.popleft())
-
-            coords = np.array([_line_to_complex(p) for p in lines[:n_dims]])
-            lines = lines[n_dims:]
+            coords = np.array([_line_to_complex(lines.popleft(), prec>52) for k in range(n_dims)])
 
             # the next point is the last approximation of the point
             # on the path before convergence
             prec = int(lines.popleft())
-
-            approx_pt = np.array([_line_to_complex(p) for p in lines[:n_dims]])
-            lines = lines[n_dims:]
+            approx_pt = np.array([_line_to_complex(lines.popleft(), prec>52) for k in range(n_dims)])
 
             condition_number = float(lines.popleft())
             corank = int(lines.popleft()) # corank of Jacobian at this point
@@ -248,7 +245,7 @@ def read_witness_data(filename: str):
             component_number = int(lines.popleft())
 
             if component_number == -1:
-                raise UnclassifiedException(f"components in {filename} have unclassified points")
+                raise UnclassifiedException(f"components in {witness_data_file} have unclassified points")
 
             deflations = int(lines.popleft())
 
@@ -268,6 +265,7 @@ def read_witness_data(filename: str):
     # -1 designates the end of witness points
     assert int(lines.popleft()) == -1
 
+    MULTIPRECISION = 1
     RATIONAL = 2
 
     # remaining data is related to slices, randomization,
@@ -287,41 +285,33 @@ def read_witness_data(filename: str):
             A = None
             W = None
         else:
-            A = lines[:AW_size]
-            lines = lines[AW_size:]
-
-            W = lines[:AW_size]
-            lines = lines[AW_size:]
-
             # A is complex-valued
             if num_format == RATIONAL:
-                A = np.array([_line_to_complex_rat(a) for a in A])
+                A = np.array([_line_to_complex_rat(lines.popleft()) for k in range(AW_size)])
             else:
-                A = np.array([_line_to_complex(a) for a in A])
-
+                A = np.array([_line_to_complex(lines.popleft(),
+                                               num_format==MULTIPRECISION) for k in range(AW_size)])
             A = A.reshape((n_rows, n_cols))
 
-            W = np.array([int(w) for w in W]).reshape((n_rows, n_cols)) # W is integer-valued
+            W = np.array([int(lines.popleft()) for k in range(AW_size)]).reshape((n_rows, n_cols)) # W is integer-valued
 
         # third, a vector H used for homogenization
         # random if projective input
         H_size = int(lines.popleft())
-        H = lines[:H_size]
-        lines = lines[H_size:]
 
         # H is complex-valued
         if num_format == RATIONAL:
-            H = np.array([_line_to_complex_rat(h) for h in H])
+            H = np.array([_line_to_complex_rat(lines.popleft()) for k in range(H_size)])
         else:
-            H = np.array(_line_to_complex(h) for h in H)
+            H = np.array(_line_to_complex(lines.popleft(),
+                                          num_format==MULTIPRECISION) for k in range(H_size))
 
         # fourth, a number homVarConst
         # 0 for affine, random for projective
-        hvc = lines.popleft()
         if num_format == RATIONAL:
-            hvc = _line_to_complex_rat(hvc)
+            hvc = _line_to_complex_rat(lines.popleft())
         else:
-            hvc = _line_to_complex(hvc)
+            hvc = _line_to_complex(lines.popleft())
 
         # fifth, matrix B for linear slice coefficients
         n_rows, n_cols = [int(l) for l in lines.popleft().split(" ")]
@@ -330,28 +320,24 @@ def read_witness_data(filename: str):
         if B_size == 0:
             B = None
         else:
-            B = lines[:B_size]
-            lines = lines[B_size:]
-
             # B is complex-valued
             if num_format == RATIONAL:
-                B = np.array([_line_to_complex_rat(b) for b in B])
+                B = np.array([_line_to_complex_rat(lines.popleft()) for k in range(B_size)])
             else:
-                B = np.array([_line_to_complex(b) for b in B])
+                B = np.array([_line_to_complex(lines.popleft(),
+                                               num_format==MULTIPRECISION) for k in range(B_size)])
 
             B = B.reshape((n_rows, n_cols))
 
         # sixth and finally, vector p for patch coefficients
-        p_size = int(lines.popleft())
-
-        patch = lines[:p_size]
-        lines = lines[p_size:]
+        patch_size = int(lines.popleft())
 
         # patch is complex-valued
         if num_format == RATIONAL:
-            patch = np.array([_line_to_complex_rat(p) for p in patch])
+            patch = np.array([_line_to_complex_rat(lines.popleft()) for k in range(patch_size)])
         else:
-            patch = np.array([_line_to_complex(p) for p in patch])
+            patch = np.array([_line_to_complex(lines.popleft(),
+                                               num_format==MULTIPRECISION) for k in range(patch_size)])
 
         codims[i]["A"] = A
         codims[i]["W"] = W
@@ -363,7 +349,86 @@ def read_witness_data(filename: str):
     return codims
 
 
-def write_points(points: List[np.ndarray], filename: str="") -> None:
+def write_input_file(inputs: dict, config: dict, input_file: str):
+    """Write a Bertini input file.
+
+    Parameters
+    ----------
+    inputs : dict
+        Key-value pairs of input values.
+    config : dict
+        Key-value pairs of config values.
+    input_file : str
+        Path to input file.
+    """
+
+    with open(input_file, "w") as fh:
+        # config section
+        print("CONFIG", file=fh)
+
+        for key, val in config.items():
+            print(f"{key}:{val};", file=fh)
+
+        print("END", file=fh)
+
+        print("INPUT", file=fh)
+        # name declarations
+        if inputs["variable_group"]:
+            for variable_group in inputs["variable_group"]:
+                print(f"variable_group {','.join(variable_group)};", file=fh)
+
+        if inputs["variable"]:
+            for variable in inputs["variable"]:
+                print(f"variable {','.join(variable)};", file=fh)
+
+        if inputs["hom_variable_group"]:
+            for hom_variable_group in inputs["hom_variable_group"]:
+                print(f"hom_variable_group {','.join(hom_variable_group)};", file=fh)
+
+        if inputs["pathvariable"]:
+            for pathvariable in inputs["pathvariable"]:
+                print(f"pathvariable {','.join(pathvariable)};", file=fh)
+
+        if inputs["random"]:
+            for random in inputs["random"]:
+                print(f"random {','.join(random)};", file=fh)
+
+        if inputs["random_real"]:
+            for random_real in inputs["random_real"]:
+                print(f"random_real {','.join(random_real)};", file=fh)
+
+        if inputs["parameter"]:
+            print(f"parameter {','.join(inputs['parameter'].keys())};", file=fh)
+
+        if inputs["constant"]:
+            print(f"constant {','.join(inputs['constant'].keys())};", file=fh)
+
+
+        print(f"function {','.join(inputs['function'].keys())};", file=fh)
+
+        # optional assignments (parameters, constants, &c.)
+        if inputs["parameter"]:
+            for key, val in inputs["parameter"].items():
+                if val is None:
+                    continue
+                print(f"{key} = {val};", file=fh)
+
+        if inputs["constant"]:
+            for key, val in inputs["constant"].items():
+                print(f"{key} = {val};", file=fh)
+
+        if inputs["subfunction"]:
+            for key, val in inputs["subfunction"].items():
+                print(f"{key} = {val};", file=fh)
+
+        # function definitions
+        for key, val in inputs["function"].items():
+            print(f"{key} = {val};", file=fh)
+
+        print("END", file=fh)
+
+
+def write_points_file(points: List[np.ndarray], points_file: str="") -> None:
     """Print a set of points in Bertini output fashion, optionally to a file.
 
     Parameters
@@ -371,12 +436,12 @@ def write_points(points: List[np.ndarray], filename: str="") -> None:
     Keyword arguments:
     points : iterable
         Collection of points to print.
-    filename : str, optional
-
+    points_file : str, optional
+        Path to file to write to. Writes to stdout if not specified.
     """
 
-    if filename:
-        fh = open(filename, 'w')
+    if points_file:
+        fh = open(points_file, "w")
     else:
         fh = sys.stdout
 
@@ -391,7 +456,105 @@ def write_points(points: List[np.ndarray], filename: str="") -> None:
 
         print("", file=fh)
 
-    if filename:
+    if points_file:
         fh.close()
 
-read_witness_data("C:/Users/Alan/AppData/Local/Packages/CanonicalGroupLimited.UbuntuonWindows_79rhkp1fndgsc/LocalState/rootfs/home/alan/BertiniLinux64_v1.6/examples/pos_dim/basic_pos_dim/witness_data")
+
+def write_witness_data_file(witness_data: dict, witness_data_file: str):
+        """
+        """
+        from sympy import Integer, Float
+        fh = open(witness_data_file, "w")
+
+        nonempty_codims = len(witness_data)
+        num_vars = len(witness_data[0]['points'][0]['coordinates'])
+        fh.write('{0}\n'.format(num_vars))
+        fh.write('{0}\n'.format(nonempty_codims))
+
+        for i in range(nonempty_codims):
+            wd_codim = witness_data[i]
+            fh.write('{0}\n'.format(wd_codim['codim']))
+            codim_points = [p for p in wd_codim['points']]
+            fh.write('{0}\n'.format(len(codim_points)))
+            for p in codim_points:
+                prec = p['precision']
+                fh.write('{0}\n'.format(prec))
+
+                coordinates = p['coordinates']
+                for c in coordinates:
+                    real,imag = c.as_real_imag()
+                    fh.write('{0} {1}\n'.format(real, imag))
+
+                fh.write('{0}\n'.format(prec))
+                approx = p['last approximation']
+                for a in approx:
+                    real,imag = a.as_real_imag()
+                    fh.write('{0} {1}\n'.format(real, imag))
+                fh.write('{0}\n'.format(p['condition number']))
+                fh.write('{0}\n'.format(p['corank']))
+                fh.write('{0}\n'.format(p['smallest nonzero']))
+                fh.write('{0}\n'.format(p['largest zero']))
+                fh.write('{0}\n'.format(p['type']))
+                fh.write('{0}\n'.format(p['multiplicity']))
+                fh.write('{0}\n'.format(p['component number']))
+                fh.write('{0}\n'.format(p['deflations']))
+        fh.write('-1\n\n') # -1 designates the end of witness points
+
+        h1 = witness_data[0]['H'][0]
+        if type(h1) == Integer:
+            numtype = 0
+        elif type(h1) == Float:
+            numtype = 1
+        else:
+            numtype = 2
+        fh.write('{0}\n'.format(numtype))
+
+        for i in range(nonempty_codims):
+            wd_codim = witness_data[i]
+            A   = wd_codim['A']
+            W   = wd_codim['W']
+            H   = wd_codim['H']
+            hvc = wd_codim['homVarConst']
+            B   = wd_codim['slice']
+            P   = wd_codim['p']
+
+            if A: # also W
+                num_rows, num_cols = A.shape
+                fh.write('{0} {1}\n'.format(num_rows, num_cols))
+                for j in range(num_rows):
+                    for k in range(num_cols):
+                        real, imag = A[j,k].as_real_imag()
+                        fh.write('{0} {1}\n'.format(real, imag))
+                for j in range(num_rows):
+                    for k in range(num_cols):
+                        fh.write('{0}\n'.format(W[j,k])) # W is an *integer* matrix
+            else:
+                fh.write('1 0\n')
+
+            fh.write('\n')
+            h = len(H)
+            fh.write('{0}\n'.format(h))
+            for j in range(h):
+                real, imag = H[j].as_real_imag()
+                fh.write('{0} {1}\n'.format(real, imag))
+
+            fh.write('\n')
+            real,imag = hvc.as_real_imag()
+            fh.write('{0} {1}\n'.format(real, imag))
+            if B:
+                num_rows, num_cols = B.shape
+                fh.write('{0} {1}\n'.format(num_rows, num_cols))
+                for j in range(num_rows):
+                    for k in range(num_cols):
+                        real, imag = B[j,k].as_real_imag()
+                        fh.write('{0} {1}\n'.format(real, imag))
+            else:
+                fh.write('1 0\n')
+
+            p = len(P)
+            fh.write('{0}\n'.format(p))
+            for j in range(p):
+                real, imag = P[j].as_real_imag()
+                fh.write('{0} {1}\n'.format(real, imag))
+
+        fh.close()

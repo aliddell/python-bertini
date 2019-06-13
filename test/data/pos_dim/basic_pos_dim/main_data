@@ -1,0 +1,72 @@
+Number of variables: 3
+Variables:  x y z
+Rank: 3
+
+----------DIMENSION 2----------
+
+NONSINGULAR SOLUTIONS
+---------------
+Path number: 0
+Component number: 0
+Estimated condition number: 1.000000e+00
+-8.651486572514062e-01 -3.025133101835100e-01
+8.078459249085922e-01 -3.154223365744238e-01
+-1.505944354919275e-02 4.586049183415803e-01
+Multiplicity: 1
+Deflations needed: 0
+---------------
+Path number: 1
+Component number: 0
+Estimated condition number: 1.000000e+00
+1.896495708890502e-01 -1.550891408361973e-01
+-8.161460708279070e-02 -1.454525958401207e-01
+-1.001442966264148e+00 -1.751625718228506e-02
+Multiplicity: 1
+Deflations needed: 0
+
+----------DIMENSION 1----------
+
+----------DIMENSION 0----------
+
+NONSINGULAR SOLUTIONS
+---------------
+Path number: 0
+Component number: 0
+Estimated condition number: 3.302907e+00
+4.999999999999999e-01 5.551115123125783e-17
+4.999999999999998e-01 2.775557561562891e-17
+4.999999999999998e-01 2.775557561562891e-17
+Multiplicity: 1
+Deflations needed: 0
+
+
+*************** input file needed to reproduce this run ***************
+
+CONFIG
+
+TrackType: 1;
+CoeffBound: 3.043377000000e+00;
+DegreeBound: 3.000000000000e+00;
+RandomSeed: 1560351849;
+
+END;
+
+INPUT
+
+variable_group x,y,z;
+function f1,f2,f3;
+f1=(x^2+y^2+z^2-1)*(x-1/2);
+f2=(x^2+y^2+z^2-1)*(y-1/2);
+f3=(x^2+y^2+z^2-1)*(z-1/2);
+
+END;
+
+
+*************** version information ***************
+Bertini(TM) v1.6
+GMP v6.0.0, MPFR v3.1.2
+
+Authors:
+D.J. Bates, J.D. Hauenstein,
+A.J. Sommese, C.W. Wampler
+

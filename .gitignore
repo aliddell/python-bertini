@@ -4,7 +4,7 @@ __pycache__
 
 # test output
 test/*/*/fail
-test/*/*/*_data
+#test/*/*/*_data
 test/*/*/output*
 test/*/*/rawout*
 test/*/*/regenSummary
