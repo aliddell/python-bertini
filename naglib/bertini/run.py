@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from collections import deque
+from collections import OrderedDict
 import os
 import os.path as op
 import subprocess
@@ -7,6 +7,7 @@ import tempfile
 
 import numpy as np
 
+from naglib.bertini.config import BertiniConfig
 from naglib.bertini.io import read_input_file, read_witness_data_file
 from naglib.constants import TOL
 from naglib.system import BERTINI, MPIRUN, PCOUNT
@@ -14,101 +15,95 @@ from naglib.exceptions import BertiniError, NoBertiniException
 
 
 class BertiniRun(object):
-    TEVALP    = -4
-    TEVALPJ   = -3
-    TNEWTP    = -2
-    TNEWTPJ   = -1
-    TZERODIM  =  0 # parallel
-    TPOSDIM   =  1 # parallel
-    TSAMPLE   =  2
-    TMEMTEST  =  3
-    TPRINTWS  =  4
-    TPROJECT  =  5
-    TISOSTAB  =  6
-    TREGENEXT =  7 # parallel
-
-    def __init__(self, **kwargs):
+    def __init__(self, config, **kwargs):
         """Construct a BertiniRun.
 
         Parameters
         ----------
+        config : BertiniConfig
+            Options to pass to Bertini.
         **kwargs
             Keyword arguments.
 
-            config : dict
-                Key-value pairs of configurations
-            variable_group : list or deque
+            variable_group : list
                 Variable group(s)
-            variable : list or deque
+            variable : list
                 Variables
-            hom_variable_group : list or deque
+            hom_variable_group : list
                 Homogeneous variables
-            pathvariable : list or deque
+            pathvariable : list
                 Path variables
+            random : list
+                Collection of complex-valued random variables
+            random_real : list
+                Collection of complex-valued random variables
             constant : dict
                 Key-value pairs of constant symbols and their values
-            random : list or deque
-                Collection of complex-valued random variables
-            random_real : list or deque
-                Collection of complex-valued random variables
-            function : dict
-                Key-value pairs of function symbols and their values
+            subfunction : dict
+                Key-value pairs of subfunction symbols and their values
             parameter : dict
                 Key-value pairs of parameter symbols and their values
+            function : OrderedDict
+                Key-value pairs of function symbols and their values
         """
 
-        config = kwargs["config"] if "config" in kwargs else {}
-        if not isinstance(config, dict):
-            raise TypeError(f"config type '{type(config)}' not understood")
+        if not isinstance(config, BertiniConfig):
+            raise TypeError("config must be an instance of BertiniConfig")
+        self._config = config
 
-        variable_group = kwargs["variable_group"] if "variable_group" in kwargs else deque()
-        if isinstance(variable_group, list):
-            variable_group = deque(variable_group)
-        elif not isinstance(variable_group, deque):
+        variable_group = kwargs["variable_group"] if "variable_group" in kwargs else []
+        if isinstance(variable_group, tuple):
+            variable_group = list(variable_group)
+        if not isinstance(variable_group, list):
             raise TypeError(f"variable_group type '{type(variable_group)}' not understood")
 
-        variable = kwargs["variable"] if "variable" in kwargs else deque()
-        if isinstance(variable, list):
-            variable = deque(variable)
-        if not isinstance(variable, deque):
+        variable = kwargs["variable"] if "variable" in kwargs else []
+        if isinstance(variable, tuple):
+            variable = list(variable)
+        if not isinstance(variable, list):
             raise TypeError(f"variable type '{type(variable)}' not understood")
 
-        hom_variable_group = kwargs["hom_variable_group"] if "hom_variable_group" in kwargs else deque()
-        if isinstance(hom_variable_group, list):
-            hom_variable_group = deque(hom_variable_group)
-        if not isinstance(hom_variable_group, deque):
+        hom_variable_group = kwargs["hom_variable_group"] if "hom_variable_group" in kwargs else []
+        if isinstance(hom_variable_group, tuple):
+            hom_variable_group = list(hom_variable_group)
+        if not isinstance(hom_variable_group, list):
             raise TypeError(f"hom_variable_group type '{type(hom_variable_group)}' not understood")
 
-        pathvariable = kwargs["pathvariable"] if "pathvariable" in kwargs else deque()
-        if isinstance(pathvariable, list):
-            pathvariable = deque(pathvariable)
-        if not isinstance(pathvariable, deque):
+        pathvariable = kwargs["pathvariable"] if "pathvariable" in kwargs else []
+        if isinstance(pathvariable, tuple):
+            pathvariable = list(pathvariable)
+        if not isinstance(pathvariable, list):
             raise TypeError(f"pathvariable type '{type(pathvariable)}' not understood")
 
-        random = kwargs["random"] if "random" in kwargs else deque()
-        if isinstance(random, list):
-            random = deque(random)
-        if not isinstance(random, deque):
+        random = kwargs["random"] if "random" in kwargs else []
+        if isinstance(random, tuple):
+            random = list(random)
+        if not isinstance(random, list):
             raise TypeError(f"random type '{type(random)}' not understood")
 
-        random_real = kwargs["random_real"] if "random_real" in kwargs else deque()
-        if isinstance(random_real, list):
-            random_real = deque(random_real)
-        if not isinstance(random_real, deque):
+        random_real = kwargs["random_real"] if "random_real" in kwargs else []
+        if isinstance(random_real, tuple):
+            random_real = list(random_real)
+        if not isinstance(random_real, list):
             raise TypeError(f"random_real type '{type(random_real)}' not understood")
-
 
         constant = kwargs["constant"] if "constant" in kwargs else {}
         if not isinstance(constant, dict):
             raise TypeError(f"constant type '{type(constant)}' not understood")
 
-        function = kwargs["function"] if "function" in kwargs else {}
-        if not isinstance(function, dict):
-            raise TypeError(f"function type '{type(function)}' not understood")
+        subfunction = kwargs["subfunction"] if "subfunction" in kwargs else {}
+        if not isinstance(subfunction, dict):
+            raise TypeError(f"subfunction type '{type(subfunction)}' not understood")
 
         parameter = kwargs["parameter"] if "parameter" in kwargs else {}
         if not isinstance(parameter, dict):
             raise TypeError(f"parameter type '{type(parameter)}' not understood")
+
+        function = kwargs["function"] if "function" in kwargs else OrderedDict()
+        if isinstance(function, dict):
+            function = OrderedDict(function)
+        if not isinstance(function, OrderedDict):
+            raise TypeError(f"function type '{type(function)}' not understood")
 
         self._config = dict([(k.lower(), config[k]) for k in config])
 

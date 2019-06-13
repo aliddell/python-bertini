@@ -4,7 +4,7 @@ from context import op, TESTBASE
 
 from collections import deque, OrderedDict
 
-class TestParameterHomotopy1:
+class TestAbInitio:
     def setup(self):
         self.inputs = dict(variable_group=deque(["x"]),
                            variable=deque(),

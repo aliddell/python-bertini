@@ -46,16 +46,16 @@ def read_input_file(input_file: str) -> Tuple:
         lines = deque([l.strip() for l in fh.readlines() if l != "\n"])
 
     config = {}
-    inputs = dict(variable_group=deque(),
-                  variable=deque(),
-                  hom_variable_group=deque(),
-                  pathvariable=deque(),
-                  random=deque(),
-                  random_real=deque(),
-                  constant=OrderedDict(),
-                  function=OrderedDict(),
-                  parameter=OrderedDict(),
-                  subfunction=OrderedDict())
+    inputs = dict(variable_group=[],
+                  variable=[],
+                  hom_variable_group=[],
+                  pathvariable=[],
+                  random=[],
+                  random_real=[],
+                  constant={},
+                  parameter={},
+                  subfunction={},
+                  function=OrderedDict())
     misclines = []
 
     in_config = in_input = False
