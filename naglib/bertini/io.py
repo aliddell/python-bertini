@@ -9,6 +9,7 @@ from typing import List, Tuple
 import mpmath as mp
 import numpy as np
 
+from naglib.bertini.input_file import BertiniConfig, BertiniInput
 from naglib.exceptions import UnclassifiedException
 
 
@@ -45,7 +46,7 @@ def read_input_file(input_file: str) -> Tuple:
     with open(input_file, "r") as fh:
         lines = deque([l.strip() for l in fh.readlines() if l != "\n"])
 
-    config = {}
+    config = BertiniConfig()
     inputs = dict(variable_group=[],
                   variable=[],
                   hom_variable_group=[],
@@ -84,21 +85,10 @@ def read_input_file(input_file: str) -> Tuple:
             continue
 
         if in_config:
-            key, val = map(lambda x: x.strip(), line.split(":"))
+            key, val = map(lambda l: l.strip(), line.split(":"))
             val = val.split("%")[0].strip(" ;") # remove comment, semicolon, trailing whitespace
 
-            if key.lower() in ["condnumthreshold", "endpointfinitethreshold", "finaltol",
-                               "pathtruncationthreshold", "samplefactor", "securitymaxnorm",
-                               "slicetolbeforeeg", "slicetolduringeg"]:
-                val = float(val)
-            elif key.lower() in ["coeffbound", "degreebound", "maxcodimension", "mptype",
-                                 "parameterhomotopy", "precision", "randomseed", "securitylevel",
-                                 "sharpendigits", "sharpenonly", "specificcodimension",
-                                 "tracktype", "useregeneration", "userhomotopy", "witnessgentype",
-                                 "witnesssupersetonly"]:
-                val = int(val)
-
-            config[key] = val
+            setattr(config, key.lower(), val)
 
         elif in_input:
             if vargroup_re.match(line):
@@ -349,7 +339,7 @@ def read_witness_data_file(witness_data_file: str) -> list:
     return codims
 
 
-def write_input_file(inputs: dict, config: dict, input_file: str):
+def write_input_file(inputs: dict, config: BertiniConfig, input_file: str):
     """Write a Bertini input file.
 
     Parameters
@@ -369,7 +359,7 @@ def write_input_file(inputs: dict, config: dict, input_file: str):
         for key, val in config.items():
             print(f"{key}:{val};", file=fh)
 
-        print("END", file=fh)
+        print("END;", file=fh)
 
         print("INPUT", file=fh)
         # name declarations
@@ -425,7 +415,7 @@ def write_input_file(inputs: dict, config: dict, input_file: str):
         for key, val in inputs["function"].items():
             print(f"{key} = {val};", file=fh)
 
-        print("END", file=fh)
+        print("END;", file=fh)
 
 
 def write_points_file(points: List[np.ndarray], points_file: str="") -> None:

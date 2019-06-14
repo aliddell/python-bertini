@@ -7,7 +7,7 @@ import tempfile
 
 import numpy as np
 
-from naglib.bertini.config import BertiniConfig
+from naglib.bertini.input_file import BertiniConfig
 from naglib.bertini.io import read_input_file, read_witness_data_file
 from naglib.constants import TOL
 from naglib.system import BERTINI, MPIRUN, PCOUNT
@@ -41,7 +41,7 @@ class BertiniRun(object):
                 Key-value pairs of constant symbols and their values
             subfunction : dict
                 Key-value pairs of subfunction symbols and their values
-            parameter : dict
+            parameter : OrderedDict
                 Key-value pairs of parameter symbols and their values
             function : OrderedDict
                 Key-value pairs of function symbols and their values
@@ -95,7 +95,7 @@ class BertiniRun(object):
         if not isinstance(subfunction, dict):
             raise TypeError(f"subfunction type '{type(subfunction)}' not understood")
 
-        parameter = kwargs["parameter"] if "parameter" in kwargs else {}
+        parameter = kwargs["parameter"] if "parameter" in kwargs else OrderedDict()
         if not isinstance(parameter, dict):
             raise TypeError(f"parameter type '{type(parameter)}' not understood")
 
