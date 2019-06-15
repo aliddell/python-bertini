@@ -15,197 +15,68 @@ from naglib.exceptions import BertiniError, NoBertiniException
 
 
 class BertiniRun(object):
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, inputs):
         """Construct a BertiniRun.
 
         Parameters
         ----------
         config : BertiniConfig
             Options to pass to Bertini.
-        **kwargs
-            Keyword arguments.
-
-            variable_group : list
-                Variable group(s)
-            variable : list
-                Variables
-            hom_variable_group : list
-                Homogeneous variables
-            pathvariable : list
-                Path variables
-            random : list
-                Collection of complex-valued random variables
-            random_real : list
-                Collection of complex-valued random variables
-            constant : dict
-                Key-value pairs of constant symbols and their values
-            subfunction : dict
-                Key-value pairs of subfunction symbols and their values
-            parameter : OrderedDict
-                Key-value pairs of parameter symbols and their values
-            function : OrderedDict
-                Key-value pairs of function symbols and their values
+        inputs : BertiniInput
+            Bertini input section.
+        **kwargs : Keyword arguments
+            Arguments required for specific run types.
         """
 
         if not isinstance(config, BertiniConfig):
             raise TypeError("config must be an instance of BertiniConfig")
         self._config = config
 
-        variable_group = kwargs["variable_group"] if "variable_group" in kwargs else []
-        if isinstance(variable_group, tuple):
-            variable_group = list(variable_group)
-        if not isinstance(variable_group, list):
-            raise TypeError(f"variable_group type '{type(variable_group)}' not understood")
+        if not isinstance(inputs, BertiniInput):
+            raise TypeError("inputs must be an instance of BertiniInput")
+        self._inputs = inputs
 
-        variable = kwargs["variable"] if "variable" in kwargs else []
-        if isinstance(variable, tuple):
-            variable = list(variable)
-        if not isinstance(variable, list):
-            raise TypeError(f"variable type '{type(variable)}' not understood")
+        # can use MPI for these types of run
+        self._parallel = self.tracktype in (config.TZERODIM, config.TPOSDIM, config.TREGENEXT)
 
-        hom_variable_group = kwargs["hom_variable_group"] if "hom_variable_group" in kwargs else []
-        if isinstance(hom_variable_group, tuple):
-            hom_variable_group = list(hom_variable_group)
-        if not isinstance(hom_variable_group, list):
-            raise TypeError(f"hom_variable_group type '{type(hom_variable_group)}' not understood")
+        if config.needs_start_points():
+            if "start" not in kwargs:
+                raise ValueError("specify a point or points to evaluate with the keyword argument 'start'")
+            self.start = kwargs["start"]
 
-        pathvariable = kwargs["pathvariable"] if "pathvariable" in kwargs else []
-        if isinstance(pathvariable, tuple):
-            pathvariable = list(pathvariable)
-        if not isinstance(pathvariable, list):
-            raise TypeError(f"pathvariable type '{type(pathvariable)}' not understood")
+        if config.needs_component():
+            if "component" not in kwargs:
+                raise ValueError("specify a component with the keyword argument 'component'")
+            self._component = kwargs["component"]
 
-        random = kwargs["random"] if "random" in kwargs else []
-        if isinstance(random, tuple):
-            random = list(random)
-        if not isinstance(random, list):
-            raise TypeError(f"random type '{type(random)}' not understood")
+        if config.needs_sample_count():
+            if "sample" not in kwargs:
+                raise ValueError("specify how many points to sample with the keyword argument 'sample'")
+            self._sample = kwargs["sample"]
 
-        random_real = kwargs["random_real"] if "random_real" in kwargs else []
-        if isinstance(random_real, tuple):
-            random_real = list(random_real)
-        if not isinstance(random_real, list):
-            raise TypeError(f"random_real type '{type(random_real)}' not understood")
+        if config.needs_projection_variables():
+            if "projection" not in kwargs:
+                raise ValueError("specify the variables onto which you wish to project with the keyword argument 'projection'")
+            self._projection = kwargs["projection"]
 
-        constant = kwargs["constant"] if "constant" in kwargs else {}
-        if not isinstance(constant, dict):
-            raise TypeError(f"constant type '{type(constant)}' not understood")
+        # a setting of ParameterHomotopy > 0 requires parameters
+        if config.parameterhomotopy > 0 and not inputs.parameters:
+            raise ValueError("you are attempting a parameter homotopy with no parameters")
 
-        subfunction = kwargs["subfunction"] if "subfunction" in kwargs else {}
-        if not isinstance(subfunction, dict):
-            raise TypeError(f"subfunction type '{type(subfunction)}' not understood")
+        # conversely, the presence of parameters requires ParameterHomotopy > 0
+        if inputs.parameters and config.parameterhomotopy == 0:
+            raise ValueError("your system has parameters but you have not specified a parameter homotopy")
 
-        parameter = kwargs["parameter"] if "parameter" in kwargs else OrderedDict()
-        if not isinstance(parameter, dict):
-            raise TypeError(f"parameter type '{type(parameter)}' not understood")
-
-        function = kwargs["function"] if "function" in kwargs else OrderedDict()
-        if isinstance(function, dict):
-            function = OrderedDict(function)
-        if not isinstance(function, OrderedDict):
-            raise TypeError(f"function type '{type(function)}' not understood")
-
-        self._config = dict([(k.lower(), config[k]) for k in config])
-
-        # check tracktype, set values accordingly
-        if "tracktype" not in config:
-            config["tracktype"] = 0
-
-        if config["tracktype"] not in range(-4, 8):
-            raise ValueError("TrackType must be an integer between -4 and 7 (inclusive)")
-
-        self._parallel = self.tracktype in (self.TZERODIM, self.TPOSDIM, self.TREGENEXT)
-
-        # check to see if tracktype jives with kwargs
-        msg = ""
-        ## start point(s) required
-        if self.tracktype in (self.TEVALP, self.TEVALPJ, self.TNEWTP, self.TNEWTPJ, self.TMEMTEST, self.TISOSTAB) and "start" not in kkeys:
-            msg = "specify a point or points to evaluate with the keyword argument 'start'"
-        elif "start" in kkeys:
-            start = kwargs["start"]
-            if type(start) not in (list, tuple):
-                start = [start]
-            self._start = start
-        ## component required
-        if tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTWS, self.TPROJECT, self.TREGENEXT) and 'component' not in kkeys:
-            msg = "specify a component with the keyword argument 'component'"
-        elif 'component' in kkeys:
-            self._component = kwargs['component']
-        ## sample count required
-        if tracktype == self.TSAMPLE and 'sample' not in kkeys:
-            msg = "specify how many points to sample with the keyword argument `sample'"
-        elif tracktype == self.TSAMPLE:
-            self._sample = kwargs['sample']
-        ## projection variables required
-        if tracktype == self.TPROJECT and 'projection' not in kkeys:
-            msg = "specify the variables onto which you wish to project with the keyword argument `projection'"
-        elif 'projection' in kkeys:
-            self._projection = kwargs['projection']
-        if msg:
-            raise KeyError(msg)
-
-        # tolerance
-        # TODO:make this mean something
-        if 'tol' in kkeys:
-            self._tol = kwargs['tol']
-        else:
-            self._tol = TOL
-
-        # parameter homotopy
-        self._parameter_homotopy = {'key':'', 'arg':0}
-        if 'parameterhomotopy' in ckeys:
-            ckeys2 = config.keys()
-            for k in ckeys2:
-                if k.lower() == 'parameterhomotopy':
-                    self._parameter_homotopy['key'] = 'ParameterHomotopy'
-                    self._parameter_homotopy['arg'] = config[k] # in (0,1,2)
-                    break
-
-            del ckeys2
-
-        # ensure the system jives with the call for parameter homotopy
-        msg = ''
-        if not system.parameters and self._parameter_homotopy['arg'] > 0:
-            msg = "you have attempted to define a parameter homotopy on a system with no parameters!"
-        elif system.parameters and self._parameter_homotopy['arg'] <= 0:
-            msg = "a parameterized system requires ParameterHomotopy either 1 or 2"
-        elif tracktype != self.TZERODIM and self._parameter_homotopy['arg'] > 0:
-            msg = "parameter homotopy only supported for zero-dimensional runs"
-
-        if msg:
-            raise KeyError(msg)
-
-        if 'start' in kkeys:
-            start = kwargs['start']
-            if type(start) not in (tuple, list):
-                start = [start]
-            # this doesn't go in self._parameter_homotopy because other kinds of run use start files
-            self._start = start
-        if 'start_parameters' in kkeys:
-            startp = kwargs['start_parameters']
-            if type(startp) not in (tuple, list):
-                startp = [startp]
-            self._parameter_homotopy['start parameters'] = startp
-        else:
-            startp = None
-        if 'final_parameters' in kkeys:
-            finalp = kwargs['final_parameters']
-            if type(finalp) not in (tuple, list):
-                finalp = [finalp]
-            self._parameter_homotopy['final parameters'] = finalp
-        else:
-            finalp = None
-
-        # if a system specifies one of start parameters or final parameters it must specify the other
-        if (startp and not finalp) or (finalp and not startp):
-            msg = "specify both start parameters and final parameters or neither"
-            raise BertiniError(msg)
-
-        # user did not specify start or final parameters
-        if 'parameterhomotopy' in ckeys and self._parameter_homotopy['arg'] > 1:
-            if not (startp or finalp):
-                msg = "specify start and/or final parameters with the keyword arguments `start_parameters' and/or `final_parameters'"
-                raise KeyError(msg)
+        # parameterhomotopy:2 requires start and final params
+        if config.parameterhomotopy == 2:
+            if "start_parameters" in kwargs:
+                self.start_parameters = kwargs["start_parameters"]
+            else:
+                raise ValueError("you have selected parameterhomotopy:2 but you have not given start parameters")
+            if "final_parameters" in kwargs:
+                self.final_parameters = kwargs["final_parameters"]
+            else:
+                raise ValueError("you have selected parameterhomotopy:2 but you have not given final parameters")
 
         self._dirname = tempfile.mkdtemp()
         self._bertini = BERTINI
@@ -632,14 +503,42 @@ class BertiniRun(object):
         return self._output
 
     @property
-    def tracktype(self):
-        return self._config["tracktype"]
-    @tracktype.setter
-    def tracktype(self, val):
-        if  val not in range(-4, 8):
-            raise ValueError("tracktype must be an integer between -4 and 7 (inclusive)")
+    def start_parameters(self):
+        if hasattr(self, "_start_parameters"):
+            return self._start_parameters
+        else:
+            return np.zeros(0, dtype=np.complex)
+    @start_parameters.setter
+    def start_parameters(self, val):
+        if self.config.parameterhomotopy != 2:
+            raise ValueError("only specify start_parameters for parameterhomotopy:2")
+        if not isinstance(val, np.ndarray):
+            raise TypeError("expected a numpy array")
+        if val.size != len(self.inputs.parameters):
+            raise ValueError(f"expected {len(self.inputs.parameters)} parameters but you specifed {val.size}")
 
-        self._config["tracktype"] = int(val)
+        self._start_parameters = val.as_type(np.complex)
+
+    @property
+    def final_parameters(self):
+        if hasattr(self, "_final_parameters"):
+            return self._final_parameters
+        else:
+            return np.zeros(0, dtype=np.complex)
+    @final_parameters.setter
+    def final_parameters(self, val):
+        if self.config.parameterhomotopy != 2:
+            raise ValueError("only specify final_parameters for parameterhomotopy:2")
+        if not isinstance(val, np.ndarray):
+            raise TypeError("expected a numpy array")
+        if val.size != len(self.inputs.parameters):
+            raise ValueError(f"expected {len(self.inputs.parameters)} parameters but you specifed {val.size}")
+
+        self._final_parameters = val.as_type(np.complex)
+
+    @property
+    def tracktype(self):
+        return self.config.tracktype
 
 
 def parameter_homotopy(system: list):
