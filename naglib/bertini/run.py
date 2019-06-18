@@ -7,16 +7,15 @@ import tempfile
 
 import numpy as np
 
-from typing import AnyStr, Union
+from typing import Union
 
 from naglib.bertini.input_file import BertiniConfig, BertiniInput
-from naglib.bertini.io import read_input_file, read_witness_data_file
-from naglib.constants import TOL
+from naglib.bertini.io import read_input_file, read_witness_data_file, write_input_file
 from naglib.system import BERTINI, MPIRUN, PCOUNT
 from naglib.exceptions import BertiniError, NoBertiniException
 
 
-def _which(exe: AnyStr) -> Union[AnyStr, None]:
+def _which(exe: str) -> Union[str, None]:
     if sys.platform == "win32":
         which_exe = "where.exe"
     else:
@@ -206,8 +205,6 @@ class BertiniRun(object):
         if not self._complete:
             return
 
-        from naglib.bertini.fileutils import read_points_file
-        from naglib.utils import striplines
         dirname = self._dirname
         system = self._system
         tol = self._tol
@@ -494,6 +491,29 @@ class BertiniRun(object):
             data = self._recover_data()
 
         return data
+
+    def setup(self, dirname: str = None):
+        """
+
+        Parameters
+        ----------
+        dirname : str
+            Path to directory to run Bertini.
+
+        Returns
+        -------
+
+        """
+        if dirname is None:
+            self._dirname = tempfile.mkdtemp()
+        elif not op.isdir(dirname):
+            os.makedirs(dirname)
+            self._dirname = dirname
+        else:
+            self._dirname = dirname
+
+        input_file = op.join(self._dirname, "input")
+        write_input_file(self.inputs, self.config)
 
     @property
     def bertini(self):

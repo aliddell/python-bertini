@@ -1,4 +1,4 @@
-from context import op, TESTBASE
+from context import op, BASEDIR
 
 from collections import OrderedDict
 

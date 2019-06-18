@@ -339,15 +339,15 @@ def read_witness_data_file(witness_data_file: str) -> list:
     return codims
 
 
-def write_input_file(inputs: dict, config: BertiniConfig, input_file: str):
+def write_input_file(inputs: BertiniInput, config: BertiniConfig, input_file: str):
     """Write a Bertini input file.
 
     Parameters
     ----------
-    inputs : dict
-        Key-value pairs of input values.
-    config : dict
-        Key-value pairs of config values.
+    inputs : BertiniInput
+        Input values.
+    config : BertiniConfig
+        Config values.
     input_file : str
         Path to input file.
     """
@@ -355,12 +355,10 @@ def write_input_file(inputs: dict, config: BertiniConfig, input_file: str):
     with open(input_file, "w") as fh:
         # config section
         print("CONFIG", file=fh)
-
-        for key, val in config.items():
-            print(f"{key}:{val};", file=fh)
-
+        print(config, file=fh)
         print("END;", file=fh)
 
+        # TODO: pick up here
         print("INPUT", file=fh)
         # name declarations
         if inputs["variable_group"]:
@@ -392,7 +390,6 @@ def write_input_file(inputs: dict, config: BertiniConfig, input_file: str):
 
         if inputs["constant"]:
             print(f"constant {','.join(inputs['constant'].keys())};", file=fh)
-
 
         print(f"function {','.join(inputs['function'].keys())};", file=fh)
 
