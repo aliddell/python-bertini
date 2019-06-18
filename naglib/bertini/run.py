@@ -1,21 +1,37 @@
 # -*- coding: utf-8 -*-
-from collections import OrderedDict
 import os
 import os.path as op
 import subprocess
+import sys
 import tempfile
 
 import numpy as np
 
-from naglib.bertini.input_file import BertiniConfig
+from typing import AnyStr, Union
+
+from naglib.bertini.input_file import BertiniConfig, BertiniInput
 from naglib.bertini.io import read_input_file, read_witness_data_file
 from naglib.constants import TOL
 from naglib.system import BERTINI, MPIRUN, PCOUNT
 from naglib.exceptions import BertiniError, NoBertiniException
 
 
+def _which(exe: AnyStr) -> Union[AnyStr, None]:
+    if sys.platform == "win32":
+        which_exe = "where.exe"
+    else:
+        which_exe = "which"
+
+    try:
+        path = subprocess.check_output([which_exe, exe], stderr=subprocess.DEVNULL).splitlines()[0].decode()
+    except subprocess.CalledProcessError:
+        path = None
+
+    return path
+
+
 class BertiniRun(object):
-    def __init__(self, config, inputs):
+    def __init__(self, config, inputs, **kwargs):
         """Construct a BertiniRun.
 
         Parameters
@@ -28,9 +44,7 @@ class BertiniRun(object):
             Arguments required for specific run types.
         """
 
-        if not isinstance(config, BertiniConfig):
-            raise TypeError("config must be an instance of BertiniConfig")
-        self._config = config
+        self.config = config
 
         if not isinstance(inputs, BertiniInput):
             raise TypeError("inputs must be an instance of BertiniInput")
@@ -60,11 +74,11 @@ class BertiniRun(object):
             self._projection = kwargs["projection"]
 
         # a setting of ParameterHomotopy > 0 requires parameters
-        if config.parameterhomotopy > 0 and not inputs.parameters:
+        if config.parameterhomotopy > 0 and not inputs.parameter:
             raise ValueError("you are attempting a parameter homotopy with no parameters")
 
         # conversely, the presence of parameters requires ParameterHomotopy > 0
-        if inputs.parameters and config.parameterhomotopy == 0:
+        if inputs.parameter and config.parameterhomotopy == 0:
             raise ValueError("your system has parameters but you have not specified a parameter homotopy")
 
         # parameterhomotopy:2 requires start and final params
@@ -78,12 +92,17 @@ class BertiniRun(object):
             else:
                 raise ValueError("you have selected parameterhomotopy:2 but you have not given final parameters")
 
-        self._dirname = tempfile.mkdtemp()
-        self._bertini = BERTINI
-        self._system = system
-        self._config = config
+        if "bertini_path" in kwargs:
+            if not op.isfile(kwargs["bertini_path"]):
+                raise OSError(f"didn't find Bertini at '{kwargs['bertini_path']}'")
+            self._bertini = kwargs["bertini_path"]
+        else:
+            bertini = _which("bertini")
+            if bertini is None:
+                raise OSError("couldn't find a bertini executable and you didn't specify one")
+            self._bertini = bertini
+
         self._complete = False
-        self._inputf = []
 
     def _recover_components(self, witness_data):
         """
@@ -484,12 +503,23 @@ class BertiniRun(object):
         self._bertini = bert
 
     @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, val):
+        if not isinstance(val, BertiniConfig):
+            raise TypeError("config must be an instance of BertiniConfig")
+        self._config = val
+
+    @property
     def complete(self):
         return self._complete
 
     @property
     def dirname(self):
         return self._dirname
+
     @dirname.setter
     def dirname(self, name):
         self._dirname = name
@@ -508,14 +538,15 @@ class BertiniRun(object):
             return self._start_parameters
         else:
             return np.zeros(0, dtype=np.complex)
+
     @start_parameters.setter
     def start_parameters(self, val):
         if self.config.parameterhomotopy != 2:
             raise ValueError("only specify start_parameters for parameterhomotopy:2")
         if not isinstance(val, np.ndarray):
             raise TypeError("expected a numpy array")
-        if val.size != len(self.inputs.parameters):
-            raise ValueError(f"expected {len(self.inputs.parameters)} parameters but you specifed {val.size}")
+        if val.size != len(self.inputs.parameter):
+            raise ValueError(f"expected {len(self.inputs.parameter)} parameters but you specifed {val.size}")
 
         self._start_parameters = val.as_type(np.complex)
 
@@ -525,14 +556,15 @@ class BertiniRun(object):
             return self._final_parameters
         else:
             return np.zeros(0, dtype=np.complex)
+
     @final_parameters.setter
     def final_parameters(self, val):
         if self.config.parameterhomotopy != 2:
             raise ValueError("only specify final_parameters for parameterhomotopy:2")
         if not isinstance(val, np.ndarray):
             raise TypeError("expected a numpy array")
-        if val.size != len(self.inputs.parameters):
-            raise ValueError(f"expected {len(self.inputs.parameters)} parameters but you specifed {val.size}")
+        if val.size != len(self.inputs.parameter):
+            raise ValueError(f"expected {len(self.inputs.parameter)} parameters but you specifed {val.size}")
 
         self._final_parameters = val.as_type(np.complex)
 

@@ -12,12 +12,12 @@ def _list_of_lists_of_str(obj):
 
 def _dict_of_type(obj, dtype):
     return isinstance(obj, dict) and _list_of_str(list(obj.keys())) \
-     and all((isinstance(v, dtype) or v is None) for v in obj.values())
+           and all((isinstance(v, dtype) or v is None) for v in obj.values())
 
 
 def _ordereddict_of_type(obj, dtype):
     return isinstance(obj, OrderedDict) and _list_of_str(list(obj.keys())) \
-        and all((isinstance(v, dtype) or v is None) for v in obj.values())
+           and all((isinstance(v, dtype) or v is None) for v in obj.values())
 
 
 PARAMETERS = OrderedDict(tracktype={"default": 0,
@@ -48,18 +48,18 @@ INPUT_TYPES = OrderedDict(variable_group={"default": [],
 
 
 class BertiniConfig(object):
-    TEVALP    = -4
-    TEVALPJ   = -3
-    TNEWTP    = -2
-    TNEWTPJ   = -1
-    TZERODIM  =  0 # parallel
-    TPOSDIM   =  1 # parallel
-    TSAMPLE   =  2
-    TMEMTEST  =  3
-    TPRINTWS  =  4
-    TPROJECT  =  5
-    TISOSTAB  =  6
-    TREGENEXT =  7 # parallel
+    TEVALP = -4
+    TEVALPJ = -3
+    TNEWTP = -2
+    TNEWTPJ = -1
+    TZERODIM = 0  # parallel
+    TPOSDIM = 1  # parallel
+    TSAMPLE = 2
+    TMEMTEST = 3
+    TPRINTWS = 4
+    TPROJECT = 5
+    TISOSTAB = 6
+    TREGENEXT = 7  # parallel
 
     def __init__(self, **kwargs):
         for arg_name in PARAMETERS:
@@ -105,6 +105,7 @@ class BertiniConfig(object):
     @property
     def parameterhomotopy(self):
         return self._parameterhomotopy
+
     @parameterhomotopy.setter
     def parameterhomotopy(self, val):
         is_valid = PARAMETERS["parameterhomotopy"]["is valid"]
@@ -112,12 +113,14 @@ class BertiniConfig(object):
             val = int(val)
 
         if not is_valid(val):
-            raise ValueError(f"parameterhomotopy must take one of the following values: {','.join(map(str, range(0, 3)))}")
+            raise ValueError(
+                f"parameterhomotopy must take one of the following values: {','.join(map(str, range(0, 3)))}")
         self._parameterhomotopy = val
 
     @property
     def tracktype(self):
         return self._tracktype
+
     @tracktype.setter
     def tracktype(self, val):
         is_valid = PARAMETERS["tracktype"]["is valid"]
@@ -150,9 +153,10 @@ class BertiniInput(object):
     @property
     def variable_group(self):
         return self._variable_group
+
     @variable_group.setter
     def variable_group(self, val):
-        is_valid = INPUT_TYPES["variable_group"]
+        is_valid = INPUT_TYPES["variable_group"]["is valid"]
         if not is_valid(val):
             raise ValueError("variable_group must be a list of lists of str")
         self._variable_group = val
@@ -160,9 +164,10 @@ class BertiniInput(object):
     @property
     def variable(self):
         return self._variable
+
     @variable.setter
     def variable(self, val):
-        is_valid = INPUT_TYPES["variable"]
+        is_valid = INPUT_TYPES["variable"]["is valid"]
         if not is_valid(val):
             raise ValueError("variable must be a list of lists of str")
         self._variable = val
@@ -170,9 +175,10 @@ class BertiniInput(object):
     @property
     def hom_variable_group(self):
         return self._hom_variable_group
+
     @hom_variable_group.setter
     def hom_variable_group(self, val):
-        is_valid = INPUT_TYPES["hom_variable_group"]
+        is_valid = INPUT_TYPES["hom_variable_group"]["is valid"]
         if not is_valid(val):
             raise ValueError("hom_variable_group must be a list of lists of str")
         self._hom_variable_group = val
@@ -180,9 +186,10 @@ class BertiniInput(object):
     @property
     def pathvariable(self):
         return self._pathvariable
+
     @pathvariable.setter
     def pathvariable(self, val):
-        is_valid = INPUT_TYPES["pathvariable"]
+        is_valid = INPUT_TYPES["pathvariable"]["is valid"]
         if not is_valid(val):
             raise ValueError("pathvariable must be a list of str")
         self._pathvariable = val
@@ -190,9 +197,10 @@ class BertiniInput(object):
     @property
     def random(self):
         return self._random
+
     @random.setter
     def random(self, val):
-        is_valid = INPUT_TYPES["random"]
+        is_valid = INPUT_TYPES["random"]["is valid"]
         if not is_valid(val):
             raise ValueError("random must be a list of str")
         self._random = val
@@ -200,9 +208,10 @@ class BertiniInput(object):
     @property
     def random_real(self):
         return self._random_real
+
     @random_real.setter
     def random_real(self, val):
-        is_valid = INPUT_TYPES["random_real"]
+        is_valid = INPUT_TYPES["random_real"]["is valid"]
         if not is_valid(val):
             raise ValueError("random_real must be a list of str")
         self._random_real = val
@@ -210,9 +219,10 @@ class BertiniInput(object):
     @property
     def constant(self):
         return self._constant
+
     @constant.setter
     def constant(self, val):
-        is_valid = INPUT_TYPES["constant"]
+        is_valid = INPUT_TYPES["constant"]["is valid"]
         if not is_valid(val):
             raise ValueError("constant must be a dict of numeric")
         self._constant = val
@@ -220,9 +230,10 @@ class BertiniInput(object):
     @property
     def subfunction(self):
         return self._subfunction
+
     @subfunction.setter
     def subfunction(self, val):
-        is_valid = INPUT_TYPES["subfunction"]
+        is_valid = INPUT_TYPES["subfunction"]["is valid"]
         if not is_valid(val):
             raise ValueError("subfunction must be a dict of str")
         self._subfunction = val
@@ -230,9 +241,10 @@ class BertiniInput(object):
     @property
     def parameter(self):
         return self._parameter
+
     @parameter.setter
     def parameter(self, val):
-        is_valid = INPUT_TYPES["parameter"]
+        is_valid = INPUT_TYPES["parameter"]["is valid"]
         if not is_valid(val):
             raise ValueError("parameter must be an OrderedDict of str")
         self._parameter = val
@@ -240,9 +252,10 @@ class BertiniInput(object):
     @property
     def function(self):
         return self._function
+
     @function.setter
     def function(self, val):
-        is_valid = INPUT_TYPES["function"]
+        is_valid = INPUT_TYPES["function"]["is valid"]
         if not is_valid(val):
             raise ValueError("function must be an OrderedDict of str")
         self._function = val
