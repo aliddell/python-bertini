@@ -4,7 +4,7 @@ import os.path as op
 import sys
 import re
 
-from typing import List, Tuple
+from typing import Tuple
 
 import mpmath as mp
 import numpy as np
@@ -144,7 +144,7 @@ def read_input_file(input_file: str) -> Tuple:
     return config, inputs, misclines
 
 
-def read_points_file(points_file: str, tol: float=None) -> np.ndarray:
+def read_points_file(points_file: str, tol: float = None) -> np.ndarray:
     """Read points from an output file.
 
     Parameters

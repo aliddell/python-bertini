@@ -11,7 +11,7 @@ import numpy as np
 from typing import Union
 
 from naglib.bertini.input_file import BertiniConfig, BertiniInput
-from naglib.bertini.io import (read_input_file, read_witness_data_file,
+from naglib.bertini.io import (read_input_file, read_points_file, read_witness_data_file,
                                write_input_file, write_points_file)
 from naglib.exceptions import BertiniError, NoBertiniException
 
@@ -28,6 +28,10 @@ def _which(exe: str) -> Union[str, None]:
         path = None
 
     return path
+
+
+class BertiniResult(object):
+    pass
 
 
 class BertiniRun(object):
@@ -206,138 +210,29 @@ class BertiniRun(object):
         return components
 
     def _recover_data(self):
-        """
-        recover the information pertinent to a run
-        """
+        """Recover data from a run.
 
+        Returns
+        -------
+        data : BertiniResult
+        """
         if not self._complete:
             return
 
-        dirname = self._dirname
-        system = self._system
-        tol = self._tol
-        tracktype = self._tracktype
-        main_data = dirname + '/main_data'
-        fh = open(main_data, 'r')
-        self._main_data = striplines(fh.readlines())
-        fh.close()
+        with open(op.join(self.dirname, "main_data"), "r") as fh:
+            # TODO: implement read_main_data in naglib.bertini.io to return BertiniResult
+            self._main_data = [l.strip() for l in fh.readlines() if l != "\n"]
 
-        projective = not not system.homvar
+        result = BertiniResult()
+        if self.tracktype == self.config.TZERODIM:
+            result.finite_solutions = read_points_file(op.join(self.dirname, "finite_solutions"))
+            result.real_finite_solutions = read_points_file(op.join(self.dirname, "real_finite_solutions"))
+            result.singular_solutions = read_points_file(op.join(self.dirname, "singular_solutions"))
 
-        if tracktype == self.TEVALP:
-            pass
-        elif tracktype == self.TEVALPJ:
-            pass
-        elif tracktype == self.TNEWTP:
-            pass
-        elif tracktype == self.TNEWTPJ:
-            pass
-        elif tracktype == self.TZERODIM:
-            finites = dirname + '/finite_solutions'
-            startp = dirname + '/start_parameters'
-            finite_solutions = read_points_file(finites, tol=tol, projective=projective)
+            if self.config.parameterhomotopy == 1:
+                result.start_parameters = read_points_file(op.join(self.dirname, "start_parameters"))
 
-            ptype  = self._parameter_homotopy['arg']
-            if ptype == 1:
-                start_parameters = read_points_file(startp, tol=tol, projective=projective)
-                return finite_solutions, start_parameters
-
-            return finite_solutions
-        elif tracktype == self.TPOSDIM:
-            wdfile = dirname + '/witness_data'
-            self._witness_data = self.read_witness_data_file(wdfile)
-            components = self._recover_components(self._witness_data)
-
-            return components
-        elif tracktype == self.TSAMPLE:
-            wdfile = dirname + '/witness_data'
-            self._witness_data = self.read_witness_data_file(wdfile)
-            samplef = dirname + '/sampled'
-            sampled = read_points_file(samplef, tol=tol, projective=projective)
-
-            return sampled
-        elif tracktype == self.TMEMTEST:
-            from sympy import zeros
-
-            wdfile = dirname + '/witness_data'
-            self._witness_data = self.read_witness_data_file(wdfile)
-            inmat = dirname + '/incidence_matrix'
-            fh = open(inmat, 'r')
-            lines = striplines(fh.readlines())
-            fh.close()
-
-            testcodim = self._component.codim
-            testcid   = 0 # component_id should be 0 after write
-
-            testp = self._start
-            if type(testp) not in (list, tuple):
-                testp = [testp]
-
-            nonempty_codims = int(lines[0])
-            lines = lines[1:]
-            # gather nonempty codims with component count for each
-            ccounts = lines[:nonempty_codims]
-            lines = lines[nonempty_codims:]
-
-            ccounts = [tuple([int(d) for d in c.split(' ')]) for c in ccounts]
-            # ordered list of codims with component ids, for matrix
-            cids = [(c[0], j) for c in ccounts for j in range(c[1])]
-            colcount = len(cids)
-            dex = cids.index((testcodim, testcid))
-
-            numpoints = int(lines[0])
-            lines = lines[1:]
-
-            inmat = zeros(numpoints, colcount)
-            # populate incidence matrix
-            for i in range(numpoints):
-                line = lines[i].split(' ')
-                row = [int(l) for l in line]
-                for j in range(colcount):
-                    inmat[i,j] = row[j]
-
-            if numpoints == 1:
-                return inmat[0, dex] == 1
-            else:
-                ret = []
-                for i in range(numpoints):
-                    ret.append(inmat[i, dex] == 1)
-                return ret
-
-        elif tracktype == self.TPRINTWS:
-            pointsfile = dirname + '/points.out'
-            #sysfile    = dirname + '/sys.out'
-
-            points = read_points_file(pointsfile, tol=tol, projective=projective)
-            #TODO: parse linear system file and return a LinearSystem
-
-            return points
-        elif tracktype == self.TPROJECT:
-            #TODO: implement
-            pass
-        elif tracktype == self.TISOSTAB:
-            config = self._config
-            ckeys = config.keys()
-            lkeys = [k.lower() for k in ckeys]
-            cws = None
-            if 'constructwitnessset' in lkeys:
-                for k in ckeys:
-                    if k.lower() == 'constructwitnessset':
-                        cws = k
-                        break
-            if cws and config[cws] == 1:
-                wdfile = dirname + '/witness_data'
-                self._witness_data = self.read_witness_data_file(wdfile)
-                components = self._recover_components(self._witness_data)
-                return components
-
-            #TODO: read isosingular_summary and maybe output_isosingular
-        elif tracktype == self.TREGENEXT:
-            wdfile = dirname + '/witness_data'
-            self._witness_data = self.read_witness_data_file(wdfile)
-            components = self._recover_components(self._witness_data)
-
-            return components
+        return result
 
     def _recover_input(self):
         """
@@ -442,7 +337,7 @@ class BertiniRun(object):
         fh.close()
 
     def run(self, dirname: str = None, tee: bool = True):
-        """
+        """Run Bertini and collect results.
 
         Parameters
         ----------
@@ -496,8 +391,10 @@ class BertiniRun(object):
         self._complete = True
         self._output = output
 
+        return self._recover_data()
+
     def setup(self, dirname: str = None):
-        """
+        """Write input and instructions files to working directory.
 
         Parameters
         ----------
@@ -517,8 +414,8 @@ class BertiniRun(object):
         write_input_file(self.config, self.inputs, input_file)
 
         if self.config.parameterhomotopy == 2:
-            write_points_file(self.start_parameters, op.join(self._dirname, "start_parameters"))
-            write_points_file(self.final_parameters, op.join(self._dirname, "final_parameters"))
+            write_points_file(self.start_parameters.reshape(1, self.start_parameters.size), op.join(self._dirname, "start_parameters"))
+            write_points_file(self.final_parameters.reshape(1, self.final_parameters.size), op.join(self._dirname, "final_parameters"))
 
     @property
     def bertini(self):

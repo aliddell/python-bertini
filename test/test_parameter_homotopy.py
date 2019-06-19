@@ -13,5 +13,8 @@ def test_ab_initio():
 
     config = BertiniConfig(parameterhomotopy=1)
     brun = BertiniRun(config, inputs)
-    brun.run(dirname=op.join(BASEDIR, "test", "param-htpy"))
+    result = brun.run(dirname=op.join(BASEDIR, "test", "param-htpy"))
+
+    assert result.finite_solutions.shape == (1, 6)
+    print(result.start_parameters)
 
