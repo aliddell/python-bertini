@@ -147,8 +147,70 @@ class BertiniInput(object):
 
         self._validate()
 
+    def __str__(self):
+        s = "INPUT\n"
+        # name declarations
+        if self.variable_group:
+            for variable_group in self.variable_group:
+                s += f"variable_group {','.join(variable_group)};\n"
+
+        if self.variable:
+            for variable in self.variable:
+                s += f"variable {','.join(variable)};\n"
+
+        if self.hom_variable_group:
+            for hom_variable_group in self.hom_variable_group:
+                s += f"hom_variable_group {','.join(hom_variable_group)};\n"
+
+        if self.pathvariable:
+            for pathvariable in self.pathvariable:
+                s += f"pathvariable {','.join(pathvariable)};\n"
+
+        if self.random:
+            for random in self.random:
+                s += f"random {','.join(random)};\n"
+
+        if self.random_real:
+            for random_real in self.random_real:
+                s += f"random_real {','.join(random_real)};\n"
+
+        if self.parameter:
+            parameters = ",".join(self.parameter.keys())
+            s += f"parameter {parameters};\n"
+
+        if self.constant:
+            constant = ",".join(self.constant.keys())
+            s += f"constant {constant};\n"
+
+        function = ",".join(self.function.keys())
+        s += f"function {function};\n"
+
+        # optional assignments (parameters, constants, &c.)
+        if self.parameter:
+            for key, val in self.parameter.items():
+                if val is None:
+                    continue
+                s += f"{key} = {val};\n"
+
+        if self.constant:
+            for key, val in self.constant.items():
+                s += f"{key} = {val};\n"
+
+        if self.subfunction:
+            for key, val in self.subfunction.items():
+                s += f"{key} = {val};\n"
+
+        # function definitions
+        for key, val in self.function.items():
+            s += f"{key} = {val};\n"
+
+        s += "END;"
+
+        return s
+
     def _validate(self):
-        pass
+        if self.variable and (self.variable_group or self.hom_variable_group):
+            raise ValueError("specify EITHER variable OR some combination of variable_group and hom_variable_group")
 
     @property
     def variable_group(self):
@@ -259,3 +321,12 @@ class BertiniInput(object):
         if not is_valid(val):
             raise ValueError("function must be an OrderedDict of str")
         self._function = val
+
+    @property
+    def ndims(self):
+        if self.variable:
+            nd = sum(len(v) for v in self.variable)
+        else:
+            nd = sum(len(v) for v in self.variable_group) + sum(len(v) for v in self.hom_variable_group)
+
+        return nd

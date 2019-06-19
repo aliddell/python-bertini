@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import os.path as op
+import multiprocessing
 import subprocess
 import sys
 import tempfile
@@ -10,8 +11,8 @@ import numpy as np
 from typing import Union
 
 from naglib.bertini.input_file import BertiniConfig, BertiniInput
-from naglib.bertini.io import read_input_file, read_witness_data_file, write_input_file
-from naglib.system import BERTINI, MPIRUN, PCOUNT
+from naglib.bertini.io import (read_input_file, read_witness_data_file,
+                               write_input_file, write_points_file)
 from naglib.exceptions import BertiniError, NoBertiniException
 
 
@@ -100,6 +101,13 @@ class BertiniRun(object):
             if bertini is None:
                 raise OSError("couldn't find a bertini executable and you didn't specify one")
             self._bertini = bertini
+
+        if "mpi_path" in kwargs:
+            if not op.isfile(kwargs["mpi_path"]):
+                raise OSError(f"didn't find MPI executable at '{kwargs['mpi_path']}'")
+            self._mpi = kwargs["mpi_path"]
+        else:
+            self._mpi = _which("mpirun")
 
         self._complete = False
 
@@ -360,7 +368,6 @@ class BertiniRun(object):
         return inlines
 
     def _write_files(self):
-        from os.path import exists
         from naglib.bertini.fileutils import fprint
 
         tracktype = self._tracktype
@@ -434,63 +441,38 @@ class BertiniRun(object):
             fh.write(line + '\n')
         fh.close()
 
-    def rerun(self, config={}):
-        if not self._complete:
-            return self.run()
-        else:
-            self._config.update(config)
-            return self.run()
-
     def run(self, rerun_on_fail=False):
         # in case the user has changed any of these
-        if not BERTINI:
-            raise NoBertiniException()
-
-        self._bertini = BERTINI
-
-        if self._parallel and MPIRUN:
-            cmd = MPIRUN
-            arg = [cmd, '-np', str(PCOUNT), self._bertini]
+        if self._parallel and self._mpi is not None:
+            cmd = self._mpi
+            arg = [cmd, '-np', str(multiprocessing.cpu_count()), self._bertini]
         else:
             arg = [self._bertini]
 
-        dirname = self._dirname
+        self.setup()  # write files
 
-        input_file = self._write_files()
-
-        if op.exists(dirname + '/instructions'):
-            stdin = dirname + '/instructions'
+        if op.isfile(op.join(self.dirname, "/instructions")):
+            stdin = op.join(self.dirname, "/instructions")
         else:
             stdin = None
 
-        arg += [input_file]
+        arg += ["input"]
 
-        os.chdir(dirname)
-        if stdin:
-            stdin = open(stdin, 'r')
+        os.chdir(self.dirname)
+        if stdin is not None:
+            stdin = open(stdin, "r")
+
         try:
             output = subprocess.check_output(arg, stdin=stdin, universal_newlines=True)
         except subprocess.CalledProcessError as e:
-            msg = naglib.bertini.system.proc_err_output(e.output)
+            msg = naglib.system.proc_err_output(e.output)
             raise BertiniError(msg)
 
-        if stdin:
+        if stdin is not None:
             stdin.close()
 
         self._complete = True
         self._output = output
-
-        if rerun_on_fail:
-            try:
-                self._inputf = self._recover_input()
-                data = self._recover_data()
-            except:
-                data = self.rerun()
-        else:
-            self._inputf = self._recover_input()
-            data = self._recover_data()
-
-        return data
 
     def setup(self, dirname: str = None):
         """
@@ -504,6 +486,7 @@ class BertiniRun(object):
         -------
 
         """
+        # write input file
         if dirname is None:
             self._dirname = tempfile.mkdtemp()
         elif not op.isdir(dirname):
@@ -513,14 +496,19 @@ class BertiniRun(object):
             self._dirname = dirname
 
         input_file = op.join(self._dirname, "input")
-        write_input_file(self.inputs, self.config)
+        write_input_file(self.config, self.inputs, input_file)
+
+        if self.config.parameterhomotopy == 2:
+            write_points_file(self.start_parameters, op.join(self._dirname, "start_parameters"))
+            write_points_file(self.final_parameters, op.join(self._dirname, "final_parameters"))
 
     @property
     def bertini(self):
         return self._bertini
+
     @bertini.setter
-    def bertini(self, bert):
-        self._bertini = bert
+    def bertini(self, val):
+        self._bertini = val
 
     @property
     def config(self):
@@ -545,12 +533,36 @@ class BertiniRun(object):
         self._dirname = name
 
     @property
-    def inputf(self):
-        return self._inputf
+    def inputs(self):
+        return self._inputs
+
+    @inputs.setter
+    def inputs(self, val):
+        if not isinstance(val, BertiniInput):
+            raise TypeError("inputs must be an instance of BertiniInput")
+        self._inputs = val
 
     @property
     def output(self):
         return self._output
+
+    @property
+    def start(self):
+        if hasattr(self, "_start"):
+            return self._start
+        else:
+            return np.zeros(0, dtype=np.complex)
+
+    @start.setter
+    def start(self, val):
+        if not isinstance(val, np.ndarray):
+            raise TypeError("expected a numpy array")
+        if val.ndim == 1:
+            val = val.reshape(val.size, 1)
+        if val.shape[0] != self.config.ndims:
+            raise ValueError(f"expected points of dimension {self.config.ndims} but you specified {val.shape[0]}")
+
+        self._start = val.as_type(np.complex)
 
     @property
     def start_parameters(self):
@@ -566,7 +578,7 @@ class BertiniRun(object):
         if not isinstance(val, np.ndarray):
             raise TypeError("expected a numpy array")
         if val.size != len(self.inputs.parameter):
-            raise ValueError(f"expected {len(self.inputs.parameter)} parameters but you specifed {val.size}")
+            raise ValueError(f"expected {len(self.inputs.parameter)} parameters but you specified {val.size}")
 
         self._start_parameters = val.as_type(np.complex)
 
@@ -584,7 +596,7 @@ class BertiniRun(object):
         if not isinstance(val, np.ndarray):
             raise TypeError("expected a numpy array")
         if val.size != len(self.inputs.parameter):
-            raise ValueError(f"expected {len(self.inputs.parameter)} parameters but you specifed {val.size}")
+            raise ValueError(f"expected {len(self.inputs.parameter)} parameters but you specified {val.size}")
 
         self._final_parameters = val.as_type(np.complex)
 

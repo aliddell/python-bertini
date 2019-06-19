@@ -13,4 +13,5 @@ def test_ab_initio():
 
     config = BertiniConfig(parameterhomotopy=1)
     brun = BertiniRun(config, inputs)
+    brun.run()
 

@@ -339,7 +339,7 @@ def read_witness_data_file(witness_data_file: str) -> list:
     return codims
 
 
-def write_input_file(inputs: BertiniInput, config: BertiniConfig, input_file: str):
+def write_input_file(config: BertiniConfig, inputs: BertiniInput, input_file: str):
     """Write a Bertini input file.
 
     Parameters
@@ -354,68 +354,13 @@ def write_input_file(inputs: BertiniInput, config: BertiniConfig, input_file: st
 
     with open(input_file, "w") as fh:
         # config section
-        print("CONFIG", file=fh)
         print(config, file=fh)
-        print("END;", file=fh)
 
-        # TODO: pick up here
-        print("INPUT", file=fh)
-        # name declarations
-        if inputs["variable_group"]:
-            for variable_group in inputs["variable_group"]:
-                print(f"variable_group {','.join(variable_group)};", file=fh)
-
-        if inputs["variable"]:
-            for variable in inputs["variable"]:
-                print(f"variable {','.join(variable)};", file=fh)
-
-        if inputs["hom_variable_group"]:
-            for hom_variable_group in inputs["hom_variable_group"]:
-                print(f"hom_variable_group {','.join(hom_variable_group)};", file=fh)
-
-        if inputs["pathvariable"]:
-            for pathvariable in inputs["pathvariable"]:
-                print(f"pathvariable {','.join(pathvariable)};", file=fh)
-
-        if inputs["random"]:
-            for random in inputs["random"]:
-                print(f"random {','.join(random)};", file=fh)
-
-        if inputs["random_real"]:
-            for random_real in inputs["random_real"]:
-                print(f"random_real {','.join(random_real)};", file=fh)
-
-        if inputs["parameter"]:
-            print(f"parameter {','.join(inputs['parameter'].keys())};", file=fh)
-
-        if inputs["constant"]:
-            print(f"constant {','.join(inputs['constant'].keys())};", file=fh)
-
-        print(f"function {','.join(inputs['function'].keys())};", file=fh)
-
-        # optional assignments (parameters, constants, &c.)
-        if inputs["parameter"]:
-            for key, val in inputs["parameter"].items():
-                if val is None:
-                    continue
-                print(f"{key} = {val};", file=fh)
-
-        if inputs["constant"]:
-            for key, val in inputs["constant"].items():
-                print(f"{key} = {val};", file=fh)
-
-        if inputs["subfunction"]:
-            for key, val in inputs["subfunction"].items():
-                print(f"{key} = {val};", file=fh)
-
-        # function definitions
-        for key, val in inputs["function"].items():
-            print(f"{key} = {val};", file=fh)
-
-        print("END;", file=fh)
+        # input section
+        print(inputs, file=fh)
 
 
-def write_points_file(points: List[np.ndarray], points_file: str="") -> None:
+def write_points_file(points: np.ndarray, points_file: str = "") -> None:
     """Print a set of points in Bertini output fashion, optionally to a file.
 
     Parameters
@@ -432,13 +377,18 @@ def write_points_file(points: List[np.ndarray], points_file: str="") -> None:
     else:
         fh = sys.stdout
 
-    n_points = len(points)
+    if points.ndim == 1:  # single point
+        points = points.reshape(points.size, 1)
+
+    n_dims, n_points = points.shape
+
     print(f"{n_points}\n", file=fh)
 
-    for p in points:
+    for j in range(n_points):
+        p = points[:, j]
         real, imag = p.real, p.imag
 
-        for i in range(real.size):
+        for i in range(n_dims):
             print(f"{real[i]} {imag[i]}", file=fh)
 
         print("", file=fh)
