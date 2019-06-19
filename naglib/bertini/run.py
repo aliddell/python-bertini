@@ -441,32 +441,54 @@ class BertiniRun(object):
             fh.write(line + '\n')
         fh.close()
 
-    def run(self, rerun_on_fail=False):
+    def run(self, dirname: str = None, tee: bool = True):
+        """
+
+        Parameters
+        ----------
+        dirname : str, optional
+            Path to working directory.
+        tee : bool, optional
+            Print to stdout as you go if true.
+        Returns
+        -------
+
+        """
         # in case the user has changed any of these
         if self._parallel and self._mpi is not None:
             cmd = self._mpi
-            arg = [cmd, '-np', str(multiprocessing.cpu_count()), self._bertini]
+            arg = [cmd, '-np', str(multiprocessing.cpu_count()), self._bertini, "input"]
         else:
-            arg = [self._bertini]
+            arg = [self._bertini, "input"]
 
-        self.setup()  # write files
+        self.setup(dirname)  # write files
 
         if op.isfile(op.join(self.dirname, "/instructions")):
             stdin = op.join(self.dirname, "/instructions")
         else:
             stdin = None
 
-        arg += ["input"]
-
         os.chdir(self.dirname)
         if stdin is not None:
             stdin = open(stdin, "r")
 
         try:
-            output = subprocess.check_output(arg, stdin=stdin, universal_newlines=True)
+            proc = subprocess.Popen(arg, stdin=stdin, stdout=subprocess.PIPE,
+                                    universal_newlines=True)
         except subprocess.CalledProcessError as e:
             msg = naglib.system.proc_err_output(e.output)
             raise BertiniError(msg)
+
+        output = []
+        while True:
+            line = proc.stdout.readline()
+            if line == "" and proc.poll() is not None:
+                break
+
+            line = line.strip()
+            output.append(line)
+            if tee:
+                print(line)
 
         if stdin is not None:
             stdin.close()
@@ -481,10 +503,6 @@ class BertiniRun(object):
         ----------
         dirname : str
             Path to directory to run Bertini.
-
-        Returns
-        -------
-
         """
         # write input file
         if dirname is None:
