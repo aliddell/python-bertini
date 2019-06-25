@@ -4,10 +4,22 @@
 __pycache__
 
 # test output
-test/*/*/fail
-#test/*/*/*_data
-test/*/*/output*
-test/*/*/rawout*
-test/*/*/regenSummary
-test/*/*/startRPD*
-test/*/*/witness_superset*
+test/data/zero_dim/**/failed_paths
+test/data/zero_dim/**/finite_solutions
+test/data/zero_dim/**/main_data
+test/data/zero_dim/**/midpath_data
+test/data/zero_dim/**/nonsingular_solutions
+test/data/zero_dim/**/raw_data
+test/data/zero_dim/**/raw_solutions
+test/data/zero_dim/**/real_finite_solutions
+test/data/zero_dim/**/singular_solutions
+test/data/zero_dim/**/start
+test/data/zero_dim/**/start_parameters
+test/data/zero_dim/**/output
+
+test/data/pos_dim/*/fail
+test/data/pos_dim/basic_pos_dim/witness_data
+test/data/pos_dim/*/rawout*
+test/data/pos_dim/*/regenSummary
+test/data/pos_dim/*/startRPD*
+test/data/pos_dim/*/witness_superset*

@@ -1,0 +1,10 @@
+CONFIG
+parameterhomotopy:1;
+randomseed:10191;
+END;
+INPUT
+variable_group x;
+parameter a0,a1,a2,a3,a4,a5,a6;
+function f;
+f = a0+x*(a1+x*(a2+x*(a3+x*(a4+x*(a5+x*a6)))));
+END;

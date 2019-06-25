@@ -22,8 +22,36 @@ def _ordereddict_of_type(obj, dtype):
 
 PARAMETERS = OrderedDict(tracktype={"default": 0,
                                     "is valid": lambda x: x in range(-4, 8)},
+                         mptype={"default": 2,
+                                 "is valid": lambda x: x in range(0, 3)},
+                         precision={"default": 96,
+                                    "is valid": lambda x: isinstance(x, int) and x >= 64},
+                         coeffbound={"default": 1000.,  # for user-defined homotopies only
+                                     "is valid": lambda x: isinstance(x, float) and x > 0},
+                         degreebound={"default": 5,  # for user-defined homotopies only
+                                      "is valid": lambda x: isinstance(x, int) and x > 0},
+                         ampmaxprec={"default": 1024,
+                                     "is valid": lambda x: isinstance(x, int) and x >= 64},
                          parameterhomotopy={"default": 0,
-                                            "is valid": lambda x: x in range(0, 3)})
+                                            "is valid": lambda x: x in range(0, 3)},
+                         randomseed={"default": 0,
+                                     "is valid": lambda x: isinstance(x, int) and x >= 0})
+
+
+def _validate_param(name, val):
+    if name not in PARAMETERS:
+        return val, False
+
+    default_val = PARAMETERS[name]["default"]
+    is_valid = PARAMETERS[name]["is valid"]
+    if not isinstance(val, type(default_val)):
+        try:
+            val = type(default_val)(val)  # cast val to the same type as default_val
+        except ValueError:  # failed to cast
+            return val, False
+
+    return val, is_valid(val)
+
 
 INPUT_TYPES = OrderedDict(variable_group={"default": [],
                                           "is valid": _list_of_lists_of_str},
@@ -86,7 +114,9 @@ class BertiniConfig(object):
 
     def _validate(self):
         """Ensure combinations of parameters play nicely."""
-        pass
+        if self.mptype != 1 and self.precision != PARAMETERS["precision"]["default"]:
+            raise ValueError("you have set a non-default precision but have specified "
+                             f"{'double' if self.mptype == 0 else 'adaptive'} precision")
 
     def needs_component(self):
         return self.tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTWS,
@@ -103,19 +133,84 @@ class BertiniConfig(object):
         return self.tracktype == self.TPROJECT
 
     @property
+    def ampmaxprec(self):
+        return self._ampmaxprec
+
+    @ampmaxprec.setter
+    def ampmaxprec(self, val):
+        val, is_valid = _validate_param("ampmaxprec", val)
+        if not is_valid:
+            raise ValueError("ampmaxprec must be an integer greater than or equal to 64")
+        self._ampmaxprec = val
+
+    @property
+    def coeffbound(self):
+        return self._coeffbound
+
+    @coeffbound.setter
+    def coeffbound(self, val):
+        val, is_valid = _validate_param("coeffbound", val)
+        if not is_valid:
+            raise ValueError("coeffbound must be a positive double")
+        self._coeffbound = val
+
+    @property
+    def degreebound(self):
+        return self._degreebound
+
+    @degreebound.setter
+    def degreebound(self, val):
+        val, is_valid = _validate_param("degreebound", val)
+        if not is_valid:
+            raise ValueError("degreebound must be a positive double")
+        self._degreebound = val
+
+    @property
+    def mptype(self):
+        return self._mptype
+
+    @mptype.setter
+    def mptype(self, val):
+        val, is_valid = _validate_param("mptype", val)
+        if not is_valid:
+            raise ValueError(
+                f"mptype must take one of the following values: {','.join(map(str, range(0, 3)))}")
+        self._mptype = val
+
+
+    @property
     def parameterhomotopy(self):
         return self._parameterhomotopy
 
     @parameterhomotopy.setter
     def parameterhomotopy(self, val):
-        is_valid = PARAMETERS["parameterhomotopy"]["is valid"]
-        if isinstance(val, str) or (not isinstance(val, int) and isinstance(val, Number)):
-            val = int(val)
-
-        if not is_valid(val):
+        val, is_valid = _validate_param("parameterhomotopy", val)
+        if not is_valid:
             raise ValueError(
                 f"parameterhomotopy must take one of the following values: {','.join(map(str, range(0, 3)))}")
         self._parameterhomotopy = val
+
+    @property
+    def precision(self):
+        return self._precision
+
+    @precision.setter
+    def precision(self, val):
+        val, is_valid = _validate_param("precision", val)
+        if not is_valid:
+            raise ValueError("precision must be an integer greater than or equal to 64")
+        self._precision = val
+
+    @property
+    def randomseed(self):
+        return self._randomseed
+
+    @randomseed.setter
+    def randomseed(self, val):
+        val, is_valid = _validate_param("randomseed", val)
+        if not is_valid:
+            raise ValueError("randomseed must be a nonnegative integer")
+        self._randomseed = val
 
     @property
     def tracktype(self):
@@ -123,11 +218,8 @@ class BertiniConfig(object):
 
     @tracktype.setter
     def tracktype(self, val):
-        is_valid = PARAMETERS["tracktype"]["is valid"]
-        if isinstance(val, str) or (not isinstance(val, int) and isinstance(val, Number)):
-            val = int(val)
-
-        if not is_valid(val):
+        val, is_valid = _validate_param("tracktype", val)
+        if not is_valid:
             raise ValueError(f"tracktype must take one of the following values: {','.join(map(str, range(-4, 7)))}")
         self._tracktype = int(val)
 

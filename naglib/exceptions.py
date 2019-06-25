@@ -7,13 +7,15 @@ class NAGlibBaseException(Exception):
     
     def __str__(self):
         return self.message
-    
+
+
 class AffineInfinityException(NAGlibBaseException):
     """
     """
     def __init__(self, message):
         super(AffineInfinityException, self).__init__(message)
-    
+
+
 class BertiniError(Exception):
     """
     BertiniError
@@ -22,23 +24,15 @@ class BertiniError(Exception):
     """
     def __init__(self, message):
         super(BertiniError, self).__init__(message)
-    
+
+
 class ExitSpaceError(NAGlibBaseException):
     """
     """
     def __init__(self, message):
         super(ExitSpaceError, self).__init__(message)
 
-class NoBertiniException(NAGlibBaseException):
-    """
-    NoBertiniException
-    
-    Raise NoBertiniException when Bertini can't be located on the system
-    """
-    def __init__(self):
-        message = "you don't seem to have Bertini installed anywhere I can find it"
-        super(NoBertiniException, self).__init__(message)
-    
+
 class NonPolynomialException(NAGlibBaseException):
     """
     NonPolynomialException
@@ -48,7 +42,8 @@ class NonPolynomialException(NAGlibBaseException):
     """
     def __init__(self, message):
         super(NonPolynomialException, self).__init__(message)
-    
+
+
 class NonHomogeneousException(NAGlibBaseException):
     """
     NonHomogeneousException
@@ -58,13 +53,15 @@ class NonHomogeneousException(NAGlibBaseException):
     """
     def __init__(self, message):
         super(NonHomogeneousException, self).__init__(message)
-        
+
+
 class UnclassifiedException(NAGlibBaseException):
     """
     """
     def __init__(self, message):
         super(UnclassifiedException, self).__init__(message)
-        
+
+
 class WitnessDataException(NAGlibBaseException):
     """
     """

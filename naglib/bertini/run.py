@@ -12,8 +12,8 @@ from typing import Union
 
 from naglib.bertini.input_file import BertiniConfig, BertiniInput
 from naglib.bertini.io import (read_input_file, read_points_file, read_witness_data_file,
-                               write_input_file, write_points_file)
-from naglib.exceptions import BertiniError, NoBertiniException
+                               write_input_file, write_points_file, extract_error_message)
+from naglib.exceptions import BertiniError
 
 
 def _which(exe: str) -> Union[str, None]:
@@ -225,19 +225,23 @@ class BertiniRun(object):
 
         result = BertiniResult()
         if self.tracktype == self.config.TZERODIM:
-            result.finite_solutions = read_points_file(op.join(self.dirname, "finite_solutions"))
-            result.real_finite_solutions = read_points_file(op.join(self.dirname, "real_finite_solutions"))
-            result.singular_solutions = read_points_file(op.join(self.dirname, "singular_solutions"))
+            result.finite_solutions = read_points_file(op.join(self.dirname, "finite_solutions"),
+                                                       multi=self.config.mptype != 0)
+            result.nonsingular_solutions = read_points_file(op.join(self.dirname, "nonsingular_solutions"),
+                                                            multi=self.config.mptype != 0)
+            result.real_finite_solutions = read_points_file(op.join(self.dirname, "real_finite_solutions"),
+                                                            multi=self.config.mptype != 0)
+            result.singular_solutions = read_points_file(op.join(self.dirname, "singular_solutions"),
+                                                         multi=self.config.mptype != 0)
 
             if self.config.parameterhomotopy == 1:
-                result.start_parameters = read_points_file(op.join(self.dirname, "start_parameters"))
+                result.start_parameters = read_points_file(op.join(self.dirname, "start_parameters"), multi=True)
+                result.start = read_points_file(op.join(self.dirname, "start"), multi=self.config.mptype != 0)
 
         return result
 
     def _recover_input(self):
-        """
-        Reads main_data and recovers the input file
-        needed to reproduce a run
+        """Read main_data and recover input needed to reproduce this run.
         """
         filename = self._dirname + "/main_data"
         key = "*************** input file needed to reproduce this run ***************\n"
@@ -262,72 +266,72 @@ class BertiniRun(object):
 
         return inlines
 
-    def _write_files(self):
-        from naglib.bertini.fileutils import fprint
-
-        tracktype = self._tracktype
-        dirname = self._dirname
-        system = self._system
-        if not op.exists(dirname):
-            os.mkdir(dirname)
-
-        ### write the system
-        sysconfig = self._config.copy()
-        sysconfig.update({'TrackType':tracktype})
-        inputf = self._write_system(system, config=sysconfig)
-
-        ### write out `start', `start_parameters', `final_parameters'
-        if '_start' in dir(self):
-            start = self._start
-            if self._tracktype == self.TMEMTEST:
-                startfile = dirname + '/member_points'
-            else:
-                startfile = dirname + '/start'
-            fprint(start, startfile)
-        if self._parameter_homotopy:
-            phtpy = self._parameter_homotopy
-            pkeys = phtpy.keys()
-            if 'start parameters' in pkeys:
-                startp = phtpy['start parameters']
-                startpfile = dirname + '/start_parameters'
-                fprint(startp, startpfile)
-            if 'final parameters' in pkeys:
-                finalp = phtpy['final parameters']
-                finalpfile = dirname + '/final_parameters'
-                fprint(finalp, finalpfile)
-
-        ### write out component information
-        if '_component' in dir(self):
-            component = self._component
-            #cid = component.component_id
-            dim = component.dim
-            if tracktype == self.TREGENEXT:
-                self._write_system(component.system, 'iold', {'TrackType':1})
-                witness_data = component._construct_witness_data()
-                self._write_witness_data(witness_data, dirname, filename='wdold')
-                instructions = ['1', 'iold', 'wdold', str(dim), '0']
-                self._write_instructions(instructions)
-            elif tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTWS, self.TPROJECT):
-                witness_data = component._construct_witness_data()
-                self._write_witness_data(witness_data, dirname)
-                if tracktype == self.TSAMPLE:
-                    sample = self._sample
-                    instructions = [str(dim), '0', str(sample), '0', 'sampled']
-                    self._write_instructions(instructions)
-                elif tracktype == self.TPRINTWS:
-                    instructions = [str(dim), '0', 'points.out', 'sys.out']
-                    self._write_instructions(instructions)
-                elif tracktype == self.TPROJECT:
-                    instructions = [str(dim), '0']
-                    self._write_instructions(instructions)
-
-                    ### write out projection information
-                    projection = self._projection
-                    projnum = ['1' if x in projection else '0' for x in system.variables]
-                    projnum = [' '.join(projnum)]
-                    self._write_instructions(projnum, 'projection')
-
-        return inputf
+    # def _write_files(self):
+    #     from naglib.bertini.fileutils import fprint
+    #
+    #     tracktype = self._tracktype
+    #     dirname = self._dirname
+    #     system = self._system
+    #     if not op.exists(dirname):
+    #         os.mkdir(dirname)
+    #
+    #     ### write the system
+    #     sysconfig = self._config.copy()
+    #     sysconfig.update({'TrackType':tracktype})
+    #     inputf = self._write_system(system, config=sysconfig)
+    #
+    #     ### write out `start', `start_parameters', `final_parameters'
+    #     if '_start' in dir(self):
+    #         start = self._start
+    #         if self._tracktype == self.TMEMTEST:
+    #             startfile = dirname + '/member_points'
+    #         else:
+    #             startfile = dirname + '/start'
+    #         fprint(start, startfile)
+    #     if self._parameter_homotopy:
+    #         phtpy = self._parameter_homotopy
+    #         pkeys = phtpy.keys()
+    #         if 'start parameters' in pkeys:
+    #             startp = phtpy['start parameters']
+    #             startpfile = dirname + '/start_parameters'
+    #             fprint(startp, startpfile)
+    #         if 'final parameters' in pkeys:
+    #             finalp = phtpy['final parameters']
+    #             finalpfile = dirname + '/final_parameters'
+    #             fprint(finalp, finalpfile)
+    #
+    #     ### write out component information
+    #     if '_component' in dir(self):
+    #         component = self._component
+    #         #cid = component.component_id
+    #         dim = component.dim
+    #         if tracktype == self.TREGENEXT:
+    #             self._write_system(component.system, 'iold', {'TrackType':1})
+    #             witness_data = component._construct_witness_data()
+    #             self._write_witness_data(witness_data, dirname, filename='wdold')
+    #             instructions = ['1', 'iold', 'wdold', str(dim), '0']
+    #             self._write_instructions(instructions)
+    #         elif tracktype in (self.TSAMPLE, self.TMEMTEST, self.TPRINTWS, self.TPROJECT):
+    #             witness_data = component._construct_witness_data()
+    #             self._write_witness_data(witness_data, dirname)
+    #             if tracktype == self.TSAMPLE:
+    #                 sample = self._sample
+    #                 instructions = [str(dim), '0', str(sample), '0', 'sampled']
+    #                 self._write_instructions(instructions)
+    #             elif tracktype == self.TPRINTWS:
+    #                 instructions = [str(dim), '0', 'points.out', 'sys.out']
+    #                 self._write_instructions(instructions)
+    #             elif tracktype == self.TPROJECT:
+    #                 instructions = [str(dim), '0']
+    #                 self._write_instructions(instructions)
+    #
+    #                 ### write out projection information
+    #                 projection = self._projection
+    #                 projnum = ['1' if x in projection else '0' for x in system.variables]
+    #                 projnum = [' '.join(projnum)]
+    #                 self._write_instructions(projnum, 'projection')
+    #
+    #     return inputf
 
     def _write_instructions(self, lines, filename='instructions'):
         filename = self._dirname + '/' + filename
@@ -371,7 +375,7 @@ class BertiniRun(object):
             proc = subprocess.Popen(arg, stdin=stdin, stdout=subprocess.PIPE,
                                     universal_newlines=True)
         except subprocess.CalledProcessError as e:
-            msg = naglib.system.proc_err_output(e.output)
+            msg = extract_error_message(e.output)
             raise BertiniError(msg)
 
         output = []

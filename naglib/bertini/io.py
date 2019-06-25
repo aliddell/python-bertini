@@ -1,10 +1,11 @@
+from _io import TextIOWrapper
 from collections import deque, OrderedDict
 from fractions import Fraction
 import os.path as op
 import sys
 import re
 
-from typing import Tuple
+from typing import Tuple, Callable
 
 import mpmath as mp
 import numpy as np
@@ -13,7 +14,7 @@ from naglib.bertini.input_file import BertiniConfig, BertiniInput
 from naglib.exceptions import UnclassifiedException
 
 
-def _line_to_complex(line: str, multi: bool=False) -> complex:
+def _line_to_complex(line: str, multi: bool = False) -> complex:
     real, imag = line.split(" ")
     return mp.mpc(real, imag) if multi else np.complex(float(real), float(imag))
 
@@ -24,39 +25,29 @@ def _line_to_complex_rat(line: str) -> complex:
     return np.complex(Fraction(real), Fraction(imag))
 
 
-def read_input_file(input_file: str) -> Tuple:
-    """Parse input file.
+def parse_input_file(fh: TextIOWrapper, stop_if: Callable = None) -> Tuple[BertiniConfig, BertiniInput, list]:
+    """Given an open file handle, read until stopping criterion is satisfied
+    and try to parse an input file from it.
 
     Parameters
     ----------
-    input_file : str
-        Path to input file.
+    fh : _io.TextIOWrapper
+        An open file handle.
+    stop_if : function, optional
+        Stop when the next line satisfies this function.
 
     Returns
     -------
-    config : dict
+    config : BertiniConfig
         Key-value pairs of parameters set in the CONFIG section.
-    inputs : dict
+    inputs : BertiniInput
         Values set in the INPUT section.
     """
-
-    if not op.isfile(op.abspath(input_file)):
-        raise IOError(f"Input file '{input_file}' not found")
-
-    with open(input_file, "r") as fh:
-        lines = deque([l.strip() for l in fh.readlines() if l != "\n"])
+    if stop_if is None:
+        stop_if = lambda line: line != ""
 
     config = BertiniConfig()
-    inputs = dict(variable_group=[],
-                  variable=[],
-                  hom_variable_group=[],
-                  pathvariable=[],
-                  random=[],
-                  random_real=[],
-                  constant={},
-                  parameter={},
-                  subfunction={},
-                  function=OrderedDict())
+    inputs = BertiniInput()
     misclines = []
 
     in_config = in_input = False
@@ -69,8 +60,9 @@ def read_input_file(input_file: str) -> Tuple:
     function_re = re.compile(r"^function\s+", re.I)
     parameter_re = re.compile(r"^parameter\s+", re.I)
 
-    while lines:
-        line = lines.popleft().strip(" ;")
+    line = fh.readline()
+    while not stop_if(line):
+        line = line.strip(" ;")
 
         if line.lower() == "config":
             in_config = True
@@ -86,41 +78,41 @@ def read_input_file(input_file: str) -> Tuple:
 
         if in_config:
             key, val = map(lambda l: l.strip(), line.split(":"))
-            val = val.split("%")[0].strip(" ;") # remove comment, semicolon, trailing whitespace
+            val = val.split("%")[0].strip(" ;")  # remove comment, semicolon, trailing whitespace
 
             setattr(config, key.lower(), val)
 
         elif in_input:
             if vargroup_re.match(line):
                 line = vargroup_re.sub("", line)
-                inputs["variable_group"].append(re.split(r",\s*", line))
+                inputs.variable_group.append(re.split(r",\s*", line))
             elif var_re.match(line):
                 line = var_re.sub("", line)
-                inputs["variable"].append(re.split(r",\s*", line))
+                inputs.variable.append(re.split(r",\s*", line))
             elif homvargroup_re.match(line):
                 line = homvargroup_re.sub("", line)
-                inputs["hom_variable_group"].append(re.split(r",\s*", line))
+                inputs.hom_variable_group.append(re.split(r",\s*", line))
             elif pathvar_re.match(line):
                 line = pathvar_re.sub("", line)
-                inputs["pathvariable"].append(re.split(r",\s*", line))
+                inputs.pathvariable.append(re.split(r",\s*", line))
             elif random_re.match(line):
                 line = random_re.sub("", line)
-                inputs["random"].append(re.split(r",\s*", line))
+                inputs.random.append(re.split(r",\s*", line))
             elif constant_re.match(line):
                 line = constant_re.sub("", line)
                 constants = re.split(r",\s*", line)
                 for c in constants:
-                    inputs["constant"][c] = None
+                    inputs.constant[c] = None
             elif function_re.match(line):
                 line = function_re.sub("", line)
                 functions = re.split(r",\s*", line)
                 for f in functions:
-                    inputs["function"][f] = None
+                    inputs.function[f] = None
             elif parameter_re.match(line):
                 line = parameter_re.sub("", line)
                 params = re.split(r",\s*", line)
                 for p in params:
-                    inputs["parameter"][p] = None
+                    inputs.parameter[p] = None
             else:
                 terms = re.split(r";\s*", line)
                 for term in terms:
@@ -132,19 +124,46 @@ def read_input_file(input_file: str) -> Tuple:
                         misclines.append("=".join(term))
                     else:
                         term, val = term
-                        if term in inputs["constant"]:
-                            inputs["constant"][term] = val
-                        elif term in inputs["function"]:
-                            inputs["function"][term] = val
-                        elif term in inputs["parameter"]:
-                            inputs["parameter"][term] = val
+                        if term in inputs.constant:
+                            inputs.constant[term] = val
+                        elif term in inputs.function:
+                            inputs.function[term] = val
+                        elif term in inputs.parameter:
+                            inputs.parameter[term] = val
                         else:
-                            inputs["subfunction"][term] = val
+                            inputs.subfunction[term] = val
+
+        line = fh.readline()
 
     return config, inputs, misclines
 
 
-def read_points_file(points_file: str, tol: float = None) -> np.ndarray:
+def read_input_file(input_file: str) -> Tuple[BertiniConfig, BertiniInput, list]:
+    """Given a path to an input file, parse its contents.
+
+    Parameters
+    ----------
+    input_file : str
+        Path to input file.
+
+    Returns
+    -------
+    config : BertiniConfig
+        Key-value pairs of parameters set in the CONFIG section.
+    inputs : BertiniInput
+        Values set in the INPUT section.
+    """
+
+    if not op.isfile(op.abspath(input_file)):
+        raise IOError(f"Input file '{input_file}' not found")
+
+    with open(input_file, "r") as fh:
+        config, inputs, misclines = parse_input_file(fh)
+
+    return config, inputs, misclines
+
+
+def read_points_file(points_file: str, tol: float = None, multi: bool = False) -> np.ndarray:
     """Read points from an output file.
 
     Parameters
@@ -154,6 +173,8 @@ def read_points_file(points_file: str, tol: float = None) -> np.ndarray:
     tol : float, optional
         If given, numbers smaller than this in absolute value will be set to 0.
         Otherwise, they will be left as is.
+    multi : bool, optional
+        Use a multiple precision type if true (infer precision from string length)
 
     Returns
     -------
@@ -166,21 +187,34 @@ def read_points_file(points_file: str, tol: float = None) -> np.ndarray:
         raise IOError(f"Points file '{points_file}' not found")
 
     with open(points_file, "r") as fh:
-        lines = [l.strip() for l in fh.readlines() if l != "\n"]
+        lines = [l.strip(";\n") for l in fh.readlines() if l != "\n"]
 
-    n_points = int(lines[0])
+    n_points = int(lines.pop(0))
     if n_points == 0:
-        return np.zeros(0, dtype=np.complex) # return an empty array
+        return np.zeros(0, dtype=np.complex)  # return an empty array
 
-    lines = lines[1:]
     n_lines = len(lines)
     n_dims = n_lines // n_points
 
-    points = np.zeros((n_dims, n_points), dtype=np.complex)
+    if multi:  # peak ahead to get an idea of precision required
+        r = lines[0].split(" ")[0]
+        if "e" in r.lower():  # remove exponent
+            r = r[:r.lower().index("e")]
+        r = r.strip("-0").replace(".", "")
+
+        prec_est = int(np.floor(len(r) * np.log2(10)))
+
+        if mp.mp.prec < prec_est:  # only ever raise working precision
+            mp.mp.prec = prec_est
+
+        if mp.mp.prec == 53:  # default precision, just use doubles
+            multi = False
+
+    points = np.zeros((n_dims, n_points), dtype=mp.mpc if multi else np.complex)
 
     for i in range(0, n_lines, n_dims):
         point_lines = lines[i:i+n_dims]
-        points[:, i//n_dims] = np.array([_line_to_complex(p) for p in point_lines])
+        points[:, i//n_dims] = np.array([_line_to_complex(p, multi) for p in point_lines])
 
     if tol is not None:
         points.imag[np.abs(points.imag) < tol] = 0
@@ -495,3 +529,34 @@ def write_witness_data_file(witness_data: dict, witness_data_file: str):
                 fh.write('{0} {1}\n'.format(real, imag))
 
         fh.close()
+
+
+def extract_error_message(output: str) -> str:
+    """Extract Bertini error message.
+
+    Parameters
+    ----------
+    output : str
+        Bertini standard output.
+
+    Returns
+    -------
+    err_message: str
+        Just the relevant error text.
+    """
+    lines = output.splitlines()
+
+    idx = None
+    for l in lines:
+        if l.startswith("ERROR"):
+            idx = lines.index(l)
+
+    if idx is None:
+        return output
+    else:
+        lines = lines[idx:-1]  # remove "Bertini will now exit due to this error"
+
+        # remove "ERROR: "
+        lines[0] = lines[0].replace("ERROR: ", "")
+
+        return "\n".join(lines)
