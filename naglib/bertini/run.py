@@ -11,7 +11,7 @@ import numpy as np
 from typing import Union
 
 from naglib.bertini.input_file import BertiniConfig, BertiniInput
-from naglib.bertini.io import (read_input_file, read_points_file, read_witness_data_file,
+from naglib.bertini.io import (read_input_file, read_main_data_file, read_points_file, read_witness_data_file,
                                write_input_file, write_points_file, extract_error_message)
 from naglib.exceptions import BertiniError
 
@@ -30,13 +30,9 @@ def _which(exe: str) -> Union[str, None]:
     return path
 
 
-class BertiniResult(object):
-    pass
-
-
-class BertiniRun(object):
+class BertiniRun:
     def __init__(self, config, inputs, **kwargs):
-        """Construct a BertiniRun.
+        """A single Bertini run.
 
         Parameters
         ----------
@@ -74,7 +70,8 @@ class BertiniRun(object):
 
         if config.needs_projection_variables():
             if "projection" not in kwargs:
-                raise ValueError("specify the variables onto which you wish to project with the keyword argument 'projection'")
+                raise ValueError("specify the variables onto which you wish to project with the keyword argument "
+                                 "'projection'")
             self._projection = kwargs["projection"]
 
         # a setting of ParameterHomotopy > 0 requires parameters
@@ -219,11 +216,8 @@ class BertiniRun(object):
         if not self._complete:
             return
 
-        with open(op.join(self.dirname, "main_data"), "r") as fh:
-            # TODO: implement read_main_data in naglib.bertini.io to return BertiniResult
-            self._main_data = [l.strip() for l in fh.readlines() if l != "\n"]
+        result = read_main_data_file(op.join(self.dirname, "main_data"))
 
-        result = BertiniResult()
         if self.tracktype == self.config.TZERODIM:
             result.finite_solutions = read_points_file(op.join(self.dirname, "finite_solutions"),
                                                        multi=self.config.mptype != 0)
@@ -481,7 +475,7 @@ class BertiniRun(object):
         if val.shape[0] != self.config.ndims:
             raise ValueError(f"expected points of dimension {self.config.ndims} but you specified {val.shape[0]}")
 
-        self._start = val.as_type(np.complex)
+        self._start = val.astype(np.complex)
 
     @property
     def start_parameters(self):
@@ -499,7 +493,7 @@ class BertiniRun(object):
         if val.size != len(self.inputs.parameter):
             raise ValueError(f"expected {len(self.inputs.parameter)} parameters but you specified {val.size}")
 
-        self._start_parameters = val.as_type(np.complex)
+        self._start_parameters = val.astype(np.complex)
 
     @property
     def final_parameters(self):
@@ -517,7 +511,7 @@ class BertiniRun(object):
         if val.size != len(self.inputs.parameter):
             raise ValueError(f"expected {len(self.inputs.parameter)} parameters but you specified {val.size}")
 
-        self._final_parameters = val.as_type(np.complex)
+        self._final_parameters = val.astype(np.complex)
 
     @property
     def tracktype(self):

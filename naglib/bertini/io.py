@@ -1,5 +1,5 @@
 from _io import TextIOWrapper
-from collections import deque, OrderedDict
+from collections import deque
 from fractions import Fraction
 import os.path as op
 import sys
@@ -12,6 +12,37 @@ import numpy as np
 
 from naglib.bertini.input_file import BertiniConfig, BertiniInput
 from naglib.exceptions import UnclassifiedException
+
+
+class BertiniResult:
+    def __init__(self, **kwargs):
+        """The output of a Bertini run.
+
+        Parameters
+        ----------
+        kwargs
+        """
+        pass
+
+    @property
+    def config(self):
+        """Configuration needed to reproduce the run."""
+        return self._config
+
+    @config.setter
+    def config(self, val):
+        assert isinstance(val, BertiniConfig)
+        self._config = val
+
+    @property
+    def inputs(self):
+        """Inputs needed to reproduce the run."""
+        return self._inputs
+
+    @inputs.setter
+    def inputs(self, val):
+        assert isinstance(val, BertiniInput)
+        self._inputs = val
 
 
 def _line_to_complex(line: str, multi: bool = False) -> complex:
@@ -44,7 +75,7 @@ def parse_input_file(fh: TextIOWrapper, stop_if: Callable = None) -> Tuple[Berti
         Values set in the INPUT section.
     """
     if stop_if is None:
-        stop_if = lambda line: line != ""
+        stop_if = lambda l: l == ""
 
     config = BertiniConfig()
     inputs = BertiniInput()
@@ -61,77 +92,72 @@ def parse_input_file(fh: TextIOWrapper, stop_if: Callable = None) -> Tuple[Berti
     parameter_re = re.compile(r"^parameter\s+", re.I)
 
     line = fh.readline()
-    while not stop_if(line):
-        line = line.strip(" ;")
+    while line and not stop_if(line):
+        line = line.strip(" ;\n")
 
         if line.lower() == "config":
             in_config = True
-            continue
         elif line.lower() == "input":
             in_input = True
-            continue
         elif line.lower() == "end":
             in_input = in_config = False
-            continue
-        elif line.startswith("%"):
-            continue
+        elif not line.startswith("%") and len(line) > 0:
+            if in_config:
+                key, val = map(lambda l: l.strip(), line.split(":"))
+                val = val.split("%")[0].strip(" ;")  # remove comment, semicolon, trailing whitespace
 
-        if in_config:
-            key, val = map(lambda l: l.strip(), line.split(":"))
-            val = val.split("%")[0].strip(" ;")  # remove comment, semicolon, trailing whitespace
+                setattr(config, key.lower(), val)
 
-            setattr(config, key.lower(), val)
-
-        elif in_input:
-            if vargroup_re.match(line):
-                line = vargroup_re.sub("", line)
-                inputs.variable_group.append(re.split(r",\s*", line))
-            elif var_re.match(line):
-                line = var_re.sub("", line)
-                inputs.variable.append(re.split(r",\s*", line))
-            elif homvargroup_re.match(line):
-                line = homvargroup_re.sub("", line)
-                inputs.hom_variable_group.append(re.split(r",\s*", line))
-            elif pathvar_re.match(line):
-                line = pathvar_re.sub("", line)
-                inputs.pathvariable.append(re.split(r",\s*", line))
-            elif random_re.match(line):
-                line = random_re.sub("", line)
-                inputs.random.append(re.split(r",\s*", line))
-            elif constant_re.match(line):
-                line = constant_re.sub("", line)
-                constants = re.split(r",\s*", line)
-                for c in constants:
-                    inputs.constant[c] = None
-            elif function_re.match(line):
-                line = function_re.sub("", line)
-                functions = re.split(r",\s*", line)
-                for f in functions:
-                    inputs.function[f] = None
-            elif parameter_re.match(line):
-                line = parameter_re.sub("", line)
-                params = re.split(r",\s*", line)
-                for p in params:
-                    inputs.parameter[p] = None
-            else:
-                terms = re.split(r";\s*", line)
-                for term in terms:
-                    # remove comments
-                    term = term.split("%")[0].strip()
-                    # split by =
-                    term = re.split(r"\s*=\s*", term)
-                    if len(term) != 2:
-                        misclines.append("=".join(term))
-                    else:
-                        term, val = term
-                        if term in inputs.constant:
-                            inputs.constant[term] = val
-                        elif term in inputs.function:
-                            inputs.function[term] = val
-                        elif term in inputs.parameter:
-                            inputs.parameter[term] = val
+            elif in_input:
+                if vargroup_re.match(line):
+                    line = vargroup_re.sub("", line)
+                    inputs.variable_group.append(re.split(r",\s*", line))
+                elif var_re.match(line):
+                    line = var_re.sub("", line)
+                    inputs.variable.append(re.split(r",\s*", line))
+                elif homvargroup_re.match(line):
+                    line = homvargroup_re.sub("", line)
+                    inputs.hom_variable_group.append(re.split(r",\s*", line))
+                elif pathvar_re.match(line):
+                    line = pathvar_re.sub("", line)
+                    inputs.pathvariable.append(re.split(r",\s*", line))
+                elif random_re.match(line):
+                    line = random_re.sub("", line)
+                    inputs.random.append(re.split(r",\s*", line))
+                elif constant_re.match(line):
+                    line = constant_re.sub("", line)
+                    constants = re.split(r",\s*", line)
+                    for c in constants:
+                        inputs.constant[c] = None
+                elif function_re.match(line):
+                    line = function_re.sub("", line)
+                    functions = re.split(r",\s*", line)
+                    for f in functions:
+                        inputs.function[f] = None
+                elif parameter_re.match(line):
+                    line = parameter_re.sub("", line)
+                    params = re.split(r",\s*", line)
+                    for p in params:
+                        inputs.parameter[p] = None
+                else:
+                    terms = re.split(r";\s*", line)
+                    for term in terms:
+                        # remove comments
+                        term = term.split("%")[0].strip()
+                        # split by =
+                        term = re.split(r"\s*=\s*", term)
+                        if len(term) != 2:
+                            misclines.append("=".join(term))
                         else:
-                            inputs.subfunction[term] = val
+                            term, val = term
+                            if term in inputs.constant:
+                                inputs.constant[term] = val
+                            elif term in inputs.function:
+                                inputs.function[term] = val
+                            elif term in inputs.parameter:
+                                inputs.parameter[term] = val
+                            else:
+                                inputs.subfunction[term] = val
 
         line = fh.readline()
 
@@ -161,6 +187,35 @@ def read_input_file(input_file: str) -> Tuple[BertiniConfig, BertiniInput, list]
         config, inputs, misclines = parse_input_file(fh)
 
     return config, inputs, misclines
+
+
+def read_main_data_file(main_data_file: str) -> BertiniResult:
+    """
+
+    Parameters
+    ----------
+    main_data_file
+
+    Returns
+    -------
+    result : BertiniResult
+    """
+    if not op.isfile(main_data_file):
+        raise IOError(f"Main data file '{main_data_file}' not found")
+
+    result = BertiniResult()
+
+    with open(main_data_file, "r") as fh:
+        line = fh.readline()
+        # TODO: parse other more useful information from main_data
+        while line and line != "*************** input file needed to reproduce this run ***************\n":
+            line = fh.readline()
+
+        c, i, _ = parse_input_file(fh, lambda l: l == "*************** version information ***************")
+
+        result.config, result.inputs = c, i
+
+    return result
 
 
 def read_points_file(points_file: str, tol: float = None, multi: bool = False) -> np.ndarray:

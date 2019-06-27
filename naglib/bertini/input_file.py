@@ -26,10 +26,10 @@ PARAMETERS = OrderedDict(tracktype={"default": 0,
                                  "is valid": lambda x: x in range(0, 3)},
                          precision={"default": 96,
                                     "is valid": lambda x: isinstance(x, int) and x >= 64},
-                         coeffbound={"default": 1000.,  # for user-defined homotopies only
+                         coeffbound={"default": 1000.,  # default for user-defined homotopies only
                                      "is valid": lambda x: isinstance(x, float) and x > 0},
-                         degreebound={"default": 5,  # for user-defined homotopies only
-                                      "is valid": lambda x: isinstance(x, int) and x > 0},
+                         degreebound={"default": 5.,  # default for user-defined homotopies only
+                                      "is valid": lambda x: isinstance(x, float) and x > 0},
                          ampmaxprec={"default": 1024,
                                      "is valid": lambda x: isinstance(x, int) and x >= 64},
                          parameterhomotopy={"default": 0,
@@ -417,8 +417,8 @@ class BertiniInput(object):
     @property
     def ndims(self):
         if self.variable:
-            nd = sum(len(v) for v in self.variable)
+            nd = len(sum(self.variable, []))
         else:
-            nd = sum(len(v) for v in self.variable_group) + sum(len(v) for v in self.hom_variable_group)
+            nd = len(sum(self.variable_group, []) + sum(self.hom_variable_group, []))
 
         return nd

@@ -5,7 +5,9 @@ __pycache__
 
 # test output
 test/data/zero_dim/**/failed_paths
+test/data/zero_dim/**/final_parameters
 test/data/zero_dim/**/finite_solutions
+test/data/zero_dim/**/function
 test/data/zero_dim/**/main_data
 test/data/zero_dim/**/midpath_data
 test/data/zero_dim/**/nonsingular_solutions
