@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='naglib',
     version='0.1.0',
-    packages=['naglib', 'naglib.core', 'naglib.bertini'],
+    packages=['naglib', 'naglib.bertini'],
     url='https://github.com/aliddell/naglib',
     license='BSD',
     author='Alan',

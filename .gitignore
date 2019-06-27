@@ -2,6 +2,7 @@
 .spyproject/
 
 __pycache__
+*.egg-info/
 
 # test output
 test/data/zero_dim/**/failed_paths
