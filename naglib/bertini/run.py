@@ -104,7 +104,7 @@ class BertiniRun:
             self._bertini = bertini
 
         if "mpi_path" in kwargs:
-            if not op.isfile(kwargs["mpi_path"]):
+            if kwargs["mpi_path"] is not None and not op.isfile(kwargs["mpi_path"]):
                 raise OSError(f"didn't find MPI executable at '{kwargs['mpi_path']}'")
             self._mpi = kwargs["mpi_path"]
         else:

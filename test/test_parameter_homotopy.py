@@ -19,7 +19,7 @@ class TestParameterHomotopy:
         self.config = BertiniConfig(parameterhomotopy=1, randomseed=10191)
 
         print("initial run")
-        brun = BertiniRun(self.config, self.inputs)
+        brun = BertiniRun(self.config, self.inputs, mpi_path=None)
         self.ab_initio_result = brun.run(dirname=self.working_dir)
 
     def test_ab_initio_result(self):
@@ -34,7 +34,7 @@ class TestParameterHomotopy:
         self.config.parameterhomotopy = 2
 
         brun = BertiniRun(self.config, self.inputs, start=self.ab_initio_result.nonsingular_solutions,
-                          start_parameters=start_parameters, final_parameters=final_parameters)
+                          start_parameters=start_parameters, final_parameters=final_parameters, mpi_path=None)
 
         self.final_result = brun.run(dirname=self.working_dir)
         assert isinstance(self.final_result.config, BertiniConfig)
