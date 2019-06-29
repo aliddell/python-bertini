@@ -328,6 +328,7 @@ class BertiniRun:
         if self.config.parameterhomotopy == 2:
             write_points_file(self.start_parameters.reshape(1, self.start_parameters.size), op.join(self._dirname, "start_parameters"))
             write_points_file(self.final_parameters.reshape(1, self.final_parameters.size), op.join(self._dirname, "final_parameters"))
+            write_points_file(self.start, op.join(self._dirname, "start"))
 
     @property
     def bertini(self):
