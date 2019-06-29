@@ -82,7 +82,7 @@ class BertiniRun:
         if inputs.parameter and config.parameterhomotopy == 0:
             raise ValueError("your system has parameters but you have not specified a parameter homotopy")
 
-        # parameterhomotopy:2 requires start and final params
+        # parameterhomotopy:2 requires start and final params, also start points
         if config.parameterhomotopy == 2:
             if "start_parameters" in kwargs:
                 self.start_parameters = kwargs["start_parameters"]
@@ -92,6 +92,7 @@ class BertiniRun:
                 self.final_parameters = kwargs["final_parameters"]
             else:
                 raise ValueError("you have selected parameterhomotopy:2 but you have not given final parameters")
+
 
         if "bertini_path" in kwargs:
             if not op.isfile(kwargs["bertini_path"]):

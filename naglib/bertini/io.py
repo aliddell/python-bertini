@@ -15,14 +15,16 @@ from naglib.exceptions import UnclassifiedException
 
 
 class BertiniResult:
-    def __init__(self, **kwargs):
+    def __init__(self, dirname, **kwargs):
         """The output of a Bertini run.
 
         Parameters
         ----------
+        dirname : str
+            Path to directory where run was done.
         kwargs
         """
-        pass
+        self._dirname = dirname
 
     @property
     def config(self):
@@ -33,6 +35,14 @@ class BertiniResult:
     def config(self, val):
         assert isinstance(val, BertiniConfig)
         self._config = val
+
+    @property
+    def dirname(self):
+        return self._dirname
+    @dirname.setter
+    def dirname(self, val):
+        assert op.isdir(val)
+        self._dirname = val
 
     @property
     def inputs(self):

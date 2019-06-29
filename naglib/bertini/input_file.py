@@ -124,8 +124,9 @@ class BertiniConfig(object):
                                   self.TPROJECT, self.TREGENEXT)
 
     def needs_start_points(self):
-        return self.tracktype in (self.TEVALP, self.TEVALPJ, self.TNEWTP,
-                                  self.TNEWTPJ, self.TMEMTEST, self.TISOSTAB)
+        nsp = self.tracktype in (self.TEVALP, self.TEVALPJ, self.TNEWTP, self.TNEWTPJ, self.TMEMTEST,
+                                 self.TISOSTAB) or self.parameterhomotopy == 2
+        return nsp
 
     def needs_sample_count(self):
         return self.tracktype == self.TSAMPLE
