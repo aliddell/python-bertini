@@ -388,8 +388,8 @@ class BertiniRun:
             raise TypeError("expected a numpy array")
         if val.ndim == 1:
             val = val.reshape(val.size, 1)
-        if val.shape[0] != self.config.ndims:
-            raise ValueError(f"expected points of dimension {self.config.ndims} but you specified {val.shape[0]}")
+        if val.shape[0] != self.inputs.ndims:
+            raise ValueError(f"expected points of dimension {self.inputs.ndims} but you specified {val.shape[0]}")
 
         self._start = val.astype(np.complex)
 
