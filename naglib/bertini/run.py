@@ -125,13 +125,13 @@ class BertiniRun:
         result = read_main_data_file(op.join(self.dirname, "main_data"))
 
         if self.tracktype == self.config.TZERODIM:
-            if op.isfile(op.join(self.dirname), "finite_solutions"):
+            if op.isfile(op.join(self.dirname, "finite_solutions")):
                 result.finite_solutions = read_points_file(op.join(self.dirname, "finite_solutions"),
                                                            multi=self.config.mptype != 0)
             else:
                 result.finite_solutions = np.array(0, dtype=np.complex)
 
-            if op.isfile(op.join(self.dirname), "real_finite_solutions"):
+            if op.isfile(op.join(self.dirname, "real_finite_solutions")):
                 result.real_finite_solutions = read_points_file(op.join(self.dirname, "real_finite_solutions"),
                                                                 multi=self.config.mptype != 0)
             else:
