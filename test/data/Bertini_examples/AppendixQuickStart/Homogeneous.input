@@ -1,0 +1,6 @@
+% Homogeneous.input
+ function f;
+ hom_variable_group x,y;
+
+ f = x^2 - y^2;
+END;

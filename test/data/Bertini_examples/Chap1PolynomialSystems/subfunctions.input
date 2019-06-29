@@ -1,0 +1,9 @@
+% subfunctions.input
+INPUT
+ variable_group z;
+ function p;
+
+ a = z^3 + z + 1;
+ b = z^2 + 2;
+ p = a^4 - 5*b^3 + 6;
+END;

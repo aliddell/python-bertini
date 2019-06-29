@@ -1,0 +1,8 @@
+% TwoGroups.input
+ variable_group z1;
+ variable_group z2;
+ function f1,f2;
+
+ f1 = (29/16)*z1^3 - 2*z1*z2;
+ f2 = z2 - z1^2;
+END;

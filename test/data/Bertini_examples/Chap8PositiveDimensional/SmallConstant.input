@@ -1,0 +1,22 @@
+% SmallConstant.input
+%
+% When the constant is bigger than FinalTol, this
+% looks like one irreducible component.  But when
+% it is small enough, it is judged to factor into
+% two lines.
+%
+% If the constant really is supposed to be nonzero,
+% the problem should be re-scaled to make this
+% apparent.
+%
+% The default FinalTol is 1e-11.  Play with
+% changing FinalTol and the constant to see what
+% happens.
+CONFIG
+  TrackType:1;
+END;
+INPUT
+  variable_group x,y;
+  function f;
+  f = x*y-1e-11;
+END;

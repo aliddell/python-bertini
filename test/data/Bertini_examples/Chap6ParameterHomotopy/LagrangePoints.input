@@ -1,0 +1,33 @@
+% LagrangePoints.input
+% Equilibria for a 3rd small body rotating with two large
+%      ones in circular orbit
+INPUT
+  function  fma1,fma2,dist13,dist23,fma3x,fma3y;
+  % definition: w = omega^2 d12^3/(G m2)
+  % The remaining variables are nondimensionalized as
+  %   ratio to d12.
+  variable_group w;
+  variable_group r1;
+  variable_group x,y,d13,d23;
+  constant mu;
+
+  % choose value for the mass ratio
+  mu = 9;
+
+  % the following eliminates r2
+  r2 = 1-r1;
+  % f=ma on mass 1
+  fma1 = w*r1 - 1;
+  % f=ma on mass 2
+  fma2 = w*r2 - mu;
+
+  % distance m1 to m3
+  dist13 = (x-r1)^2 + y^2 - d13^2;
+  % distance m2 to m3
+  dist23 = (x+r2)^2 + y^2 - d23^2;
+
+  % f=ma on m3
+  a = w*d13^3*d23^3; b1 = mu*d23^3; b2 = d13^3;
+  fma3x = a*x + b1*(r1-x) + b2*(-r2-x);
+  fma3y = a*y + b1*(-y)   + b2*(-y);
+END;

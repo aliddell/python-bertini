@@ -1,0 +1,152 @@
+% Nine-point path synthesis problem for four-bar linkages.
+% Variables in 4 groups
+CONFIG
+ UseRegeneration:1;
+ TrackTolBeforeEG:1e-8;
+ TrackTolDuringEG:1e-8;
+ SliceTolBeforeEG:1e-8;
+ SliceTolDuringEG:1e-8;
+ SecurityMaxNorm:1e7;
+ EndpointFiniteThreshold:1e7;
+ PathTruncationThreshold:1e7;
+ SampleFactor:0.1;
+END;
+
+INPUT
+ function f1,f2,f3,f4,f5,f6,f7,f8;
+ % Vectors a1,b1, a2,b2 in isotropic coordinates
+ variable_group a1,b1;
+ variable_group a2,b2;
+ variable_group A1,B1;
+ variable_group A2,B2;
+ % (pk,PK), k=1,...,8, are the precision points in isotropic coords
+ random p1,P1, p2,P2, p3,P3, p4,P4, p5,P5, p6,P6, p7,P7, p8,P8;
+
+ % These highest terms do not depend on the precision points:
+ n1 = A1*b1;
+ N1 = a1*B1;
+ n2 = A2*b2;
+ N2 = a2*B2;
+ % nN = |n N| = det[n1 N1; n2 N2]
+ nN = n1*N2 - n2*N1;
+
+ % For each precision point we have an equation:
+ %  f = |v u|*|v U| + |u U|^2,
+ % where
+ %  v = [v1+n1+N1; v2+n2+N2],
+ %  u = [w1-n1; w2-n2], U = [W1-N1; W2-N2];
+ % Expand the expressions far enough so that the cancellation
+ %  of the highest terms can be exposed.
+ % Repeat this template for k=1,...,8
+ % v1k = pk*Pk - a1*Pk - A1*pk;
+ % v2k = pk*Pk - a2*Pk - A2*pk;
+ % w1k = b1*Pk; W1k = B1*pk;
+ % w2k = b2*Pk; W2k = B2*pk;
+ % These sums are the entries in v
+ % s1k = v1k + n1 + N1;
+ % s2k = v2k + n2 + N2;
+ % These are the lower-order terms (that do not cancel)
+ % vuLowk = s1k*w2k - s2k*w1k - v1k*n2 + v2k*n1;
+ % vULowk = s1k*W2k - s2k*W1k - v1k*N2 + v2k*N1;
+ % uULowk = w1k*W2k - w2k*W1k - w1k*N2 + w2k*N1 - n1*W2k + n2*W1k;
+ % Finally, form f, with degree 8 terms cancelled out.
+ %   (highest terms are |n N|*|N n| + |n N|^2 = 0)
+ % fk = vuLowk*vULowk - vuLowk*nN + vULowk*nN + uULowk^2 + 2*uULowk*nN;
+
+ % k=1
+ v11 = p1*P1 - a1*P1 - A1*p1;
+ v21 = p1*P1 - a2*P1 - A2*p1;
+ w11 = b1*P1; W11 = B1*p1;
+ w21 = b2*P1; W21 = B2*p1;
+ s11 = v11 + n1 + N1;
+ s21 = v21 + n2 + N2;
+ vuLow1 = s11*w21 - s21*w11 - v11*n2 + v21*n1;
+ vULow1 = s11*W21 - s21*W11 - v11*N2 + v21*N1;
+ uULow1 = w11*W21 - w21*W11 - w11*N2 + w21*N1 - n1*W21 + n2*W11;
+ f1 = vuLow1*vULow1 - vuLow1*nN + vULow1*nN + uULow1^2 + 2*uULow1*nN;
+
+ % k=2
+ v12 = p2*P2 - a1*P2 - A1*p2;
+ v22 = p2*P2 - a2*P2 - A2*p2;
+ w12 = b1*P2; W12 = B1*p2;
+ w22 = b2*P2; W22 = B2*p2;
+ s12 = v12 + n1 + N1;
+ s22 = v22 + n2 + N2;
+ vuLow2 = s12*w22 - s22*w12 - v12*n2 + v22*n1;
+ vULow2 = s12*W22 - s22*W12 - v12*N2 + v22*N1;
+ uULow2 = w12*W22 - w22*W12 - w12*N2 + w22*N1 - n1*W22 + n2*W12;
+ f2 = vuLow2*vULow2 - vuLow2*nN + vULow2*nN + uULow2^2 + 2*uULow2*nN;
+
+ % k=3
+ v13 = p3*P3 - a1*P3 - A1*p3;
+ v23 = p3*P3 - a2*P3 - A2*p3;
+ w13 = b1*P3; W13 = B1*p3;
+ w23 = b2*P3; W23 = B2*p3;
+ s13 = v13 + n1 + N1;
+ s23 = v23 + n2 + N2;
+ vuLow3 = s13*w23 - s23*w13 - v13*n2 + v23*n1;
+ vULow3 = s13*W23 - s23*W13 - v13*N2 + v23*N1;
+ uULow3 = w13*W23 - w23*W13 - w13*N2 + w23*N1 - n1*W23 + n2*W13;
+ f3 = vuLow3*vULow3 - vuLow3*nN + vULow3*nN + uULow3^2 + 2*uULow3*nN;
+
+ % k=4
+ v14 = p4*P4 - a1*P4 - A1*p4;
+ v24 = p4*P4 - a2*P4 - A2*p4;
+ w14 = b1*P4; W14 = B1*p4;
+ w24 = b2*P4; W24 = B2*p4;
+ s14 = v14 + n1 + N1;
+ s24 = v24 + n2 + N2;
+ vuLow4 = s14*w24 - s24*w14 - v14*n2 + v24*n1;
+ vULow4 = s14*W24 - s24*W14 - v14*N2 + v24*N1;
+ uULow4 = w14*W24 - w24*W14 - w14*N2 + w24*N1 - n1*W24 + n2*W14;
+ f4 = vuLow4*vULow4 - vuLow4*nN + vULow4*nN + uULow4^2 + 2*uULow4*nN;
+
+ % k=5
+ v15 = p5*P5 - a1*P5 - A1*p5;
+ v25 = p5*P5 - a2*P5 - A2*p5;
+ w15 = b1*P5; W15 = B1*p5;
+ w25 = b2*P5; W25 = B2*p5;
+ s15 = v15 + n1 + N1;
+ s25 = v25 + n2 + N2;
+ vuLow5 = s15*w25 - s25*w15 - v15*n2 + v25*n1;
+ vULow5 = s15*W25 - s25*W15 - v15*N2 + v25*N1;
+ uULow5 = w15*W25 - w25*W15 - w15*N2 + w25*N1 - n1*W25 + n2*W15;
+ f5 = vuLow5*vULow5 - vuLow5*nN + vULow5*nN + uULow5^2 + 2*uULow5*nN;
+
+ % k=6
+ v16 = p6*P6 - a1*P6 - A1*p6;
+ v26 = p6*P6 - a2*P6 - A2*p6;
+ w16 = b1*P6; W16 = B1*p6;
+ w26 = b2*P6; W26 = B2*p6;
+ s16 = v16 + n1 + N1;
+ s26 = v26 + n2 + N2;
+ vuLow6 = s16*w26 - s26*w16 - v16*n2 + v26*n1;
+ vULow6 = s16*W26 - s26*W16 - v16*N2 + v26*N1;
+ uULow6 = w16*W26 - w26*W16 - w16*N2 + w26*N1 - n1*W26 + n2*W16;
+ f6 = vuLow6*vULow6 - vuLow6*nN + vULow6*nN + uULow6^2 + 2*uULow6*nN;
+
+ % k=7
+ v17 = p7*P7 - a1*P7 - A1*p7;
+ v27 = p7*P7 - a2*P7 - A2*p7;
+ w17 = b1*P7; W17 = B1*p7;
+ w27 = b2*P7; W27 = B2*p7;
+ s17 = v17 + n1 + N1;
+ s27 = v27 + n2 + N2;
+ vuLow7 = s17*w27 - s27*w17 - v17*n2 + v27*n1;
+ vULow7 = s17*W27 - s27*W17 - v17*N2 + v27*N1;
+ uULow7 = w17*W27 - w27*W17 - w17*N2 + w27*N1 - n1*W27 + n2*W17;
+ f7 = vuLow7*vULow7 - vuLow7*nN + vULow7*nN + uULow7^2 + 2*uULow7*nN;
+
+ % k=8
+ v18 = p8*P8 - a1*P8 - A1*p8;
+ v28 = p8*P8 - a2*P8 - A2*p8;
+ w18 = b1*P8; W18 = B1*p8;
+ w28 = b2*P8; W28 = B2*p8;
+ s18 = v18 + n1 + N1;
+ s28 = v28 + n2 + N2;
+ vuLow8 = s18*w28 - s28*w18 - v18*n2 + v28*n1;
+ vULow8 = s18*W28 - s28*W18 - v18*N2 + v28*N1;
+ uULow8 = w18*W28 - w28*W18 - w18*N2 + w28*N1 - n1*W28 + n2*W18;
+ f8 = vuLow8*vULow8 - vuLow8*nN + vULow8*nN + uULow8^2 + 2*uULow8*nN;
+
+END;

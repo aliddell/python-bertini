@@ -1,0 +1,17 @@
+% CondNumCalc.input
+CONFIG
+ % Perform a Newton iteration & approximate the condition number
+ TrackType:-1;
+ % Utilize 256-bit fixed precision
+ MPType:1;
+ Precision:256;
+ % fix a seed for the random number generator
+ RandomSeed:1934835;
+END;
+INPUT
+ function circle,parabola;
+ variable_group x,y;
+
+ circle = x^2 + (y-1)^2 - 1;
+ parabola = y - 2*x^2;
+END;

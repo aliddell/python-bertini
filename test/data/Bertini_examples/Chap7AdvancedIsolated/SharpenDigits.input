@@ -1,0 +1,12 @@
+% SharpenDigits.input
+CONFIG
+ % Solve using a total-degree homotopy
+ SharpenDigits:20; % sharpen the endpoints to 20 digits
+END;
+INPUT
+ function circle,parabola;
+ variable_group x,y;
+
+ circle = x^2 + (y-1)^2 - 1;
+ parabola = y - 2*x^2;
+END;

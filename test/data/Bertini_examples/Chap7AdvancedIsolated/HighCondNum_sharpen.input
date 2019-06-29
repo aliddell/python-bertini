@@ -1,0 +1,12 @@
+% HighCondNum_sharpen.input
+CONFIG
+ SharpenOnly:1; % use the sharpening module
+ CondNumThreshold:1e12; % adjust the condition number threshold
+END;
+INPUT
+ function f,g;
+ variable_group x,y;
+
+ f = y - x^10;
+ g = y - 1e-10;
+END;

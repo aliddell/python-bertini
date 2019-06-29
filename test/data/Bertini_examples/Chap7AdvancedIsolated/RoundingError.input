@@ -1,0 +1,12 @@
+% RoundingError.input
+ function f1,f2;
+ variable_group x;
+ variable_group y;
+ constant a,b;
+
+ a = 1.414214; % round sqrt(2) to 6 decimal places
+ b = 2;
+
+ f1 = x*y^3 - a*y^3 - 1;
+ f2 = x^2 - b;
+END;

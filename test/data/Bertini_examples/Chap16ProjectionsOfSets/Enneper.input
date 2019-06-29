@@ -1,0 +1,12 @@
+% Enneper.input
+CONFIG
+ TrackType:1;
+END;
+INPUT
+ function f1,f2,f3;
+ variable_group x,y,z,u,v;
+
+ f1 = 3*x - u*(1 - u^2/3 + v^2);
+ f2 = 3*y + v*(1 - v^2/3 + u^2);
+ f3 = 3*z - (u^2 - v^2);
+END;

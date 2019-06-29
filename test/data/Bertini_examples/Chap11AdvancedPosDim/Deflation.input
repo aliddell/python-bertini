@@ -1,0 +1,11 @@
+% Deflation.input
+CONFIG
+ TrackType:1;
+END;
+INPUT
+ variable_group x,y;
+ function cylinder,sphere;
+
+ cylinder = x^2 + y^2 - 1;
+ sphere = x^2 + y^2 + z^2 - 1;
+END;

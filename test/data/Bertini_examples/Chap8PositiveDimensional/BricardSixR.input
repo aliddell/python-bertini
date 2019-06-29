@@ -1,0 +1,80 @@
+% Bricard 6R (six-revolute) mechanism
+%
+% This is a special case of 6R serial-link inverse kinematics.
+% This closed-loop 6R mechanism has a 1-degree-of-freedom motion,
+%  so we use TrackType:1 to find that curve.
+%
+CONFIG
+   TrackType:1;
+END;
+
+INPUT
+  % link lengths
+  constant a1,a2,a3,a4,a5;
+  % link offsets
+  constant d2,d3,d4,d5;
+  % twist cosines
+  constant c1,c2,c3,c4,c5;
+  % endpoint position
+  constant px,py,pz;
+  % joint 1 orientation (fixed)
+  constant z1x,z1y,z1z;
+  % joint 6 orientation (fixed)
+  constant z6x,z6y,z6z;
+
+  % give values to constants
+  z1x=1; z1y=0; z1z=0;
+  z6x=0; z6y=0; z6z=1;
+  a1=1; a2=1; a3=1; a4=1; a5=1;
+  d2=0; d3=0; d4=0; d5=0;
+  c1=0; c2=0; c3=0; c4=0; c5=0;
+  px=0; py=1; pz=0;
+
+  variable_group z2x,z2y,z2z, z3x,z3y,z3z, z4x,z4y,z4z, z5x,z5y,z5z;
+
+  function unit2, unit3, unit4, unit5;
+  function twist1, twist2, twist3, twist4, twist5;
+  function X,Y,Z;
+
+  unit2 = z2x^2 + z2y^2 + z2z^2 -1;
+  unit3 = z3x^2 + z3y^2 + z3z^2 -1;
+  unit4 = z4x^2 + z4y^2 + z4z^2 -1;
+  unit5 = z5x^2 + z5y^2 + z5z^2 -1;
+  twist1 = z1x*z2x + z1y*z2y + z1z*z2z - c1;
+  twist2 = z2x*z3x + z2y*z3y + z2z*z3z - c2;
+  twist3 = z3x*z4x + z3y*z4y + z3z*z4z - c3;
+  twist4 = z4x*z5x + z4y*z5y + z4z*z5z - c4;
+  twist5 = z5x*z6x + z5y*z6y + z5z*z6z - c5;
+  % form cross products
+  x1x = z1y*z2z - z1z*z2y;
+  x2x = z2y*z3z - z2z*z3y;
+  x3x = z3y*z4z - z3z*z4y;
+  x4x = z4y*z5z - z4z*z5y;
+  x5x = z5y*z6z - z5z*z6y;
+  x1y = z1z*z2x - z1x*z2z;
+  x2y = z2z*z3x - z2x*z3z;
+  x3y = z3z*z4x - z3x*z4z;
+  x4y = z4z*z5x - z4x*z5z;
+  x5y = z5z*z6x - z5x*z6z;
+  x1z = z1x*z2y - z1y*z2x;
+  x2z = z2x*z3y - z2y*z3x;
+  x3z = z3x*z4y - z3y*z4x;
+  x4z = z4x*z5y - z4y*z5x;
+  x5z = z5x*z6y - z5y*z6x;
+  % position
+  X = a1*x1x + d2*z2x +
+      a2*x2x + d3*z3x +
+      a3*x3x + d4*z4x +
+      a4*x4x + d5*z5x +
+      a5*x5x - px;
+  Y = a1*x1y + d2*z2y +
+      a2*x2y + d3*z3y +
+      a3*x3y + d4*z4y +
+      a4*x4y + d5*z5y +
+      a5*x5y - py;
+  Z = a1*x1z + d2*z2z +
+      a2*x2z + d3*z3z +
+      a3*x3z + d4*z4z +
+      a4*x4z + d5*z5z +
+      a5*x5z - pz;
+END;

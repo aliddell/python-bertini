@@ -1,0 +1,7 @@
+% HighCondNum.input
+ function f,g;
+ variable_group x,y;
+
+ f = y - x^10;
+ g = y - 1e-10;
+END;

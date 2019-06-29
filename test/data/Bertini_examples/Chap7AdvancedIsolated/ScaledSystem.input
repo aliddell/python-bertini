@@ -1,0 +1,11 @@
+% ScaledSystem.input
+CONFIG
+ SharpenDigits:30; % sharpen endpoints to 30 digits
+END;
+INPUT
+ function f1,f2;
+ variable_group hatx,haty;
+
+ f1 = hatx*haty - 1;
+ f2 = hatx - haty - 10;
+END;

@@ -1,0 +1,11 @@
+% GeneralizedEigenvalue.input
+% Simple example of using two homogeneous groups.
+% This is a 2x2 generalized eigenvalue problem.
+INPUT
+ function f1,f2;
+ hom_variable_group v1,v2;
+ hom_variable_group mu,lambda;
+
+ f1 = mu*(1*v1 + 2*v2) - lambda*( 4*v1 - 2*v2);
+ f2 = mu*(2*v1 + 4*v2) - lambda*(-2*v1 + 1*v2);
+END;

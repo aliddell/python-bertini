@@ -1,0 +1,23 @@
+% Discriminant.input
+CONFIG
+ UserHomotopy:2;
+END;
+INPUT
+ function f1,f2,l1,l2;
+ variable_group a,b,c;
+ hom_variable_group x,z;
+ constant a1,b1,c1;
+ random gamma;
+ pathvariable T;
+ parameter t;
+
+ t = T;
+ a1 = 1;
+ b1 = 2;
+ c1 = 1;
+
+ f1 = a*x^2 + b*x*z + c*z^2;
+ f2 = 2*a*x + b*z;
+ l1 = (a - 3*c - 4)*(1 - t + gamma*t) - (a1 - 3*c1 - 4)*(1 - t);
+ l2 = (b + 3*c + 2)*(1 - t + gamma*t) - (b1 + 3*c1 + 2)*(1 - t);
+END;

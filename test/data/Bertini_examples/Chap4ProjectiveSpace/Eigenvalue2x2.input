@@ -1,0 +1,11 @@
+% Eigenvalue2x2.input
+% A simple eigenvalue/eigenvector problem
+%   illustrating usage of hom_variable_group.
+INPUT
+ function f1,f2;
+ variable_group lambda;
+ hom_variable_group v1,v2;
+
+ f1 = (1-lambda)*v1 + 2*v2;
+ f2 = 3*v1 + (4-lambda)*v2;
+END;

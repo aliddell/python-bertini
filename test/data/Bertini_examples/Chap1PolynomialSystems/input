@@ -1,0 +1,7 @@
+  %input: our first input file
+  variable_group x,y;
+  function f,g;
+
+  f = x^2 - 1;
+  g = y^2 - 4;
+ END;

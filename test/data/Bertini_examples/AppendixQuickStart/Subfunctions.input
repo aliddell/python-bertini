@@ -1,0 +1,12 @@
+% Subfunctions.input
+ variable_group x,y,z;
+ function f1,f2,f3;
+
+ S = x^2+y^2+z^2-1;
+ T = y-x^2;
+ U = x*y-z;
+
+ f1 = S*T*(x-2);
+ f2 = S*U*(y-2);
+ f3 = S*T*U*(z-2);
+END;

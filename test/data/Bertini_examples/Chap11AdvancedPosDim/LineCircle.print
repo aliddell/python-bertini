@@ -1,0 +1,11 @@
+% LineCircle.print
+CONFIG
+ TrackType:4; % print witness set
+ MPType:0;    % print using double precision
+END;
+INPUT
+ function f;
+ variable_group x,y;
+
+ f = (x - y)*(x^2 + y^2 - 1);
+END;

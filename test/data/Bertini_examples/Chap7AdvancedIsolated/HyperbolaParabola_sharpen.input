@@ -1,0 +1,12 @@
+% HyperbolaParabola_sharpen.input
+CONFIG
+ SharpenOnly:1; % use the sharpening module
+ SharpenDigits:20; % sharpen to 20 digits
+END;
+INPUT
+ function hyperbola,parabola;
+ variable_group x,y;
+
+ hyperbola = x^2 - y^2 - 1;
+ parabola = x - y^2 - 1;
+END;

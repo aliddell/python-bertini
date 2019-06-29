@@ -1,0 +1,11 @@
+% ParameterHomotopy.input
+CONFIG
+ ParameterHomotopy:1;
+END;
+INPUT
+ variable_group x;
+ function f;
+ parameter s;
+
+ f = x^2-s;
+END;

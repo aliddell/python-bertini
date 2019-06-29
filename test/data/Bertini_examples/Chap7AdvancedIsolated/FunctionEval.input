@@ -1,0 +1,17 @@
+% FunctionEval.input
+CONFIG
+  % Evaluate a user-defined homotopy using 64-bit precision
+  UserHomotopy:1;
+  TrackType:-4;
+  MPType:1;
+  Precision:64;
+END;
+INPUT
+  function f;
+  variable x;
+  pathvariable T;
+  parameter t;
+  t = T;
+
+  f = exp(sin(x/(1+x))) + 1/cos(x-2) - 1;
+END;

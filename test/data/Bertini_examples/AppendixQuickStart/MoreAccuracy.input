@@ -1,0 +1,10 @@
+% MoreAccuracy.input
+CONFIG
+ FinalTol:1e-20;
+END;
+INPUT
+ function f;
+ variable_group x;
+
+ f = x^2 - 1;
+END;

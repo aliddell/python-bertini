@@ -1,0 +1,19 @@
+% UserDefined_ProductSpace.input
+CONFIG
+  % Track a user-defined homotopy on a product space
+  UserHomotopy:2;
+  SecurityLevel:1;
+END;
+INPUT
+  function f,g;
+  variable_group x;
+  variable_group y;
+  pathvariable T;
+  t = 1-T; % t goes from 0 to 1
+  parameter a,b;
+  a = sin(t*Pi/2);
+  b = t;
+
+  f = x^2 - 3*a*x - 4;
+  g = x*y + y - b;
+END;

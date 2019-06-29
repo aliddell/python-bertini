@@ -1,0 +1,14 @@
+%AroundTheUnitCircleAlt.input
+CONFIG
+ UserHomotopy:1;
+END;
+
+INPUT
+ variable z;
+ function H;
+ parameter s;
+ pathvariable t;
+
+ s = exp(2*Pi*I*(1-t));
+ H = z^2 - s;
+END;

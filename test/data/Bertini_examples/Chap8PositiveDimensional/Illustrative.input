@@ -1,0 +1,14 @@
+% Illustrative.input
+CONFIG
+ TrackType:1;
+END;
+INPUT
+ variable_group x,y,z;
+ function f1,f2,f3;
+ S = x^2+y^2+z^2-1;
+ T = y-x^2;
+ U = z-x^3;
+ f1 = T*S*(x-2);
+ f2 = U*S*(y-2);
+ f3 = T*U*S*(z-2);
+END;

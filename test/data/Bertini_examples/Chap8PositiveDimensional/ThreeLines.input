@@ -1,0 +1,11 @@
+% ThreeLines.input
+CONFIG
+  TrackType:1;
+END;
+INPUT
+  variable_group x,y,z;
+  function f,g;
+
+  f = x*z+y;
+  g = y*z+x;
+END;

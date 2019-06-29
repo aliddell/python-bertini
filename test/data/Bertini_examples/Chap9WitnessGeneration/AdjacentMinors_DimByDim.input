@@ -1,0 +1,20 @@
+% Adjacent Minors dimension-by-dimension
+%
+CONFIG
+ TrackType:1;
+ WitnessGenType:1; % dimension-by-dimension
+ WitnessSupersetOnly:1; % only compute a witness point superset
+END;
+INPUT
+ function f1,f2,f3,f4,f5,f6;
+ variable_group  x_[11],x_[12],x_[13],x_[14],
+                 x_[21],x_[22],x_[23],x_[24],
+                 x_[31],x_[32],x_[33],x_[34];
+
+ f1 = x_[11]*x_[22]-x_[12]*x_[21];
+ f2 = x_[12]*x_[23]-x_[13]*x_[22];
+ f3 = x_[13]*x_[24]-x_[14]*x_[23];
+ f4 = x_[21]*x_[32]-x_[22]*x_[31];
+ f5 = x_[22]*x_[33]-x_[23]*x_[32];
+ f6 = x_[23]*x_[34]-x_[24]*x_[33];
+END;

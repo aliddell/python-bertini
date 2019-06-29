@@ -1,0 +1,14 @@
+% UserDefined_NewtonHomotopy.input
+CONFIG
+  % Track a user-defined homotopy
+  UserHomotopy:1;
+END;
+INPUT
+  function f;
+  variable x;
+  pathvariable T;
+  parameter t;
+  t = T;
+
+  f = exp(sin(x/(1+x))) + 1/cos(x-2) - 1 - t*(-1.81713970082);
+END;

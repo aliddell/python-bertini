@@ -1,0 +1,17 @@
+% UserHomotopy_Projective.input
+CONFIG
+ UserHomotopy:2;
+END;
+INPUT
+ variable_group x;
+ function f;
+ pathvariable t;
+ parameter s;
+ constant gamma;
+
+ gamma = 0.8 - 1.2*I;
+ s = t;
+
+ f = (x^2-1)*gamma*s + (x^2)*(1-s);
+ % Note: t does not explicitly appear in f
+END;

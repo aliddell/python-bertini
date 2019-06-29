@@ -1,0 +1,10 @@
+% LineCircle.input
+CONFIG
+ TrackType:1;
+END;
+INPUT
+ function f;
+ variable_group x,y;
+
+ f = (x - y)*(x^2 + y^2 - 1);
+END;

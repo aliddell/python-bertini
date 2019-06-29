@@ -1,0 +1,14 @@
+% Unscale.input
+CONFIG
+ TrackType:-4; % perform evaluation
+ % Utilize 96-bit fixed precision
+ MPType:1;
+ Precision:96;
+END;
+INPUT
+ function x,y;
+ variable_group hatx,haty;
+
+ x = 1e-11*hatx;
+ y = 1e-5*haty;
+END;

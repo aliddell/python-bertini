@@ -1,0 +1,22 @@
+6
+
+30 0
+
+30.00000000000021 -1.2e-12
+
+7.422190004295883e-01 0.000000000000000e+00
+
+2.999999999999990e+01 1.776356839400250e-15
+
+0.742219000429588411304753220667e0 -0.107600627472146010258159776305e-26
+
+0.299999999999998983894731417796e2 -0.208679331633159200994841978461e-22
+
+% File: degree10eval.points
+%   some points for evaluating the degree10.input problem
+% Try
+%   >> bertini degree10eval.input degree10eval.points
+% z=30 is for illustration.
+% z=30.00000000000021 + -1.2e-12*I is a solution approximated using FinalTol:1e-11;
+% The next two are solutions approximated using FinalTol:1e-15;
+% The last two are solutions approximated using FinalTol:1e-19;

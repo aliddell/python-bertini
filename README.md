@@ -2,6 +2,7 @@
 
 NAGlib is a Python library for numerical algebraic geometry.
 Mostly, it's just a wrapper around [Bertini](https://bertini.nd.edu) (sold separately).
+(Note: I am not a member of Bertini team, just an interested user who likes automating things.)
 
 ## Installing NAGlib
 

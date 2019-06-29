@@ -1,0 +1,16 @@
+%AroundTheUnitCircle.input
+CONFIG
+ UserHomotopy:1;
+END;
+
+INPUT
+ variable z;
+ function H;
+ parameter q1,q2;
+ pathvariable t;
+
+ q1 = cos(2*Pi*(1-t));
+ q2 = sin(2*Pi*(1-t));
+ s = q1 + I*q2;
+ H = z^2 - s;
+END;

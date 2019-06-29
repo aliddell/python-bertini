@@ -1,0 +1,15 @@
+% FixedPoint.input
+CONFIG
+ % Use a fixed-point homotopy to sharpen
+ ParameterHomotopy:2;
+ FinalTol:1e-20;
+END;
+INPUT
+ function parabola,twolines
+ variable_group x,y;
+ parameter t,x0,y0;
+ random gamma;
+
+ parabola = (1-t)*(y - x^2) + gamma*t*(x - x0);
+ twolines = (1-t)*(x^2 - y^2) + gamma*t*(y - y0);
+END;

@@ -93,15 +93,26 @@ def parse_input_file(fh: TextIOWrapper, stop_if: Callable = None) -> Tuple[Berti
 
     line = fh.readline()
     while line and not stop_if(line):
-        line = line.strip(" ;\n")
+        line = line.strip()
 
         if line.lower() == "config":
             in_config = True
         elif line.lower() == "input":
             in_input = True
-        elif line.lower() == "end":
+        elif line.lower().strip(";") == "end":
             in_input = in_config = False
         elif not line.startswith("%") and len(line) > 0:
+            if not line.endswith(";"):  # statement spans several lines
+                multiline = line
+                line = fh.readline()
+                while line and not line.endswith(";"):
+                    multiline += " " + line.strip()
+                    line = fh.readline()
+
+                line = multiline
+
+            line = line.strip(" ;")
+
             if in_config:
                 key, val = map(lambda l: l.strip(), line.split(":"))
                 val = val.split("%")[0].strip(" ;")  # remove comment, semicolon, trailing whitespace

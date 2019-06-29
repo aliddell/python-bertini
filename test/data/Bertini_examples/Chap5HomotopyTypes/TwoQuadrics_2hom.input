@@ -1,0 +1,8 @@
+% TwoQuadrics_2hom.input
+INPUT
+ function f1, f2;
+ variable_group x;
+ variable_group y;
+ f1 = x*y - 1;
+ f2 = x^2 - 1;
+END;

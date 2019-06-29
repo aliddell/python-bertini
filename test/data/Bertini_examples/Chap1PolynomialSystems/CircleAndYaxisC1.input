@@ -1,0 +1,10 @@
+ % CircleAndYaxisC0.input
+ function f,g;
+ variable_group x,y;
+ constant c;
+
+ c = 1;
+ f = (x-c)^2+y^2-1;
+ g = x;
+
+END;

@@ -1,0 +1,7 @@
+%HyperbolaParabola.input
+ function hyperbola,parabola;
+ variable_group x,y;
+
+ hyperbola = x^2 - y^2 - 1;
+ parabola = x - y^2 - 1;
+END;

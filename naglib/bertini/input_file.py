@@ -1,3 +1,4 @@
+from copy import deepcopy
 from collections import OrderedDict
 from numbers import Number
 
@@ -95,7 +96,7 @@ class BertiniConfig(object):
                 arg_val = kwargs.pop(arg_name)
                 self.__setattr__(arg_name, arg_val)
             else:
-                self.__setattr__(arg_name, PARAMETERS[arg_name]["default"])
+                self.__setattr__(arg_name, deepcopy(PARAMETERS[arg_name]["default"]))
 
         if kwargs:
             key, _ = kwargs.popitem()
@@ -231,7 +232,7 @@ class BertiniInput(object):
                 arg_val = kwargs.pop(arg_name)
                 self.__setattr__(arg_name, arg_val)
             else:
-                self.__setattr__(arg_name, INPUT_TYPES[arg_name]["default"])
+                self.__setattr__(arg_name, deepcopy(INPUT_TYPES[arg_name]["default"]))
 
         if kwargs:
             key, _ = kwargs.popitem()

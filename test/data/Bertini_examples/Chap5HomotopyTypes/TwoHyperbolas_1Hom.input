@@ -1,0 +1,7 @@
+% TwoHyperbolas_1Hom.input
+variable_group x,y;
+function f1,f2;
+
+f1=x*y-1;
+f2=x*y+x-y-1  ;
+END;

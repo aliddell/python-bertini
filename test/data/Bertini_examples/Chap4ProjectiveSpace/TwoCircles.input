@@ -1,0 +1,13 @@
+% TwoCircles.input
+% Intersection of two circles
+CONFIG
+ % Force accurate determination of diverging paths
+ SecurityLevel:1;
+END;
+INPUT
+ function circle1, circle2;
+ variable_group x, y;
+
+ circle1 = x^2 + y^2 - 1;
+ circle2 = (x-1)^2 + (y+1)^2 - 1;
+END;

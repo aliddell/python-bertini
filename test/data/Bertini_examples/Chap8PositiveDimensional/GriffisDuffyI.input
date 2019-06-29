@@ -1,0 +1,173 @@
+% Bertini file for Griffis-Duffy Type I platform forward kinematics
+%
+% This special case of Stewart-Gough is Griffis-Duffy with
+% base & moving triangles as equilateral, with joints at
+% vertices and midpoints. Leg lengths compatible.
+%
+% We modify the general Stewart-Gough system to put the parameters
+% on the Griffis-Duffy parameter space.
+CONFIG
+   TrackType:1;
+END
+
+INPUT
+   % Base & moving platforms are both triangles with joints
+   % at vertices and one joint along each edge.
+   % Specify this by giving random vertices and then
+   % interpolating to put random point on each edge.
+   % As the figures are planar, we set z-coordinates to zero.
+   constant sqrt3;
+   sqrt3 = 3^(1/2);
+   % Vertices for the stationary rigid body
+   constant a1x,a1y, a3x,a3y, a5x,a5y;
+   a1x = -sqrt3; a1y = -1;
+   a3x =  sqrt3; a3y = -1;
+   a5x =    0;   a5y = 2;
+   constant a1z,a2z,a3z,a4z,a5z,a6z;
+   a1z=0;a2z=0;a3z=0;a4z=0;a5z=0;a6z=0;
+   % Interpolating constants for sides
+   constant a2,a4,a6;
+   a2=0.5;a4=0.5;a6=0.5;
+   a2x = a2*a1x + (1-a2)*a3x;
+   a2y = a2*a1y + (1-a2)*a3y;
+   a4x = a4*a3x + (1-a4)*a5x;
+   a4y = a4*a3y + (1-a4)*a5y;
+   a6x = a6*a5x + (1-a6)*a1x;
+   a6y = a6*a5y + (1-a6)*a1y;
+   % Do similar for the moving rigid body
+   % Vertices for the stationary rigid body, scaling factor rho.
+   constant rho;
+   rho = 0.40848840084869084689607210007511811758273381523777e0 +I*0.43843518180137204471464687496504664346923820863761e0;
+   constant b2x,b2y, b4x,b4y, b6x,b6y;
+   b2x = 0;   b2y=rho*2;
+   b4x = -rho*sqrt3; b4y = -rho;
+   b6x =  rho*sqrt3; b6y = -rho;
+   constant b1z,b2z,b3z,b4z,b5z,b6z;
+   b1z=0;b2z=0;b3z=0;b4z=0;b5z=0;b6z=0;
+   % Interpolating constants for sides
+   constant b1,b3,b5;
+   b1=0.5;b3=0.5;b5=0.5;
+   b1x = b1*b6x + (1-b1)*b2x;
+   b1y = b1*b6y + (1-b1)*b2y;
+   b3x = b3*b2x + (1-b3)*b4x;
+   b3y = b3*b2y + (1-b3)*b4y;
+   b5x = b5*b4x + (1-b5)*b6x;
+   b5y = b5*b4y + (1-b5)*b6y;
+   % squared distances between point pairs
+   constant d1,d2,d3,d4,d5,d6;
+   d1= 0.60253285154416311666763946757947656005254767936440e1 +I*0.46244460773969870774591688042239016441342159529488e1;
+   d2= 0.68195377486446525775410545489180535494469537475256e0 +I*0.22337719013829322825025502032123983328376923876513e1;
+   d3= 0.33100335856880728115480859653452549775233437122361e1 +I*-0.17966811115594162795869439796591218630615640979776e1;
+   d4= 0.15579139233250532088351660739114320197236432225561e1 +I*0.29335247385730361447386332238267248559416170233522e1;
+   d5= 0.40898037844000270035640955828371496115912598858697e1 +I*0.22349953092285726839281624652249023930268956704736e1;
+   d6= 0.19570344722206797029694886155922008947671975753046e1 +I*0.31191859883274302363997819325785667988053249319080e1;
+
+   % 
+
+   % These will be the squared distance functions
+   function f1,f2,f3,f4,f5,f6;
+   % The Study quadric
+   function Study;
+
+   % Use Study coordinates for the position & orientation of the moving body.
+   hom_variable_group e0,e1,e2,e3,g0,g1,g2,g3;
+
+   % Let X be the 4x4 representation of quaternion (x0,x1,x2,x3)
+   % So
+   % X = [ x0 -x1 -x2 -x3
+   %       x1  x0 -x3  x2
+   %       x2  x3  x0 -x1
+   %       x3 -x2  x1  x0 ]
+   % Treat vector (v1,v2,v3) as quaternion (0,v1,v2,v3).
+   % We also say that Re(x) = x0 or equivalently, Re(X) = x0*I.
+
+   % Quaternions obey the relation X*X' = |(x0,x1,x2,x3)|^2 = |X|^2
+   % Let ee = E*E', gg = G*G':
+   ee = e0^2 + e1^2 + e2^2 +e3^2;
+   gg = g0^2 + g1^2 + g2^2 +g3^2;
+
+   % After transformation, a point b = (b1,b2,b3) becomes
+   %   Transf(b) = (E*B*E' + G*E')/ee
+   % with the Study quadric side condition of
+   %   Study = Re(G*E') = 0
+   Study = g0*e0 + g1*e1 + g2*e2 + g3*e3;
+
+   % Accordingly, the governing equations are the squared distance relations
+   % (*)  d = | (E*B*E' + G*E')/ee - A |^2
+   %        = [ (E*B*E' + G*E')/ee - A ]*[ (E*B'*E' + E*G')/ee - A']
+   % After expanding this, several instances of E*E' = ee*I appear.  After
+   % simplifying ee/ee = 1 (cases of ee=0 are meaningless) and then
+   % clearing the denominator by multiplying by ee, (*) becomes
+   % a quadric relation in E,G, with A,B,d considered constants.
+   % We apply this 6 times for d_i, a_i, b_i.
+
+   % We simplify (*) with some vector algebra, where the following
+   % terms appear:
+   R11 = e0^2+e1^2-e2^2-e3^2;
+   R12 = 2*(-e0*e3+e1*e2);
+   R13 = 2*( e0*e2+e1*e3);
+   R21 = 2*( e0*e3+e2*e1);
+   R22 = e0^2-e1^2+e2^2-e3^2;
+   R23 = 2*(-e0*e1+e2*e3);
+   R31 = 2*(-e0*e2+e3*e1);
+   R32 = 2*( e0*e1+e3*e2);
+   R33 = e0^2-e1^2-e2^2+e3^2;
+   u1 = g0*e1 - e0*g1;
+   u2 = g0*e2 - e0*g2;
+   u3 = g0*e3 - e0*g3;
+   v1 = g2*e3 - g3*e2;
+   v2 = g3*e1 - g1*e3;
+   v3 = g1*e2 - g2*e1;
+
+   % Now, we form the 6 distance equations.
+   % Write it in terms of J, then substitute J = 1,...,6
+%   fJ = (aJx^2+aJy^2+aJz^2+bJx^2+bJy^2+bJz^2-dJ)*ee + gg +
+%        2*(u1*(aJx-bJx) + u2*(aJy-bJy) + u3*(aJz-bJz))  +
+%        2*(v1*(aJx+bJx) + v2*(aJy+bJy) + v3*(aJz+bJz))  +
+%       -2*( aJx*(R11*bJx+R12*bJy+R13*bJz) +
+%            aJy*(R21*bJx+R22*bJy+R23*bJz) +
+%            aJz*(R31*bJx+R32*bJy+R33*bJz) ) ;
+
+   f1 = (a1x^2+a1y^2+a1z^2+b1x^2+b1y^2+b1z^2-d1)*ee + gg +
+        2*(u1*(a1x-b1x) + u2*(a1y-b1y) + u3*(a1z-b1z))  +
+        2*(v1*(a1x+b1x) + v2*(a1y+b1y) + v3*(a1z+b1z))  +
+       -2*( a1x*(R11*b1x+R12*b1y+R13*b1z) +
+            a1y*(R21*b1x+R22*b1y+R23*b1z) +
+            a1z*(R31*b1x+R32*b1y+R33*b1z) ) ;
+
+   f2 = (a2x^2+a2y^2+a2z^2+b2x^2+b2y^2+b2z^2-d2)*ee + gg +
+        2*(u1*(a2x-b2x) + u2*(a2y-b2y) + u3*(a2z-b2z))  +
+        2*(v1*(a2x+b2x) + v2*(a2y+b2y) + v3*(a2z+b2z))  +
+       -2*( a2x*(R11*b2x+R12*b2y+R13*b2z) +
+            a2y*(R21*b2x+R22*b2y+R23*b2z) +
+            a2z*(R31*b2x+R32*b2y+R33*b2z) ) ;
+
+   f3 = (a3x^2+a3y^2+a3z^2+b3x^2+b3y^2+b3z^2-d3)*ee + gg +
+        2*(u1*(a3x-b3x) + u2*(a3y-b3y) + u3*(a3z-b3z))  +
+        2*(v1*(a3x+b3x) + v2*(a3y+b3y) + v3*(a3z+b3z))  +
+       -2*( a3x*(R11*b3x+R12*b3y+R13*b3z) +
+            a3y*(R21*b3x+R22*b3y+R23*b3z) +
+            a3z*(R31*b3x+R32*b3y+R33*b3z) ) ;
+
+   f4 = (a4x^2+a4y^2+a4z^2+b4x^2+b4y^2+b4z^2-d4)*ee + gg +
+        2*(u1*(a4x-b4x) + u2*(a4y-b4y) + u3*(a4z-b4z))  +
+        2*(v1*(a4x+b4x) + v2*(a4y+b4y) + v3*(a4z+b4z))  +
+       -2*( a4x*(R11*b4x+R12*b4y+R13*b4z) +
+            a4y*(R21*b4x+R22*b4y+R23*b4z) +
+            a4z*(R31*b4x+R32*b4y+R33*b4z) ) ;
+
+   f5 = (a5x^2+a5y^2+a5z^2+b5x^2+b5y^2+b5z^2-d5)*ee + gg +
+        2*(u1*(a5x-b5x) + u2*(a5y-b5y) + u3*(a5z-b5z))  +
+        2*(v1*(a5x+b5x) + v2*(a5y+b5y) + v3*(a5z+b5z))  +
+       -2*( a5x*(R11*b5x+R12*b5y+R13*b5z) +
+            a5y*(R21*b5x+R22*b5y+R23*b5z) +
+            a5z*(R31*b5x+R32*b5y+R33*b5z) ) ;
+
+   f6 = (a6x^2+a6y^2+a6z^2+b6x^2+b6y^2+b6z^2-d6)*ee + gg +
+        2*(u1*(a6x-b6x) + u2*(a6y-b6y) + u3*(a6z-b6z))  +
+        2*(v1*(a6x+b6x) + v2*(a6y+b6y) + v3*(a6z+b6z))  +
+       -2*( a6x*(R11*b6x+R12*b6y+R13*b6z) +
+            a6y*(R21*b6x+R22*b6y+R23*b6z) +
+            a6z*(R31*b6x+R32*b6y+R33*b6z) ) ;
+
+END

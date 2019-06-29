@@ -1,0 +1,11 @@
+% degree10eval.input
+CONFIG
+ TrackType:-4;
+ MPType:1;
+ Precision:128;
+END;
+INPUT
+ variable_group z;
+ function p;
+ p =  z^10 - 30*z^9 + 2;
+END;

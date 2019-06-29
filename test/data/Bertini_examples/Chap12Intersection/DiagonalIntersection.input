@@ -1,0 +1,17 @@
+% DiagonalIntersection.input
+CONFIG
+ UserHomotopy:2;
+END;
+INPUT
+ function FA,FB,L1,L2;
+ variable_group x1,x2,y1,y2;
+ pathvariable T;
+ parameter t;
+ random gamma;
+
+ t = T;
+ FA = x1;
+ FB = y1*y2;
+ L1 = gamma*t*(2*x1 + x2 - 2) + (1-t)*(x1 - y1);
+ L2 = gamma*t*(x1 + 3*y2 + 4) + (1-t)*(x2 - y2);
+END;

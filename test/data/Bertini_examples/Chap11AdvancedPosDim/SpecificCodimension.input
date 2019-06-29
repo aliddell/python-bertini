@@ -1,0 +1,15 @@
+% SpecificCodimension.input
+%    for components of codim = 2
+CONFIG
+ TrackType:1;           % compute a numerical irred. decomp.
+ SpecificCodimension:2; % for components of codim = 2
+ WitnessGenType:1;      % using dimension-by-dimension
+END;
+INPUT
+ variable_group x,y,z;
+ function f1,f2,f3;
+
+ f1 = x*(x^2-y-z^2);
+ f2 = x*(x+y+z^2-2)*(y-5);
+ f3 = x*(x^2+x-2)*(z-2);
+END;
