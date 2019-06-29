@@ -224,7 +224,7 @@ def read_main_data_file(main_data_file: str) -> BertiniResult:
     if not op.isfile(main_data_file):
         raise IOError(f"Main data file '{main_data_file}' not found")
 
-    result = BertiniResult()
+    result = BertiniResult(op.dirname(main_data_file))
 
     with open(main_data_file, "r") as fh:
         line = fh.readline()
