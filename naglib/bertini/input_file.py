@@ -33,6 +33,10 @@ PARAMETERS = OrderedDict(tracktype={"default": 0,
                                       "is valid": lambda x: isinstance(x, float) and x > 0},
                          ampmaxprec={"default": 1024,
                                      "is valid": lambda x: isinstance(x, int) and x >= 64},
+                         finaltol={"default": 1.,
+                                   "is valid": lambda x: isinstance(x, Number) and x > 0},
+                         imagthreshold={"default": 1.,
+                                        "is valid": lambda x: isinstance(x, Number) and x > 0},
                          parameterhomotopy={"default": 0,
                                             "is valid": lambda x: x in range(0, 3)},
                          randomseed={"default": 0,
@@ -166,6 +170,28 @@ class BertiniConfig(object):
         if not is_valid:
             raise ValueError("degreebound must be a positive double")
         self._degreebound = val
+
+    @property
+    def finaltol(self):
+        return self._finaltol
+
+    @finaltol.setter
+    def finaltol(self, val):
+        val, is_valid = _validate_param("finaltol", val)
+        if not is_valid:
+            raise ValueError("finaltol must be a positive double")
+        self._finaltol = val
+
+    @property
+    def imagthreshold(self):
+        return self._finaltol
+
+    @imagthreshold.setter
+    def imagthreshold(self, val):
+        val, is_valid = _validate_param("imagthreshold", val)
+        if not is_valid:
+            raise ValueError("imagthreshold must be a positive double")
+        self._imagthreshold = val
 
     @property
     def mptype(self):
