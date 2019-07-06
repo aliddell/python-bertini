@@ -276,13 +276,12 @@ class BertiniRun:
         else:
             stdin = None
 
-        os.chdir(self.dirname)
         if stdin is not None:
             stdin = open(stdin, "r")
 
         try:
             proc = subprocess.Popen(arg, stdin=stdin, stdout=subprocess.PIPE,
-                                    universal_newlines=True)
+                                    cwd=self.dirname, universal_newlines=True)
         except subprocess.CalledProcessError as e:
             msg = extract_error_message(e.output)
             raise BertiniError(msg)
