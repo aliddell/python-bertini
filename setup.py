@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(
-    name='naglib',
+    name='io',
     version='0.1.0',
-    packages=['naglib', 'naglib.bertini'],
+    packages=['io', 'io.io'],
     url='https://github.com/aliddell/naglib',
     license='BSD',
     author='Alan',

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import os.path as op
 import multiprocessing
@@ -10,10 +9,10 @@ import numpy as np
 
 from typing import Union
 
-from naglib.bertini.input_file import BertiniConfig, BertiniInput
-from naglib.bertini.io import (read_input_file, read_main_data_file, read_points_file, read_witness_data_file,
-                               write_input_file, write_points_file, extract_error_message)
-from naglib.exceptions import BertiniError
+from bertini.io.input_file import BertiniConfig, BertiniInput
+from bertini.io.io import (read_input_file, read_main_data_file, read_points_file, read_witness_data_file,
+                           write_input_file, write_points_file, extract_error_message)
+from bertini.exceptions import BertiniError
 
 
 def _which(exe: str) -> Union[str, None]:
@@ -99,9 +98,9 @@ class BertiniRun:
                 raise OSError(f"didn't find Bertini at '{kwargs['bertini_path']}'")
             self._bertini = kwargs["bertini_path"]
         else:
-            bertini = _which("bertini")
+            bertini = _which("io")
             if bertini is None:
-                raise OSError("couldn't find a bertini executable and you didn't specify one")
+                raise OSError("couldn't find a io executable and you didn't specify one")
             self._bertini = bertini
 
         if "mpi_path" in kwargs:
@@ -176,7 +175,7 @@ class BertiniRun:
         return inlines
 
     # def _write_files(self):
-    #     from naglib.bertini.fileutils import fprint
+    #     from io.io.fileutils import fprint
     #
     #     tracktype = self._tracktype
     #     dirname = self._dirname

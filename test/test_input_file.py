@@ -2,7 +2,7 @@ from context import op, BASEDIR
 
 from collections import OrderedDict
 
-from naglib.bertini.input_file import BertiniInput, BertiniConfig
+from bertini.io.input_file import BertiniInput, BertiniConfig
 
 
 def test_inputs_parameter_homotopy():

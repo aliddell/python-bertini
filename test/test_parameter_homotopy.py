@@ -4,9 +4,9 @@ from collections import OrderedDict
 
 import numpy as np
 
-from naglib.bertini.io import write_input_file
-from naglib.bertini.run import BertiniRun
-from naglib.bertini.input_file import BertiniInput, BertiniConfig
+from bertini.io.io import write_input_file
+from bertini.run import BertiniRun
+from bertini.io.input_file import BertiniInput, BertiniConfig
 
 
 class TestParameterHomotopy:

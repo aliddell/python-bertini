@@ -1,7 +1,7 @@
 from context import op, ZERO_DIM_BASE, POS_DIM_BASE
 
-from naglib.bertini.io import read_input_file
-from naglib.bertini.input_file import BertiniInput, BertiniConfig
+from bertini.io.io import read_input_file
+from bertini.io.input_file import BertiniInput, BertiniConfig
 
 
 def is_empty(x):

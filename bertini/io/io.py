@@ -10,8 +10,8 @@ from typing import Tuple, Callable
 import mpmath as mp
 import numpy as np
 
-from naglib.bertini.input_file import BertiniConfig, BertiniInput
-from naglib.exceptions import UnclassifiedException
+from bertini.io.input_file import BertiniConfig, BertiniInput
+from bertini.exceptions import UnclassifiedException
 
 
 class BertiniResult:

@@ -1,4 +1,4 @@
-name: naglib
+name: bertini
 channels:
 - defaults
 - conda-forge
