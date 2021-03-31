@@ -9,9 +9,9 @@ import numpy as np
 
 from typing import Union
 
-from bertini.io.input_file import BertiniConfig, BertiniInput
-from bertini.io.io import (read_input_file, read_main_data_file, read_points_file, read_witness_data_file,
-                           write_input_file, write_points_file, extract_error_message)
+from bertini.io.input_file import BertiniInput, BertiniConfig
+from bertini.io.utils import (read_main_data_file, read_points_file, write_input_file, write_points_file,
+                              extract_error_message)
 from bertini.exceptions import BertiniError
 
 
@@ -92,7 +92,6 @@ class BertiniRun:
             else:
                 raise ValueError("you have selected parameterhomotopy:2 but you have not given final parameters")
 
-
         if "bertini_path" in kwargs:
             if not op.isfile(kwargs["bertini_path"]):
                 raise OSError(f"didn't find Bertini at '{kwargs['bertini_path']}'")
@@ -165,12 +164,12 @@ class BertiniRun:
         except ValueError:
             msg = 'no main_data file!'
             raise BertiniError(msg)
-        inlines = lines[dex+1:]
+        inlines = lines[dex + 1:]
         while inlines[0] == '\n':
             inlines = inlines[1:]
 
         dex = inlines.index('END;\n')
-        inlines = inlines[:dex+1]
+        inlines = inlines[:dex + 1]
 
         return inlines
 
@@ -262,9 +261,9 @@ class BertiniRun:
 
         """
         # in case the user has changed any of these
-        if self._parallel and self._mpi is not None:
+        if self._parallel and self._mpi is not None and multiprocessing.cpu_count() >= 2:
             cmd = self._mpi
-            arg = [cmd, '-np', str(multiprocessing.cpu_count()), self._bertini, "input"]
+            arg = [cmd, '-np', str(multiprocessing.cpu_count() // 2), self._bertini, "input"]
         else:
             arg = [self._bertini, "input"]
 
@@ -325,8 +324,10 @@ class BertiniRun:
         write_input_file(self.config, self.inputs, input_file)
 
         if self.config.parameterhomotopy == 2:
-            write_points_file(self.start_parameters.reshape(1, self.start_parameters.size), op.join(self._dirname, "start_parameters"))
-            write_points_file(self.final_parameters.reshape(1, self.final_parameters.size), op.join(self._dirname, "final_parameters"))
+            write_points_file(self.start_parameters.reshape(1, self.start_parameters.size),
+                              op.join(self._dirname, "start_parameters"))
+            write_points_file(self.final_parameters.reshape(1, self.final_parameters.size),
+                              op.join(self._dirname, "final_parameters"))
             write_points_file(self.start, op.join(self._dirname, "start"))
 
     @property

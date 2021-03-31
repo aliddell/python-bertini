@@ -1,7 +1,8 @@
-from context import op, ZERO_DIM_BASE, POS_DIM_BASE
+from conftest import op, ZERO_DIM_BASE, POS_DIM_BASE
 
-from bertini.io.io import read_input_file
-from bertini.io.input_file import BertiniInput, BertiniConfig
+from bertini.io.utils import read_input_file
+from bertini.io.input_file.input_section import BertiniInput
+from bertini.io.input_file.config_section import BertiniConfig
 
 
 def is_empty(x):

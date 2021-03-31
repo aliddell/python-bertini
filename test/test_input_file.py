@@ -1,8 +1,6 @@
-from context import op, BASEDIR
-
 from collections import OrderedDict
 
-from bertini.io.input_file import BertiniInput, BertiniConfig
+from bertini.io.input_file.input_section import BertiniInput
 
 
 def test_inputs_parameter_homotopy():

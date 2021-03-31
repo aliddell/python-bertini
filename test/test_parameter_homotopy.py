@@ -1,12 +1,13 @@
-from context import op, ZERO_DIM_BASE
+from conftest import op, ZERO_DIM_BASE
 
 from collections import OrderedDict
 
 import numpy as np
 
-from bertini.io.io import write_input_file
+from bertini.io.utils import write_input_file
 from bertini.run import BertiniRun
-from bertini.io.input_file import BertiniInput, BertiniConfig
+from bertini.io.input_file.input_section import BertiniInput
+from bertini.io.input_file.config_section import BertiniConfig
 
 
 class TestParameterHomotopy:

@@ -1,8 +1,9 @@
-name: bertini
+name: python-bertini
 channels:
 - defaults
 - conda-forge
 dependencies:
 - python=3.*
 - numpy
+- scipy
 - mpmath
